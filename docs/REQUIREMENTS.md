@@ -1,8 +1,8 @@
 # PERSPECTIVE\_STUDIO — Foundation Requirements
 
-> **Status:** v1.2 · Foundation document · Owner: sole developer/user **Audience:** Claude Code (primary), developer (secondary) **Location in repo:** `docs/REQUIREMENTS.md`
+> **Status:** v1.3 · Foundation document · Owner: sole developer/user **Audience:** Claude Code (primary), developer (secondary) **Location in repo:** `docs/REQUIREMENTS.md`
 
-**Revisions:** v1.2 (M1, 2026-09-30) — §6.3 constraint constants fixed in `core/math/tolerance.ts`; §16 M1 status. · v1.1 (M0, 2026-09-30) — §13 TypeScript pinned to 6.0; §14 records the delivery actually used (CI on push to `main`, app id, versioning, signing key); §16 M0 status. · v1.0 — foundation document.
+**Revisions:** v1.3 (M2, 2026-09-30) — M0 closed (ADR-0002); OD-3 eye height tuned to 2.2 u; §10.3 / §10.5 details fixed in M2 (below); §16 M2 status. · v1.2 (M1, 2026-09-30) — §6.3 constraint constants fixed in `core/math/tolerance.ts`; §16 M1 status. · v1.1 (M0, 2026-09-30) — §13 TypeScript pinned to 6.0; §14 records the delivery actually used (CI on push to `main`, app id, versioning, signing key); §16 M0 status. · v1.0 — foundation document.
 
 ---
 
@@ -635,6 +635,8 @@ Each tool is a small explicit state machine: `idle → pressing → dragging →
 | Mouse wheel / trackpad | Zoom / pan (desktop) |
 | Keys (desktop) | `V` select, `B` box, `S` sketch, `P` perspective, `Del` delete, `Ctrl+D` duplicate, `Ctrl+Z / Ctrl+Shift+Z`, `G` guides, `C` construction, `F` fit |
 
+**As built (M2):** one-finger drag on empty canvas does nothing in Select / Perspective (pan is two-finger, as above). Desktop: mouse wheel zooms at the cursor, Ctrl+wheel (trackpad pinch) zooms, Shift+wheel pans sideways, middle-button drag pans; keys V, P, F.
+
 ### 10.4 Tools (V1 set; others added only via milestones)
 
 | Tool | Purpose |
@@ -653,6 +655,13 @@ Each tool is a small explicit state machine: `idle → pressing → dragging →
 - 2-point / 3-point toggle in the Perspective tool's mini bar.  
 - **Lock** toggle: when locked, the Perspective tool is disabled (prevents accidental edits).  
 - Mini bar numeric readout (optional): horizon y, VP positions, eye height.
+
+**As built (M2):**
+- Handles: VP-L and VP-R drag along the horizon (x only); the horizon line drags vertically (VP-L / VP-R move with it; VP-V is pushed out of the PV-2 band if needed, §6.4); VP-V (3pt) and the anchor drag freely. Touch radius 26 px (≥ 44 px targets). A second finger cancels the drag and restores the system.
+- Clamping: when the target is invalid, the handle stops at the edge of the valid region along the drag, with a haptic tick when clamping starts; a valid target is taken as is, so VP-V can jump across the band to look up.
+- Shading: the PV-2 band while dragging VP-V, the horizon, VP-L or VP-R (3pt); the region above horizon + 4 pp while dragging the anchor.
+- Lock: padlock button in the top bar; while locked the Perspective tool is disabled.
+- In 2pt the principal point x (`verticalX`) has no handle.
 
 ### 10.6 Object manipulation UX (box)
 
@@ -856,7 +865,7 @@ Each milestone is small, demoable, and closes with a tagged release.
 - Capacitor Android build, signed release, installed through Obtainium.  
 - **Spike:** Konva stage in the Android WebView — measure fps with 300 synthetic polylines and pen input latency/pressure/coalesced events. Record results in `docs/decisions/ADR-0002-rendering-baseline.md`.  
 - ✅ Accept: app installs/updates via Obtainium; spike numbers recorded.  
-- **Status (0.2.0):** foundation, CI and spike app delivered; spike numbers pending from the device → ADR-0002, checklist `docs/checklists/M0.md`.
+- **Status:** done (2026-09-30). Device baseline in ADR-0002: 75 fps pan and re-project (300 lines), touch event → frame ≤ 16 ms; no stylus measured (→ M6).
 
 ### M1 — Perspective core (no UI)
 
@@ -868,7 +877,8 @@ Each milestone is small, demoable, and closes with a tagged release.
 
 - PS-02…06, CV-01…03. Perspective tool, off-screen indicators, invalid-region shading, 2pt/3pt.  
 - A hard-coded test box renders (read-only) to prove live re-projection.  
-- ✅ Accept: drag every control; box responds live at 60 fps; clamping works; zoom never changes geometry.
+- ✅ Accept: drag every control; box responds live at 60 fps; clamping works; zoom never changes geometry.  
+- **Status (0.4.0):** built — PS-02…06, CV-01…03, hard-coded 1 u test box. Awaiting the device checklist `docs/checklists/M2.md`. CV-03 stores the viewport per document id in LocalStorage (one working document until M4); the perspective system itself is not persisted until DOC-02 (M4). Runtime dependencies: ADR-0003.
 
 ### M3 — Boxes
 
@@ -984,7 +994,7 @@ Read first: docs/REQUIREMENTS.md, docs/decisions/\*.
 | :---- | :---- | :---- |
 | OD-1 | Primary device (phone vs tablet), stylus model | Recorded in M0; UX tuned for tablet landscape, usable on phone portrait. |
 | OD-2 | Default paper size | 1200 × 800 pp. |
-| OD-3 | Default 3pt system | horizonY 280, VP-L x −700, VP-R x 1900, VP-V (600, 3200), anchor (600, 600), eyeHeight 1.6 u — tune so a 1 u cube ≈ 15% of paper width. |
+| OD-3 | Default 3pt system | horizonY 280, VP-L x −700, VP-R x 1900, VP-V (600, 3200), anchor (600, 600), eyeHeight **2.2 u** (tuned in M2: at 1.6 u a 1 u cube was 246 pp ≈ 20% of the paper; 2.2 u gives ≈ 180 pp ≈ 15%). |
 | OD-4 | Family colours | L blue, R orange, V purple (tuned in M2). |
 | OD-5 | After placing a box, stay in Box tool or return to Select | Return to Select (setting). |
 | OD-6 | Object grid snap step | 0.1 u, on. |

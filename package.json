@@ -1,6 +1,6 @@
 {
   "name": "perspective_studio",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "2D perspective drawing skill app",
   "scripts": {
     "dev": "vite",
@@ -16,10 +16,13 @@
   "dependencies": {
     "@capacitor/android": "^8.5.2",
     "@capacitor/core": "^8.5.2",
+    "@capacitor/haptics": "^8.0.2",
     "konva": "^10.7.0",
+    "lucide-react": "^1.49.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
-    "react-konva": "^19.3.0"
+    "react-konva": "^19.3.0",
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.5.2",

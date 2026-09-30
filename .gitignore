@@ -9,3 +9,4 @@ android/build/
 android/capacitor-cordova-android-plugins/
 android/app/src/main/assets/public/
 .DS_Store
+coverage/
