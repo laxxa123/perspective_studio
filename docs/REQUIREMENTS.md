@@ -1,8 +1,8 @@
 # PERSPECTIVE\_STUDIO — Foundation Requirements
 
-> **Status:** v1.4 · Foundation document · Owner: sole developer/user **Audience:** Claude Code (primary), developer (secondary) **Location in repo:** `docs/REQUIREMENTS.md`
+> **Status:** v1.5 · Foundation document · Owner: sole developer/user **Audience:** Claude Code (primary), developer (secondary) **Location in repo:** `docs/REQUIREMENTS.md`
 
-**Revisions:** v1.4 (0.8.0, 2026-09-30) — M3–M6 built in one delivery at the developer's request; §16.1 records what was built and the choices made. · v1.3 (M2, 2026-09-30) — M0 closed (ADR-0002); OD-3 eye height tuned to 2.2 u; §10.3 / §10.5 details fixed in M2 (below); §16 M2 status. · v1.2 (M1, 2026-09-30) — §6.3 constraint constants fixed in `core/math/tolerance.ts`; §16 M1 status. · v1.1 (M0, 2026-09-30) — §13 TypeScript pinned to 6.0; §14 records the delivery actually used (CI on push to `main`, app id, versioning, signing key); §16 M0 status. · v1.0 — foundation document.
+**Revisions:** v1.5 (2026-09-30, requirements only) — scene & viewing revision from the developer's review: horizon = eye level (PS-08, ADR-0005), placement above the horizon, hanging, working plane, Shapes submenu, quick zoom, collapsible sketch palette, plan view, origin marker, floor grid; new milestone M8; conflicts reviewed in §16.2; open decisions OD-8…OD-14. · v1.4 (0.8.0, 2026-09-30) — M3–M6 built in one delivery at the developer's request; §16.1 records what was built and the choices made. · v1.3 (M2, 2026-09-30) — M0 closed (ADR-0002); OD-3 eye height tuned to 2.2 u; §10.3 / §10.5 details fixed in M2 (below); §16 M2 status. · v1.2 (M1, 2026-09-30) — §6.3 constraint constants fixed in `core/math/tolerance.ts`; §16 M1 status. · v1.1 (M0, 2026-09-30) — §13 TypeScript pinned to 6.0; §14 records the delivery actually used (CI on push to `main`, app id, versioning, signing key); §16 M0 status. · v1.0 — foundation document.
 
 ---
 
@@ -56,7 +56,7 @@ Order of authority when documents conflict: **developer's latest instruction →
 
 ### 2.2 Non-goals (do not build, do not scaffold)
 
-- 3D engines (Three.js, Babylon, WebGL scene graphs), lighting, materials, textures, 3D camera orbit UI.  
+- 3D engines (Three.js, Babylon, WebGL scene graphs), lighting, materials, textures, 3D camera orbit UI. (The plan view, CV-05, is a flat orthographic top view of the same world data — not an orbit camera.)  
 - Backend, authentication, cloud sync, analytics, telemetry, ads.  
 - Multi-user, collaboration, social sharing features.  
 - Google Play Store distribution (V1 uses Obtainium).  
@@ -75,13 +75,18 @@ Order of authority when documents conflict: **developer's latest instruction →
 | **Viewport** | The on-screen window onto the picture plane (pan \+ zoom). UI state only. |
 | **World** | The 3D space where perspective objects live. Right-handed, **Z up**, units \= "u" (think metres). |
 | **Ground** | The world plane `z = 0`. |
-| **Horizon** | Horizontal line `y = horizonY` in the picture plane (camera roll is always 0). |
+| **Horizon** | Horizontal line `y = horizonY` in the picture plane (camera roll is always 0). **The horizon is the eye level**: the image of the horizontal plane through the eye (`z = eyeHeight`). Everything lower than the eye appears below it, everything higher above it; an object crossing eye height is cut by it. |
 | **VP-L / VP-R** | Left / right horizontal vanishing points. Both lie on the horizon. |
 | **VP-V** | Vertical vanishing point. Finite in 3-point mode, at infinity in 2-point mode. |
 | **Family L / R / V** | The three edge directions. Family L edges converge to VP-L, R to VP-R, V to VP-V. Always named by their VP, never by axis letter in UI. |
 | **Perspective system (PS)** | The persisted parameters: horizon, VP-L, VP-R, VP-V, anchor, eye height, mode. |
 | **Camera** | Derived (never persisted) projection computed from the PS. |
-| **Anchor** | A picture-plane point where the world origin (ground) is pinned. Keeps objects on screen when VPs move. |
+| **Anchor** | A picture-plane point where the world origin (0,0,0) on the floor is pinned. Keeps objects on screen when VPs move; together with the eye height it fixes where the eye stands. Not the camera. UI label "Ground point" (OD-9); drawn as a 3D axis marker (UI-05). |
+| **Eye level** | The horizontal plane `z = eyeHeight`; its image is the horizon. |
+| **Centre of vision** | The principal point `p` (§6.2): where the eye looks straight ahead. On the horizon in 2pt; at `x = verticalX` in both modes. |
+| **Working plane** | An optional horizontal plane `z = h` used for placement when a tap hits nothing (PL-01). UI state, per document. |
+| **Shape** | A placeable world entity kind (box, rect; later cylinder…), offered in the Shapes submenu (UI-01). |
+| **Plan view** | An orthographic top-down view of the world (X/Y), for checking layout (CV-05). |
 | **Entity** | Any persisted drawable item (box, rect, stroke…). Has a `kind`. |
 | **Entity kind** | A registered module defining an entity type (§8.4). |
 | **Box** | Axis-aligned rectangular prism in the world. A **cube** is a box with `uniform: true`. |
@@ -241,7 +246,8 @@ During a drag, the Perspective tool **clamps** proposed values to the nearest va
 
 - World entities are unchanged. Camera is re-derived; all entities re-project.  
 - The anchor keeps the world origin pinned in place, so the scene rotates "around" the anchor rather than flying off-screen.  
-- Dragging the horizon moves VP-L, VP-R (they are on it) and preserves `verticalX`, `vpVerticalY` unless that violates PV-2, in which case VP-V is pushed.  
+- ~~Dragging the horizon moves VP-L, VP-R and preserves `verticalX`, `vpVerticalY` unless that violates PV-2, in which case VP-V is pushed.~~ *REMOVED v1.5 (2026-09-30): it made the horizon a camera-distance control — boxes ballooned or shrank to the anchor. Superseded by PS-08 / ADR-0005.*  
+- **Dragging the horizon changes the eye height (PS-08, ADR-0005):** VP-L, VP-R and (3pt) VP-V move with it by the same amount, so camera orientation and focal length are unchanged; the anchor stays pinned and the camera keeps its horizontal distance to the world origin; `eyeHeight` is re-derived. Raising the horizon raises the eye; lowering it toward the anchor lowers the eye toward the floor, clamped by PV-4 / PV-5.  
 - Switching `3pt → 2pt` sets `vpVerticalY = null`; `2pt → 3pt` sets it to a default valid distance below the horizon.
 
 ### 6.5 Clipping & degeneracy
@@ -574,7 +580,7 @@ Each tool is a small explicit state machine: `idle → pressing → dragging →
 
 ### 10.1 Principles
 
-1. **Canvas is the app.** Full-bleed; ≤ 3 floating UI clusters; no permanent side panels on phones.  
+1. **Canvas is the app.** Full-bleed; ≤ 3 floating UI clusters; no permanent side panels on phones. (On phones the plan view, when open, takes the inspector's slot; contextual palettes collapse to one row, UI-02.)  
 2. **Colour \= family.** One consistent colour each for L, R, V used on VPs, rays, edge highlights, handles, and inspector labels. Learning happens by colour association.  
 3. **Two clear modes of touching the world:** *Perspective* (move VPs/horizon/anchor) vs *Objects* (everything else). Objects can never move the perspective by accident, and vice versa.  
 4. **Direct manipulation first, numbers second.** Drag handles on the canvas; exact values in the inspector.  
@@ -642,7 +648,7 @@ Each tool is a small explicit state machine: `idle → pressing → dragging →
 | Tool | Purpose |
 | :---- | :---- |
 | **Select** | Tap to select, drag body to move on its base plane, drag handles to resize, marquee on desktop. |
-| **Box** | Tap on ground (below horizon) → places a default cube there (unprojected onto ground). Tap on top face of an existing box → places it stacked. Tool returns to Select after placing (setting). |
+| **Shapes** (UI-01) | A submenu: Box, Rect (Ground / Wall L / Wall R / Ceiling), later Cylinder… The chosen shape is placed by tapping per BX-02 (revised); the button shows the last-used shape. Tool returns to Select after placing (setting). *(Replaces the separate Box and Rect tools, v1.5.)* |
 | **Perspective** | VP-L, VP-R, VP-V, horizon, anchor become draggable; objects dim to 40% and are non-interactive. |
 | **Sketch** (M6) | Draw strokes; snap mode chip (Off / Soft / Locked \+ family). |
 
@@ -713,27 +719,53 @@ Status: all `ACTIVE` unless marked. Milestone in brackets.
 - **PS-04** \[M2\] 2-point / 3-point mode switch.  
 - **PS-05** \[M2\] Off-screen VP indicators and Fit.  
 - **PS-06** \[M2\] Perspective lock toggle.  
-- **PS-07** \[M3\] Eye height adjustable (inspector with nothing selected → "Scene" panel).
+- **PS-07** \[M3, revised v1.5\] Eye height adjustable (inspector with nothing selected → "Scene" panel). Editing it moves the horizon exactly as PS-08 does (one meaning: eye height ⇔ horizon).  
+- **PS-08** \[M8\] Horizon = eye level: dragging the horizon (or editing eye height) raises / lowers the eye, keeping the camera's horizontal distance to the origin, its orientation and focal length (ADR-0005). VP-V moves with the horizon in 3pt.  
+- **PS-09** \[M8\] Optional scale lock during VP-L / VP-R / VP-V drags: the eye height is re-derived so a 1 u vertical edge at the anchor keeps its paper length (OD-11, default off).  
+- **PS-10** \[M8\] Optional "pin selection": during perspective drags the selected object's front-bottom corner stays fixed on paper instead of the world origin (OD-11, default off).  
+- **PS-11** \[M8\] Centre-of-vision handle in 2pt: `verticalX` draggable along the horizon between VP-L and VP-R (PV-1).
 
 ### CV — Canvas & viewport
 
 - **CV-01** \[M2\] Infinite canvas, pan, pinch/wheel zoom (0.05×–20×), fit to paper, fit to all.  
 - **CV-02** \[M2\] Input router: pointer normalization, gesture detection, pen vs touch distinction.  
-- **CV-03** \[M2\] Viewport persisted per document as UI state (not undoable).
+- **CV-03** \[M2\] Viewport persisted per document as UI state (not undoable).  
+- **CV-04** \[M8\] Quick zoom: one-tap buttons always visible in the top bar — "Fit page" and "Fit page + all VPs" (key `F`).  
+- **CV-05** \[M8\] Plan view: an orthographic top view of world X/Y, oriented per OD-12, showing the floor grid, the origin, object footprints (boxes, ground rects; walls as lines), the eye position with its view direction and field-of-view wedge, and the selection. Read-only in M8 except tap-to-select (OD-13). Toggle from the top bar; phone: an inset panel in the inspector's slot, resizable; tablet/desktop: a floating card. Its viewport (pan / zoom) is UI state per document.
 
 ### BX — Boxes / cubes
 
 - **BX-01** \[M3\] Box entity per §7.4 with `derive`, `handles`, `applyHandle`, `bounds`.  
-- **BX-02** \[M3\] Place by tapping ground (unproject to `z=0`). Tapping above the horizon when no surface is hit shows a hint, places nothing.  
-- **BX-03** \[M3\] Select, move on base plane, lift (elevation), resize along L/R/V, cube lock.  
+- ~~**BX-02** \[M3\] Place by tapping ground (unproject to `z=0`). Tapping above the horizon when no surface is hit shows a hint, places nothing.~~ *Revised v1.5 (2026-09-30), below.*  
+- **BX-02** \[M8, revised\] Placement resolves against the first surface **facing the eye** along the tap's ray: top faces of boxes and horizontal rects below eye level → the new object rests on it; undersides of boxes and horizontal rects (incl. ceilings) above eye level → it hangs from it (BX-08); the ground below the horizon; otherwise the working plane if set (PL-01); otherwise a hint. Faces the eye cannot see are never targets.  
+- **BX-03** \[M3, revised v1.5\] Select, move on base plane, lift (elevation), resize along L/R/V, cube lock. With cube lock, resizing grows / shrinks about the base centre (the footprint centre stays put, the base stays on its surface).  
 - **BX-04** \[M3\] Duplicate (offset by \+1 u along R), delete, multi-select delete.  
 - **BX-05** \[M3\] Visible/hidden edges; construction rays.  
-- **BX-06** \[M5\] Stack: place on/move onto a top face snaps `z` to that face; flush-align snapping to neighbours.  
+- **BX-06** \[M5, extended v1.5\] Stack: place on/move onto a top face snaps `z` to that face; flush-align snapping to neighbours. A hanging box (BX-08) keeps hanging when moved, re-attaching under the underside beneath the finger.  
 - **BX-07** \[M5\] Painter's ordering across boxes (§9).
+
+- **BX-08** \[M8\] Hanging: a box whose top touches the underside of a box or horizontal rect is hanging; placement above eye level hangs objects (BX-02); moving keeps them attached.
 
 ### RC — Rectangles
 
-- **RC-01** \[M5\] Rect entity per §7.5 on ground / wallL / wallR planes; place, move, resize.
+- **RC-01** \[M5\] Rect entity per §7.5 on ground / wallL / wallR planes; place, move, resize.  
+- **RC-02** \[M8\] Ceiling preset: a `ground`-plane rect placed at a chosen height (default OD-14), seen from below; no schema change.
+
+### PL — Working plane
+
+- **PL-01** \[M8\] Optional working plane `z = h` (UI state per document): shown as a faint band / grid when active; taps that hit no surface land on it (BX-02); set from the Shapes submenu or the Scene panel. `h` must differ from the eye height by at least 0.05 u (a plane at eye level is seen edge-on as the horizon and cannot be tapped); above the eye it catches taps above the horizon, below the eye taps below it.
+
+### UI — Usability (from the v1.5 review)
+
+- **UI-01** \[M8\] Shapes submenu on the bottom toolbar (one button → Box, Rect planes, future shapes); adding a shape kind adds a menu entry via the entity registry (§8.4), no toolbar change.  
+- **UI-02** \[M8\] Contextual palettes never cover the canvas needlessly: the Sketch palette is a single collapsible row (tool · colour · width · snap), collapsed to a chip by default on phones, and hides while a stroke is being drawn; the same rule for other tool palettes.  
+- **UI-03** \[M8\] Distinct lift handle: a vertical double-arrow glyph (family V colour), not a circle like the H resize handle.  
+- **UI-04** \[M8\] Multi-select on touch: long-press menu "Add to selection" and a Select-mode toggle "Multi"; marquee stays for mouse / pen.  
+- **UI-05** \[M8\] Origin marker: the anchor is drawn as a 3D axis marker — three 1 u family-coloured arrows along +X (→VP-R), +Y (→VP-L), +Z (up), exact by PS-T1; in Construction, optionally extended dashed to the VPs.  
+- **UI-06** \[M8\] Floor grid: a 1 u grid on `z = 0` centred on the origin (display toggle, §10.7). Adjustable spacing and wall grids stay in B-04.  
+- **UI-07** \[M8\] Cone of vision: a 60° circle around the centre of vision (display toggle).  
+- **UI-08** \[M8\] Live readouts in the Perspective mini bar while dragging: eye height (u) and origin distance (u).  
+- **UI-09** \[M8\] The anchor's UI label is "Ground point" (OD-9) with a one-line tooltip; the glossary term stays "Anchor".
 
 ### LY — Layers
 
@@ -908,6 +940,11 @@ Each milestone is small, demoable, and closes with a tagged release.
 
 - Write LX requirements first (this document), then build.
 
+### M8 — Scene & viewing revision (from the v1.5 review)
+
+- PS-08…11, CV-04, CV-05, BX-02 (revised), BX-03 (revised), BX-06 (extended), BX-08, RC-02, PL-01, UI-01…09; OD-3 re-tuned; ADR-0005.
+- ✅ Accept: dragging the horizon slides it along a tall box (eye level) with boxes keeping their size; a table sits below, a hanging lamp above and a tower across the horizon, all placed directly; the Shapes submenu places box and rects; Fit page / Fit page + VPs are one tap; the sketch palette collapses and never covers the drawing while sketching; the plan view shows the eye, its view wedge and footprints and follows every change; PS-T1…T6 still pass.
+
 ### 16.1 As built in 0.8.0 (M3–M6 in one delivery)
 
 Choices made where this document leaves room, and known deviations:
@@ -927,6 +964,25 @@ Choices made where this document leaves room, and known deviations:
 - **Screens.** Gallery → editor → back (top-left arrow or Android back, which first closes panels). A selected entity entirely behind the camera shows a note (§6.5).
 - **Styling.** One global stylesheet with CSS variables (light / dark) instead of CSS Modules (§13) — a deliberate simplification for a small UI; icons from Lucide.
 - **Launcher icon** from the developer's logo (`docs/brand/`).
+
+### 16.2 Conflict review (v1.5)
+
+| Conflict | Resolution |
+| :-- | :-- |
+| §6.4 "horizon drag preserves VP-V" vs PS-08 (VP-V moves with the horizon; eye height changes) | §6.4 bullet REMOVED and replaced; ADR-0005 supersedes that part of §6.4. PV-2 can no longer be hit by a horizon drag (d is unchanged). |
+| PS-07 "eye height editable" vs PS-08 "horizon drag changes eye height" | One meaning: eye height ⇔ horizon. Editing eye height moves the horizon; distance changes only by dragging the anchor. |
+| PV-4 / PV-5 vs lowering the horizon | Lowering the horizon toward the anchor now lowers the eye toward the floor; it stops at the minimum eye height (PV-5) — no more shrinking to a point. |
+| OD-3 eye height 2.2 u (tuned for cube size) vs "horizon is eye level" | OD-3 revised: eye height 1.6 u (standing adult); the default cube size is reached through the anchor position instead. |
+| BX-02 "above the horizon places nothing" vs objects above eye level | BX-02 revised: visible-face placement, hanging (BX-08), working plane (PL-01). |
+| §10.4 separate Box / Rect tools vs Shapes submenu | Replaced by one Shapes tool (UI-01); the entity registry (§8.4) feeds the menu. |
+| §10.1 "≤ 3 floating UI clusters" vs plan view | On phones the plan view takes the inspector's slot; on wide screens it is a floating card that replaces the inspector while open. |
+| §2.2 non-goal "3D camera orbit UI" vs plan view | Plan view is an orthographic 2D top view of world X/Y (no rotation, no 3D rendering); it is derived in core like the picture (new `core/derive/plan`), so §8.2 rules hold. |
+| §3 "do not rename" glossary vs renaming Anchor | Glossary term stays "Anchor"; only the UI label changes (UI-09, OD-9). |
+| B-04 (grids, PARKED) vs floor grid | UI-06 promotes only a fixed 1 u floor grid; adjustable spacing and wall grids stay PARKED in B-04. |
+| PS-09 scale lock / PS-10 pin selection vs PS-08 | They apply to VP drags only; the horizon drag is always PS-08. Both default off (OD-11). |
+| "All projection goes through core/perspective" vs plan view | The plan view uses an orthographic mapping, not a projection of the picture; it lives in core and receives no camera maths in UI. |
+| Top bar "auto-hides while drawing" (§10.2) vs CV-04 quick-zoom buttons | Quick-zoom buttons auto-hide with the top bar during a stroke, like everything else. |
+| Working plane at eye height (first draft of OD-14) vs PL-01 | A plane at eye level projects onto the horizon (edge-on) and can never be hit; PL-01 now requires `h ≠ eyeHeight` (≥ 0.05 u apart), default 2.4 u. When the eye moves (PS-08) past `h`, the plane simply switches from catching taps above the horizon to below it. |
 
 ---
 
@@ -1018,11 +1074,18 @@ Read first: docs/REQUIREMENTS.md, docs/decisions/\*.
 | :---- | :---- | :---- |
 | OD-1 | Primary device (phone vs tablet), stylus model | Recorded in M0; UX tuned for tablet landscape, usable on phone portrait. |
 | OD-2 | Default paper size | 1200 × 800 pp. |
-| OD-3 | Default 3pt system | horizonY 280, VP-L x −700, VP-R x 1900, VP-V (600, 3200), anchor (600, 600), eyeHeight **2.2 u** (tuned in M2: at 1.6 u a 1 u cube was 246 pp ≈ 20% of the paper; 2.2 u gives ≈ 180 pp ≈ 15%). |
+| OD-3 | Default 3pt system | horizonY 280, VP-L x −700, VP-R x 1900, VP-V (600, 3200), eyeHeight **1.6 u** (standing adult; revised v1.5 from 2.2 u, which was tuned only for cube size), anchor moved up toward the horizon (≈ (600, 515), tuned in M8) so a 1 u cube is still ≈ 15% of the paper width. |
 | OD-4 | Family colours | L blue, R orange, V purple (tuned in M2). |
 | OD-5 | After placing a box, stay in Box tool or return to Select | Return to Select (setting). |
 | OD-6 | Object grid snap step | 0.1 u, on. |
 | OD-7 | Soft-snap angle threshold | 6°. |
+| OD-8 | One-finger drag on empty canvas in Select | Does nothing (§10.3: pan is two-finger). |
+| OD-9 | UI label for the anchor | "Ground point". |
+| OD-10 | Plan view on phones | Inset panel in the inspector's slot, about 40% of the screen height, resizable. |
+| OD-11 | Scale lock (PS-09) and pin selection (PS-10) | Both available, both off by default. |
+| OD-12 | Plan view orientation | Eye at the bottom, looking up the screen (view direction up), so left/right match the picture. |
+| OD-13 | Plan view interaction in M8 | Read-only plus tap-to-select; moving objects in the plan view is later. |
+| OD-14 | Default ceiling height (RC-02) / working-plane height (PL-01) | 2.7 u / 2.4 u (above the default 1.6 u eye, so it catches taps above the horizon). |
 
 ---
 
@@ -1033,7 +1096,7 @@ Read first: docs/REQUIREMENTS.md, docs/decisions/\*.
 | B-01 | Box yaw (rotation about vertical) → per-object VPs on the horizon. |
 | B-02 | 1-point perspective preset. |
 | B-03 | Cylinders, cones, wedges/ramps, stairs (as entity kinds). |
-| B-04 | Ground/wall perspective grids with adjustable spacing. |
+| B-04 | Ground/wall perspective grids with adjustable spacing. (A fixed 1 u floor grid is promoted as UI-06, v1.5.) |
 | B-05 | Strokes projected onto a world plane (sketch "on" a wall). |
 | B-06 | Reference image import on its own layer. |
 | B-07 | Exact inter-object hidden-line removal. |
