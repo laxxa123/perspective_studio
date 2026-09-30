@@ -1,29 +1,8 @@
-import { useEffect, useState } from 'react';
-import { PerspectiveCanvas } from './canvas/PerspectiveCanvas';
-import { defaultSetup } from './model/scene';
+import { SpikeScreen } from './ui/spike/SpikeScreen';
+import { useWindowSize } from './ui/useWindowSize';
 
-function useWindowSize() {
-  const [size, setSize] = useState({ w: window.innerWidth, h: window.innerHeight });
-  useEffect(() => {
-    const onResize = () => setSize({ w: window.innerWidth, h: window.innerHeight });
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, []);
-  return size;
-}
-
+// M0: the app is the foundation plus the device spike (REQUIREMENTS §16).
 export function App() {
   const { w, h } = useWindowSize();
-  const [setup, setSetup] = useState(() => defaultSetup(w, h));
-
-  return (
-    <div className="app">
-      <header className="toolbar">
-        <strong>PERSPECTIVE STUDIO</strong>
-        <span className="version">{__APP_VERSION__}</span>
-        <button onClick={() => setSetup(defaultSetup(w, h))}>Reset</button>
-      </header>
-      <PerspectiveCanvas width={w} height={h} setup={setup} onChange={setSetup} />
-    </div>
-  );
+  return <SpikeScreen width={w} height={h} />;
 }

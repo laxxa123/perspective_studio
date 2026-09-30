@@ -1,25 +1,30 @@
-# PERSPECTIVE_STUDIO — notes for Claude Code sessions
+# CLAUDE.md — PERSPECTIVE_STUDIO
 
-## Requirements are the source of truth
+Read first: docs/REQUIREMENTS.md, docs/decisions/*.
 
-Read `PERSPECTIVE_STUDIO_Requirements_Base_<version>.md` in the repository root
-before any work. There is exactly one such file; its name carries the current
-requirements version. Detailed requirements are still being written: build only
-what it states.
+## Rules
 
-**Every change that adds a feature or changes behaviour must update the
-requirements in the same commit** (section 10): bump the version, rename the
-file with `git mv`, update the title and "Requirements version" lines, add a
-changelog entry, update the affected sections. Pure bug fixes, refactors and
-lint cleanups do not bump the version.
+- Work only on the current milestone. Implement only ACTIVE requirement IDs. Cite IDs in commits.
+- If a requirement is ambiguous or missing, stop and ask. Do not invent features, fields, or UI.
+- Objects are 3D world geometry; the screen is a projection (ADR-0001). Never store projected 2D geometry for world entities.
+- All projection/unprojection goes through core/perspective. No math in React or Konva code.
+- core/ imports nothing from React, Konva, DOM, Zustand, Capacitor.
+- Every document change is a command. Drags = one history entry.
+- New entity kind = new folder in core/entities + registry line + tests. Do not edit the pipeline to add a shape.
+- Schema change = schemaVersion bump + migration + fixture test.
+- No new dependency without an ADR.
+- Geometry changes require passing property tests (§6.6). Never loosen a tolerance to make a test pass without an ADR.
+- Update docs/REQUIREMENTS.md in the same change when behaviour changes.
+- Prefer small, surgical diffs. Don't reformat or refactor unrelated code.
+- Use glossary terms exactly (VP-L, VP-R, VP-V, family L/R/V, picture plane, world, anchor).
 
-## Build & delivery
+## Delivery (REQUIREMENTS §14)
 
-- Finished work is pushed straight to `main` (no pull requests). Keep the
-  session's `claude/**` branch in step with it.
-- Pushes to `main` build and publish a signed APK as a GitHub Release
-  (`.github/workflows/build-apk.yml`); Obtainium on the phone picks it up.
-- Run `npm run typecheck`, `npm test` and `npm run build` before pushing.
-- Do not change the APK signing setup or the `DEBUG_KEYSTORE_BASE64` secret
-  (shared with wp_studio): a different key makes installed copies refuse updates.
-- The pinned toolchain is in section 0; don't upgrade it as a side effect.
+- Finished work is pushed straight to `main` (no pull requests). Keep the session's `claude/**` branch in step with it.
+- Every push to `main` runs `.github/workflows/build-apk.yml`: lint, typecheck, tests, build, signed APK, GitHub Release. Obtainium on the phone installs it. Push only green work.
+- Never change the signing key or the `DEBUG_KEYSTORE_BASE64` secret (shared with wp_studio): a different key makes the installed app refuse updates.
+- Bump `package.json` `version` for each milestone release (§14); user-visible changes go in docs/CHANGELOG.md.
+
+## Commands
+
+- dev: npm run dev · test: npm test · lint: npm run lint · typecheck: npm run typecheck · android: npm run android · release: push to main (CI)

@@ -1,6 +1,8 @@
 # PERSPECTIVE\_STUDIO — Foundation Requirements
 
-> **Status:** v1.0 · Foundation document · Owner: sole developer/user **Audience:** Claude Code (primary), developer (secondary) **Location in repo:** `docs/REQUIREMENTS.md`
+> **Status:** v1.1 · Foundation document · Owner: sole developer/user **Audience:** Claude Code (primary), developer (secondary) **Location in repo:** `docs/REQUIREMENTS.md`
+
+**Revisions:** v1.1 (M0, 2026-09-30) — §13 TypeScript pinned to 6.0; §14 records the delivery actually used (CI on push to `main`, app id, versioning, signing key); §16 M0 status. · v1.0 — foundation document.
 
 ---
 
@@ -795,7 +797,7 @@ Status: all `ACTIVE` unless marked. Milestone in brackets.
 
 | Technology | Role |
 | :---- | :---- |
-| **TypeScript** (strict) | All code. Powers the perspective math, document/entity model, stroke model, and app logic. |
+| **TypeScript** (strict) | All code. Powers the perspective math, document/entity model, stroke model, and app logic. Pinned to 6.0.x: typescript-eslint (needed for §8.2 lint) does not support TypeScript 7 yet. |
 | **React** | App shell and UI: toolbar, inspector, layers, gallery, settings, display popover. |
 | **Konva \+ react-konva** | Interactive 2D canvas rendering of the RenderModel: guides, objects, sketches, handles. |
 | **Vite** | Dev server and production build. |
@@ -819,10 +821,10 @@ Versions: latest stable at project start, pinned via lockfile. Upgrades are deli
 
 ## 14\. Build & release (Android via Obtainium)
 
-- App id: `com.<developer>.perspectivestudio` (set in M0).  
-- Release APK signed with a single long-lived keystore stored **outside** the repo (backed up). Never change the key — Obtainium/Android updates require the same signature.  
-- `versionName` \= semver from `package.json`; `versionCode` monotonically increasing integer (script-derived).  
-- Release: `npm run release` → build web → `cap sync android` → Gradle `assembleRelease` → create GitHub Release `vX.Y.Z` with the APK attached (via `gh`).  
+- App id: `com.perspectivestudio.app` (kept from the first install, so Obtainium updates in place).  
+- Release APK signed with a single long-lived keystore stored **outside** the repo (backed up): the developer's debug keystore, shared with wp_studio, held in the GitHub repository secret `DEBUG_KEYSTORE_BASE64`. Never change the key — Obtainium/Android updates require the same signature. CI refuses to publish an APK signed with any other key.  
+- `versionName` \= semver from `package.json` plus `-build.<run>`; `versionCode` \= the CI run number (monotonic). Each milestone release bumps the minor version (M0 \= 0.2.0, M1 \= 0.3.0, …).  
+- Release: every push to `main` runs `.github/workflows/build-apk.yml` → lint, typecheck, tests → build web → `cap sync android` → Gradle `assembleRelease` → GitHub Release `v<versionName>` with `perspective_studio.apk` attached. (Replaces the local `npm run release` / `gh` flow: the developer delivers by pushing to `main`.) `npm run android` builds and syncs locally.  
 - Obtainium tracks the (private) GitHub repo's releases using a GitHub personal access token configured in Obtainium.  
 - Debug builds use a different app id suffix (`.dev`) so they install alongside the release build.
 
@@ -851,7 +853,8 @@ Each milestone is small, demoable, and closes with a tagged release.
 - Repo, Vite \+ React \+ TS strict, lint boundaries, Vitest, folder layout (§8.1), `CLAUDE.md`, `docs/decisions/ADR-0001-world-model.md`.  
 - Capacitor Android build, signed release, installed through Obtainium.  
 - **Spike:** Konva stage in the Android WebView — measure fps with 300 synthetic polylines and pen input latency/pressure/coalesced events. Record results in `docs/decisions/ADR-0002-rendering-baseline.md`.  
-- ✅ Accept: app installs/updates via Obtainium; spike numbers recorded.
+- ✅ Accept: app installs/updates via Obtainium; spike numbers recorded.  
+- **Status (0.2.0):** foundation, CI and spike app delivered; spike numbers pending from the device → ADR-0002, checklist `docs/checklists/M0.md`.
 
 ### M1 — Perspective core (no UI)
 
