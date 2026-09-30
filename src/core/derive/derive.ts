@@ -4,6 +4,7 @@ import type { DeriveCtx } from '../entities/types';
 import type { Entity, Id, KnownEntity, Paper, SceneDocument } from '../document/types';
 import { deriveCamera } from '../perspective/camera';
 import { guideRays } from './fans';
+import { coneOfVision, originMarker, planeGrid } from './aids';
 import type { Camera, PerspectiveSystem } from '../perspective/types';
 import { boundsOf, type Rect } from '../viewport/viewport';
 import type { DisplayOptions } from './display';
@@ -25,8 +26,13 @@ export function deriveGuides(ps: PerspectiveSystem, paper: Paper, display: Displ
   if (ps.mode === '3pt' && ps.vpVerticalY !== null) {
     items.push({ key: 'vp:V', role: 'vp', family: 'V', points: [ps.verticalX, ps.vpVerticalY] });
   }
-  items.push({ key: 'anchor', role: 'anchor', points: [ps.anchor.x, ps.anchor.y] });
   return items;
+}
+
+/** Options that are UI state, not document data. */
+export interface DeriveOptions {
+  /** Working plane height (PL-01), or null. */
+  workingPlane?: number | null;
 }
 
 interface CacheEntry {
@@ -70,9 +76,14 @@ export function deriveDocument(
   display: DisplayOptions,
   selection: ReadonlySet<Id> = new Set(),
   cache?: DeriveCache,
+  opts: DeriveOptions = {},
 ): RenderModel {
   const cam = deriveCamera(doc.perspective);
   const items = deriveGuides(doc.perspective, doc.paper, display);
+  if (display.floorGrid) items.push(...planeGrid(cam, 0, 'grid'));
+  if (opts.workingPlane !== null && opts.workingPlane !== undefined) items.push(...planeGrid(cam, opts.workingPlane, 'work', 6, 1).map((i) => ({ ...i, data: { ...i.data, working: 1 } })));
+  if (display.coneOfVision) items.push(coneOfVision(cam));
+  if (display.guides) items.push(...originMarker(cam, display.rays !== 'none'));
   for (const layer of doc.layers) {
     if (!layer.visible) continue;
     if (layer.role === 'objects' && !display.objects) continue;

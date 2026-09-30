@@ -10,6 +10,8 @@ const TOGGLES: [keyof DisplayOptions, string][] = [
   ['hiddenEdges', 'Hidden edges'],
   ['faceFills', 'Face fills'],
   ['paperFrame', 'Paper frame'],
+  ['floorGrid', 'Floor grid (1 u)'],
+  ['coneOfVision', 'Cone of vision (60°)'],
 ];
 
 export function DisplayPanel({ onFitPaper }: { onFitPaper: () => void }) {

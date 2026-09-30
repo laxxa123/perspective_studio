@@ -7,9 +7,9 @@ import { setMode } from './edit';
 import { isValid } from './validity';
 
 describe('perspective handles (PS-03)', () => {
-  it('lists VP-L, VP-R, VP-V (3pt only) and the anchor', () => {
+  it('lists VP-L, VP-R, VP-V (3pt) or the centre of vision (2pt), and the anchor', () => {
     expect(pointHandles(ps).map((h) => h.id)).toEqual(['vpL', 'vpR', 'vpV', 'anchor']);
-    expect(pointHandles(setMode(ps, '2pt')).map((h) => h.id)).toEqual(['vpL', 'vpR', 'anchor']);
+    expect(pointHandles(setMode(ps, '2pt')).map((h) => h.id)).toEqual(['vpL', 'vpR', 'cv', 'anchor']);
   });
 
   it('moves a handle freely inside the valid region', () => {
@@ -33,11 +33,11 @@ describe('perspective handles (PS-03)', () => {
     expect(r.ps.vpVerticalY).toBe(-3000);
   });
 
-  it('pushes VP-V when the horizon moves toward it (§6.4)', () => {
+  it('carries VP-V with the horizon (PS-08, ADR-0005)', () => {
     const far = dragHandle({ ...ps, anchor: { x: 600, y: 3500 } }, 'horizon', { x: 0, y: 3000 });
     expect(isValid(far.ps)).toBe(true);
     expect(far.ps.horizonY).toBe(3000);
-    expect(far.ps.vpVerticalY!).toBeGreaterThan(3200);
+    expect(far.ps.vpVerticalY! - far.ps.horizonY).toBeCloseTo(ps.vpVerticalY! - ps.horizonY, 9);
   });
 
   it('stops the anchor just below the horizon (PV-4)', () => {
@@ -48,7 +48,7 @@ describe('perspective handles (PS-03)', () => {
   });
 
   it('never produces an invalid system', () => {
-    const ids: PerspectiveHandleId[] = ['vpL', 'vpR', 'vpV', 'anchor', 'horizon'];
+    const ids: PerspectiveHandleId[] = ['vpL', 'vpR', 'vpV', 'cv', 'anchor', 'horizon'];
     fc.assert(
       fc.property(
         validPerspective,

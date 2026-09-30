@@ -4,3 +4,4 @@ export * from './camera';
 export * from './edit';
 export * from './defaults';
 export * from './handles';
+export * from './eye';

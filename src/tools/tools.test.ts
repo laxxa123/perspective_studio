@@ -50,7 +50,9 @@ function fakeEnv(sketch: Partial<SketchSettings> = {}) {
     targetLayer: (role) => doc.layers.find((l) => l.role === role)!.id,
     afterPlace: () => undefined,
     sketch: () => ({ ...DEFAULT_SKETCH, ...sketch }),
-    rectPlane: () => 'ground',
+    shape: () => ({ kind: 'box', option: 'box' }),
+    workingPlane: () => null,
+    multi: () => false,
     penSeen: () => false,
   };
   const at = (pp: { x: number; y: number }, extra: Partial<ToolInput> = {}): ToolInput => ({
@@ -123,7 +125,7 @@ describe('select tool (BX-03)', () => {
 describe('box tool (BX-02, BX-06)', () => {
   it('places a cube on the ground, on top of a box, and not above the horizon', () => {
     const t = fakeEnv();
-    const tool = createPlaceTool(t.env, 'box');
+    const tool = createPlaceTool(t.env);
     const cam = t.env.cam();
     const ground = project(cam, { x: 3, y: 0, z: 0 })!;
     tool.down(t.at(ground));
@@ -142,12 +144,55 @@ describe('box tool (BX-02, BX-06)', () => {
 
   it('places a wall rect', () => {
     const t = fakeEnv();
-    t.env.rectPlane = () => 'wallR';
-    const tool = createPlaceTool(t.env, 'rect');
+    t.env.shape = () => ({ kind: 'rect', option: 'wallR' });
+    const tool = createPlaceTool(t.env);
     const p = project(t.env.cam(), { x: 3, y: 0, z: 0 })!;
     tool.down(t.at(p));
     tool.up(t.at(p));
     expect(Object.values(t.get().entities).some((e) => e.kind === 'rect')).toBe(true);
+  });
+});
+
+describe('shapes tool above the horizon (BX-02 revised, BX-08, RC-02, PL-01)', () => {
+  it('hangs a box under a ceiling and places on the working plane', () => {
+    const t = fakeEnv();
+    t.env.shape = () => ({ kind: 'rect', option: 'ceiling' });
+    const tool = createPlaceTool(t.env);
+    const up = project(t.env.cam(), { x: 0, y: 0, z: 2.7 })!;
+    tool.down(t.at(up));
+    tool.up(t.at(up));
+    expect(Object.values(t.get().entities).some((e) => e.kind === 'rect' && (e as { position: { z: number } }).position.z === 2.7)).toBe(true);
+    t.env.shape = () => ({ kind: 'box', option: 'box' });
+    tool.down(t.at(up));
+    tool.up(t.at(up));
+    const lamp = Object.values(t.get().entities).find((e) => e.kind === 'box' && (e as BoxEntity).position.z > 1) as BoxEntity;
+    expect(lamp.position.z + lamp.size.z).toBeCloseTo(2.7, 6);
+  });
+
+  it('uses the working plane above the horizon', () => {
+    const t = fakeEnv();
+    t.env.workingPlane = () => 2.4;
+    const tool = createPlaceTool(t.env);
+    tool.down(t.at({ x: 600, y: 100 }));
+    tool.up(t.at({ x: 600, y: 100 }));
+    const b = Object.values(t.get().entities).find((e) => e.kind === 'box' && (e as BoxEntity).position.z > 0) as BoxEntity;
+    expect(b.position.z + b.size.z).toBeCloseTo(2.4, 6);
+  });
+});
+
+describe('multi-select on touch (UI-04)', () => {
+  it('toggles membership in Multi mode', () => {
+    const t = fakeEnv();
+    const cube = cubeOf(t.get());
+    t.env.multi = () => true;
+    const tool = createSelectTool(t.env);
+    const c = project(t.env.cam(), { x: 0, y: 0, z: 0.5 })!;
+    tool.down(t.at(c));
+    tool.up(t.at(c));
+    expect(t.env.selection()).toEqual([cube.id]);
+    tool.down(t.at(c));
+    tool.up(t.at(c));
+    expect(t.env.selection()).toEqual([]);
   });
 });
 

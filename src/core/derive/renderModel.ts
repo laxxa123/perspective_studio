@@ -15,7 +15,11 @@ export type RenderRole =
   | 'stroke'
   | 'handle'
   | 'paper'
-  | 'selection';
+  | 'selection'
+  /** v1.5: floor / working-plane grid lines (UI-06, PL-01). */
+  | 'grid'
+  /** v1.5: cone of vision (UI-07). */
+  | 'cone';
 
 export interface RenderItem {
   /** Stable: `${entityId}:${part}`. */

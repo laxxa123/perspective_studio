@@ -32,7 +32,12 @@ export interface ToolEnv {
   targetLayer(role: Layer['role']): Id | null;
   afterPlace(): void;
   sketch(): SketchSettings;
-  rectPlane(): 'ground' | 'wallL' | 'wallR';
+  /** The chosen shape (UI-01). */
+  shape(): { kind: string; option: string };
+  /** Working plane height, or null when off (PL-01). */
+  workingPlane(): number | null;
+  /** Touch multi-select mode (UI-04). */
+  multi(): boolean;
   penSeen(): boolean;
 }
 

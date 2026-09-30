@@ -13,7 +13,7 @@ import {
 } from '../core/commands/commands';
 import { MIN_BOX_SIZE } from '../core/entities/box/box';
 import type { BoxEntity, KnownEntity, RectEntity, SceneDocument, StrokeEntity } from '../core/document/types';
-import { clampPerspective, setMode } from '../core/perspective';
+import { setEyeHeight, setMode } from '../core/perspective';
 import { useDocumentStore } from '../state/documentStore';
 import { useUiStore } from '../state/uiStore';
 import type { Theme } from '../theme/theme';
@@ -109,13 +109,15 @@ function ScenePanel({ doc }: { doc: SceneDocument }) {
           </button>
         ))}
       </div>
+      {/* PS-07 (revised): eye height and horizon are the same thing (ADR-0005). */}
       <NumberField
         label="Eye height (u)"
         value={ps.eyeHeight}
         step={0.1}
         min={0.1}
-        onChange={(v) => !locked && run(setPerspective(clampPerspective({ ...ps, eyeHeight: v })))}
+        onChange={(v) => !locked && run(setPerspective(setEyeHeight(ps, v)))}
       />
+      <p className="muted">Changing the eye height moves the horizon; the ground point sets the distance.</p>
       <p className="muted">Paper {doc.paper.width} × {doc.paper.height} pp</p>
     </>
   );

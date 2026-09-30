@@ -4,7 +4,7 @@ import { v3 } from '../math/vec';
 import { validPerspective } from './arbitraries.test-util';
 import { deriveCamera, project, projectSegment, unproject, vanishingPoint } from './camera';
 import { DEFAULT_PERSPECTIVE } from './defaults';
-import { setHorizon, setMode } from './edit';
+import { setMode } from './edit';
 import type { PerspectiveSystem } from './types';
 import { clampPerspective, isValid, violations } from './validity';
 
@@ -110,18 +110,6 @@ describe('projection & clipping (§6.2, §6.5)', () => {
 });
 
 describe('edits (§6.4)', () => {
-  it('moves VP-L / VP-R with the horizon and keeps VP-V when allowed', () => {
-    const moved = setHorizon(ps, 300);
-    expect(moved.horizonY).toBe(300);
-    expect(moved.vpVerticalY).toBe(3200);
-  });
-
-  it('pushes VP-V when the horizon comes too close (PV-2)', () => {
-    const moved = setHorizon({ ...ps, anchor: { x: 600, y: 3300 } }, 3100);
-    expect(isValid(moved)).toBe(true);
-    expect(moved.vpVerticalY).not.toBe(3200);
-  });
-
   it('switches 3pt ⇄ 2pt', () => {
     const two = setMode(ps, '2pt');
     expect(two.vpVerticalY).toBeNull();
@@ -132,10 +120,9 @@ describe('edits (§6.4)', () => {
     expect(setMode(ps, '3pt')).toBe(ps);
   });
 
-  it('keeps every random valid system valid under edits', () => {
+  it('keeps every random valid system valid when switching mode', () => {
     fc.assert(
-      fc.property(validPerspective, fc.double({ min: -2000, max: 2000, noNaN: true }), (p, h) => {
-        expect(isValid(setHorizon(p, h))).toBe(true);
+      fc.property(validPerspective, (p) => {
         expect(isValid(setMode(p, p.mode === '3pt' ? '2pt' : '3pt'))).toBe(true);
       }),
       { numRuns: 1000 },

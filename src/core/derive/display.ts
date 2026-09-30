@@ -14,14 +14,18 @@ export interface DisplayOptions {
   hiddenEdges: boolean;
   faceFills: boolean;
   paperFrame: boolean;
+  /** v1.5: 1 u floor grid (UI-06). */
+  floorGrid: boolean;
+  /** v1.5: 60° cone of vision (UI-07). */
+  coneOfVision: boolean;
 }
 
 export type DisplayPreset = 'construction' | 'clean' | 'guides';
 
 export const DISPLAY_PRESETS: Record<DisplayPreset, DisplayOptions> = {
-  construction: { guides: true, vpFans: false, objects: true, rays: 'selected', hiddenEdges: true, faceFills: false, paperFrame: true },
-  clean: { guides: false, vpFans: false, objects: true, rays: 'none', hiddenEdges: false, faceFills: true, paperFrame: true },
-  guides: { guides: true, vpFans: true, objects: false, rays: 'none', hiddenEdges: false, faceFills: false, paperFrame: true },
+  construction: { guides: true, vpFans: false, objects: true, rays: 'selected', hiddenEdges: true, faceFills: false, paperFrame: true, floorGrid: true, coneOfVision: false },
+  clean: { guides: false, vpFans: false, objects: true, rays: 'none', hiddenEdges: false, faceFills: true, paperFrame: true, floorGrid: false, coneOfVision: false },
+  guides: { guides: true, vpFans: true, objects: false, rays: 'none', hiddenEdges: false, faceFills: false, paperFrame: true, floorGrid: true, coneOfVision: false },
 };
 
 export const DEFAULT_DISPLAY: DisplayOptions = DISPLAY_PRESETS.construction;
@@ -33,3 +37,6 @@ export function presetOf(d: DisplayOptions): DisplayPreset | null {
   }
   return null;
 }
+
+/** Display options saved before v1.5 lack the new toggles: fill them from the construction preset. */
+export const withDisplayDefaults = (d: Partial<DisplayOptions>): DisplayOptions => ({ ...DISPLAY_PRESETS.construction, ...d });

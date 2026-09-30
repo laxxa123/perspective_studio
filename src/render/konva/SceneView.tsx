@@ -1,7 +1,7 @@
 // RenderModel → Konva nodes (§9). Styling by role + family from the theme;
 // no geometry beyond placing things; no Konva events (tools hit-test in core).
 import { memo } from 'react';
-import { Circle, Group, Layer, Line, Rect, Stage, Text } from 'react-konva';
+import { Arrow, Circle, Group, Layer, Line, Rect, Stage, Text } from 'react-konva';
 import type { Family, RenderItem, RenderModel } from '../../core/derive/renderModel';
 import { WEIGHTS, withAlpha, type Theme } from '../../theme/theme';
 
@@ -13,6 +13,8 @@ export interface OverlayHandle {
   y: number;
   /** Perspective handles are larger and labelled. */
   big?: boolean;
+  /** UI-03: the lift handle is drawn as a vertical double arrow. */
+  glyph?: 'lift';
 }
 
 export interface Overlay {
@@ -83,10 +85,36 @@ function ItemNode({ it, theme, s, selected, dim }: { it: RenderItem; theme: Them
           stroke={withAlpha(fam, fan ? theme.fanAlpha : theme.rayAlpha)}
           strokeWidth={fan ? WEIGHTS.fan : WEIGHTS.ray}
           strokeScaleEnabled={false}
+          dash={it.data?.dashed ? [6 / s, 6 / s] : undefined}
           listening={false}
         />
       );
     }
+    case 'grid':
+      return (
+        <Line
+          points={it.points}
+          stroke={it.data?.working ? withAlpha(theme.selection, 0.35) : withAlpha(fam, it.data?.major ? 0.35 : 0.14)}
+          strokeWidth={it.data?.major ? 1 : 0.6}
+          strokeScaleEnabled={false}
+          listening={false}
+        />
+      );
+    case 'cone':
+      return <Line points={it.points} closed stroke={theme.muted} strokeWidth={1} strokeScaleEnabled={false} dash={[8 / s, 6 / s]} listening={false} />;
+    case 'anchor':
+      return (
+        <Arrow
+          points={it.points}
+          stroke={fam}
+          fill={fam}
+          strokeWidth={2}
+          strokeScaleEnabled={false}
+          pointerLength={9 / s}
+          pointerWidth={7 / s}
+          listening={false}
+        />
+      );
     case 'stroke':
       return (
         <Line
@@ -108,7 +136,8 @@ function ItemNode({ it, theme, s, selected, dim }: { it: RenderItem; theme: Them
 
 function SceneViewImpl({ width, height, transform, model, selection, dimObjects, overlay, theme }: Props) {
   const s = transform.scale;
-  const guides = model.items.filter((i) => i.role === 'paper' || i.role === 'horizon' || i.role === 'vp' || i.role === 'anchor' || (i.role === 'ray' && i.key.startsWith('fan:')));
+  const guides = model.items.filter((i) => !i.entityId);
+  const aids = guides.filter((i) => i.role === 'grid' || i.role === 'cone' || i.role === 'ray');
   const content = model.items.filter((i) => i.entityId);
 
   return (
@@ -120,11 +149,9 @@ function SceneViewImpl({ width, height, transform, model, selection, dimObjects,
             <Line key={i.key} points={i.points} closed fill={theme.paper} stroke={theme.paperBorder} strokeWidth={1} strokeScaleEnabled={false} />
           ))}
         {overlay.band && <Rect x={-FAR} y={overlay.band.top} width={2 * FAR} height={overlay.band.bottom - overlay.band.top} fill={theme.forbidden} />}
-        {guides
-          .filter((i) => i.role === 'ray')
-          .map((i) => (
-            <ItemNode key={i.key} it={i} theme={theme} s={s} selected={false} dim={false} />
-          ))}
+        {aids.map((i) => (
+          <ItemNode key={i.key} it={i} theme={theme} s={s} selected={false} dim={false} />
+        ))}
         {guides
           .filter((i) => i.role === 'horizon')
           .map((i) => (
@@ -144,10 +171,7 @@ function SceneViewImpl({ width, height, transform, model, selection, dimObjects,
         {guides
           .filter((i) => i.role === 'anchor')
           .map((i) => (
-            <Group key={i.key} x={i.points[0]} y={i.points[1]} scaleX={1 / s} scaleY={1 / s}>
-              <Line points={[-8, 0, 8, 0]} stroke={theme.anchor} strokeWidth={1.5} />
-              <Line points={[0, -8, 0, 8]} stroke={theme.anchor} strokeWidth={1.5} />
-            </Group>
+            <ItemNode key={i.key} it={i} theme={theme} s={s} selected={false} dim={false} />
           ))}
       </Layer>
 
@@ -177,6 +201,15 @@ function SceneViewImpl({ width, height, transform, model, selection, dimObjects,
           const color = h.family ? theme.family[h.family] : theme.anchor;
           const active = overlay.active === h.id;
           const r = h.big ? WEIGHTS.handleRadius : WEIGHTS.entityHandleRadius;
+          if (h.glyph === 'lift') {
+            return (
+              <Group key={h.id} x={h.x} y={h.y} scaleX={1 / s} scaleY={1 / s}>
+                <Rect x={-9} y={-15} width={18} height={30} cornerRadius={9} fill={theme.paper} stroke={color} strokeWidth={2} opacity={0.95} />
+                <Arrow points={[0, 0, 0, -11]} stroke={color} fill={color} strokeWidth={2} pointerLength={5} pointerWidth={7} />
+                <Arrow points={[0, 0, 0, 11]} stroke={color} fill={color} strokeWidth={2} pointerLength={5} pointerWidth={7} />
+              </Group>
+            );
+          }
           return (
             <Group key={h.id} x={h.x} y={h.y} scaleX={1 / s} scaleY={1 / s}>
               <Circle radius={r} fill={active ? color : theme.paper} stroke={color} strokeWidth={2.5} opacity={0.95} />

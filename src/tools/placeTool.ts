@@ -1,16 +1,17 @@
-// Box tool (BX-02, BX-06) and Rect tool (RC-01): tap to place.
+// Shapes tool (UI-01, BX-02 revised, BX-08, RC-02, PL-01): tap to place the
+// chosen shape — resting on surfaces below eye level, hanging from those above,
+// on the working plane, or (ceiling) on its fixed plane.
 import { addEntity } from '../core/commands/commands';
-import { DEFAULT_CUBE } from '../core/entities/box/box';
+import { kindOf, shapeOptions } from '../core/entities/registry';
 import { newId } from '../core/document/ids';
-import type { BoxEntity, RectEntity } from '../core/document/types';
+import type { KnownEntity } from '../core/document/types';
 import { dist2, type Vec2 } from '../core/math/vec';
-import { surfaceAt } from '../core/snapping/boxSnap';
+import { unproject } from '../core/perspective/camera';
+import { placementAt, WORKING_PLANE_MIN_GAP, type Placement } from '../core/snapping/boxSnap';
 import type { ToolEnv } from './env';
 import { TAP_SLOP_PX, type Tool } from './types';
 
-const snapTo = (v: number, step: number | null) => (step ? Math.round(v / step) * step : v);
-
-export function createPlaceTool(env: ToolEnv, what: 'box' | 'rect'): Tool {
+export function createPlaceTool(env: ToolEnv): Tool {
   let start: Vec2 | null = null;
   return {
     down(i) {
@@ -23,40 +24,33 @@ export function createPlaceTool(env: ToolEnv, what: 'box' | 'rect'): Tool {
         return;
       }
       start = null;
-      const doc = env.doc();
+      const { kind, option } = env.shape();
+      const def = kindOf(kind);
+      const opt = shapeOptions().find((o) => o.kind === kind && o.id === option);
+      if (!def?.create || !opt) return;
       const layerId = env.targetLayer('objects');
       if (!layerId) {
         env.toast('No unlocked, visible objects layer to place on.');
         return;
       }
-      const surface = surfaceAt(Object.values(doc.entities), env.cam(), i.pp);
-      if (!surface) {
-        env.toast('Tap below the horizon, or on top of a box, to place it.');
+      const cam = env.cam();
+      let place: Placement | null;
+      if (opt.placeOn === 'surface') {
+        place = placementAt(Object.values(env.doc().entities), cam, i.pp, { workingPlane: env.workingPlane() });
+      } else {
+        const z = opt.placeOn;
+        const P = Math.abs(z - cam.C.z) >= WORKING_PLANE_MIN_GAP ? unproject(cam, i.pp, z) : null;
+        place = P ? { point: P, mode: z < cam.C.z ? 'rest' : 'hang', supportId: null } : null;
+      }
+      if (!place) {
+        env.toast(
+          opt.placeOn === 'surface'
+            ? 'Nothing to place on here. Tap the floor, a surface you can see, or set a working plane.'
+            : `Tap ${opt.placeOn > cam.C.z ? 'above' : 'below'} the horizon to place the ${opt.label.toLowerCase()}.`,
+        );
         return;
       }
-      const step = env.snapStep();
-      const P = surface.point;
-      const half = DEFAULT_CUBE / 2;
-      const base = { id: newId(), layerId, visible: true, locked: false };
-      let entity: BoxEntity | RectEntity;
-      if (what === 'box') {
-        entity = {
-          ...base,
-          kind: 'box',
-          position: { x: snapTo(P.x - half, step), y: snapTo(P.y - half, step), z: P.z },
-          size: { x: DEFAULT_CUBE, y: DEFAULT_CUBE, z: DEFAULT_CUBE },
-          uniform: true,
-        };
-      } else {
-        const plane = env.rectPlane();
-        const position =
-          plane === 'ground'
-            ? { x: snapTo(P.x - half, step), y: snapTo(P.y - half, step), z: P.z }
-            : plane === 'wallL'
-              ? { x: snapTo(P.x, step), y: snapTo(P.y - half, step), z: P.z }
-              : { x: snapTo(P.x - half, step), y: snapTo(P.y, step), z: P.z };
-        entity = { ...base, kind: 'rect', plane, position, size: { x: DEFAULT_CUBE, y: DEFAULT_CUBE } };
-      }
+      const entity = def.create({ option, point: place.point, mode: place.mode, layerId, id: newId(), snapStep: env.snapStep() }) as KnownEntity;
       env.run(addEntity(entity));
       env.select([entity.id]);
       env.haptics.tick();

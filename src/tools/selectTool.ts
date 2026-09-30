@@ -129,7 +129,7 @@ export function createSelectTool(env: ToolEnv): Tool {
           const r = { x: Math.min(p.start.x, i.pp.x), y: Math.min(p.start.y, i.pp.y), width: Math.abs(i.pp.x - p.start.x), height: Math.abs(i.pp.y - p.start.y) };
           const ids = hitRect(env.model().items, r, pickable);
           env.select(i.shift ? [...new Set([...env.selection(), ...ids])] : ids);
-        } else if (!i.shift) {
+        } else if (!i.shift && !env.multi()) {
           env.select([]);
         }
         return;
@@ -138,10 +138,13 @@ export function createSelectTool(env: ToolEnv): Tool {
         env.commit();
         return;
       }
-      if (p.kind === 'body') {
+      // A tap (no drag) on a handle counts as a tap on its object.
+      const tappedId = p.kind === 'body' ? p.id : p.entity.id;
+      {
         const sel = env.selection();
-        if (i.shift) env.select(sel.includes(p.id) ? sel.filter((x) => x !== p.id) : [...sel, p.id]);
-        else env.select([p.id]);
+        // Shift (desktop) or Multi mode (touch, UI-04) toggles membership.
+        if (i.shift || env.multi()) env.select(sel.includes(tappedId) ? sel.filter((x) => x !== tappedId) : [...sel, tappedId]);
+        else env.select([tappedId]);
         env.haptics.tick();
       }
     },

@@ -23,15 +23,17 @@ function itemSvg(it: RenderItem, theme: Theme, px: number): string {
       return `<polyline points="${pts(it.points)}" fill="none" stroke="${theme.horizon}" stroke-width="${n(WEIGHTS.guide * px)}"/>`;
     case 'vp':
       return `<circle cx="${n(it.points[0])}" cy="${n(it.points[1])}" r="${n(WEIGHTS.vpRadius * px)}" fill="${fam}"/>`;
-    case 'anchor': {
-      const [x, y] = it.points;
-      const r = 8 * px;
-      return `<path d="M${n(x - r)} ${n(y)}H${n(x + r)}M${n(x)} ${n(y - r)}V${n(y + r)}" stroke="${theme.anchor}" stroke-width="${n(1.5 * px)}"/>`;
-    }
+    case 'anchor':
+      return `<polyline points="${pts(it.points)}" fill="none" stroke="${fam}" stroke-width="${n(2 * px)}"/>`;
     case 'ray': {
       const fan = it.key.startsWith('fan:');
-      return `<polyline points="${pts(it.points)}" fill="none" stroke="${withAlpha(fam, fan ? theme.fanAlpha : theme.rayAlpha)}" stroke-width="${n((fan ? WEIGHTS.fan : WEIGHTS.ray) * px)}"/>`;
+      const dash = it.data?.dashed ? ` stroke-dasharray="${n(6 * px)} ${n(6 * px)}"` : '';
+      return `<polyline points="${pts(it.points)}" fill="none" stroke="${withAlpha(fam, fan ? theme.fanAlpha : theme.rayAlpha)}" stroke-width="${n((fan ? WEIGHTS.fan : WEIGHTS.ray) * px)}"${dash}/>`;
     }
+    case 'grid':
+      return `<polyline points="${pts(it.points)}" fill="none" stroke="${it.data?.working ? withAlpha(theme.selection, 0.35) : withAlpha(fam, it.data?.major ? 0.35 : 0.14)}" stroke-width="${n((it.data?.major ? 1 : 0.6) * px)}"/>`;
+    case 'cone':
+      return `<polygon points="${pts(it.points)}" fill="none" stroke="${theme.muted}" stroke-width="${n(px)}" stroke-dasharray="${n(8 * px)} ${n(6 * px)}"/>`;
     case 'face':
       return it.data?.filled ? `<polygon points="${pts(it.points)}" fill="${withAlpha(fam, theme.faceAlpha)}" opacity="${op}"/>` : '';
     case 'edge':

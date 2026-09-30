@@ -4,6 +4,8 @@ import { setPerspective } from '../core/commands/commands';
 import type { Layer } from '../core/document/types';
 import { haptics } from '../platform/haptics';
 import { cameraOf, renderModelOf } from '../state/derived';
+import type { KnownEntity } from '../core/document/types';
+import { pinPointOf } from '../core/entities/pin';
 import { useDocumentStore } from '../state/documentStore';
 import { useSettingsStore } from '../state/settingsStore';
 import { useUiStore, type ToolId } from '../state/uiStore';
@@ -36,7 +38,7 @@ export const toolEnv: ToolEnv = {
   doc: () => docState().doc!,
   cam: () => cameraOf(docState().doc!.perspective),
   display: () => ui().display,
-  model: () => renderModelOf(docState().doc!, ui().display, ui().selection),
+  model: () => renderModelOf(docState().doc!, ui().display, ui().selection, ui().workingPlane),
   selection: () => ui().selection,
   select: (ids) => ui().select(ids),
   run: (cmd) => docState().run(cmd),
@@ -58,7 +60,9 @@ export const toolEnv: ToolEnv = {
     if (useSettingsStore.getState().returnToSelect) ui().setTool('select');
   },
   sketch: () => ui().sketch,
-  rectPlane: () => ui().rectPlane,
+  shape: () => ui().shape,
+  workingPlane: () => ui().workingPlane,
+  multi: () => ui().multi,
   penSeen: () => penSeen,
 };
 
@@ -71,6 +75,14 @@ export const perspectiveTool: PerspectiveTool = createPerspectiveTool({
   cancel: () => docState().cancel(),
   setDragging: (d) => ui().setDragging(d),
   haptics,
+  scaleLock: () => ui().scaleLock,
+  pinTarget: () => {
+    // PS-10: the selected object's front-bottom corner (nearest the eye).
+    if (!ui().pinSelection || ui().selection.length !== 1) return null;
+    const e = docState().doc!.entities[ui().selection[0]];
+    if (!e || 'unknown' in e) return null;
+    return pinPointOf(e as KnownEntity, cameraOf(docState().doc!.perspective));
+  },
   onDragStart: () => {
     // SK-06: once per document, when it has strokes.
     const doc = docState().doc!;
@@ -83,8 +95,7 @@ export const perspectiveTool: PerspectiveTool = createPerspectiveTool({
 
 const TOOLS: Record<ToolId, Tool> = {
   select: createSelectTool(toolEnv),
-  box: createPlaceTool(toolEnv, 'box'),
-  rect: createPlaceTool(toolEnv, 'rect'),
+  shape: createPlaceTool(toolEnv),
   sketch: createSketchTool(toolEnv),
   perspective: perspectiveTool,
 };

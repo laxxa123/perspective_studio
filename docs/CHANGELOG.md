@@ -3,6 +3,26 @@
 User-visible changes per release. Versions: `package.json` semver; each
 milestone release bumps the minor version, and CI appends `-build.<run>`.
 
+## 0.9.0 — M8: scene & viewing revision
+
+- **The horizon is your eye level.** Dragging it raises or lowers the eye —
+  boxes keep their size and the horizon slides along tall objects. Eye height
+  in the Scene panel does the same. New scenes use a standing eye (1.6 u).
+- **Objects above the horizon:** place a ceiling (Shapes → Ceiling) and hang
+  boxes under it; set a working plane to place things in the air; you can only
+  place on surfaces you can actually see.
+- **Shapes** button with a menu (Box, floor rect, walls, ceiling, working plane).
+- **Quick zoom** in the top bar: fit page, fit page + all vanishing points.
+- **Plan view** (map icon): a top-down map with your eye, what it sees, and
+  the objects; tap to select.
+- **Ground point** shows three coloured axes pointing at the vanishing points;
+  a 1 u floor grid; optional cone of vision; live eye-height / distance readout.
+- **Less clutter:** the sketch palette folds into a chip; bars hide while you
+  draw; the inspector no longer covers tool bars.
+- Lift handle has its own arrow shape; Multi-select for touch; cube lock grows
+  from the base; optional scale lock and pin while moving vanishing points;
+  2-point centre-of-vision handle.
+
 ## 0.8.0 — M3–M6: boxes, documents, scenes, sketch
 
 - **Gallery:** your scenes with thumbnails; new 3-point / 2-point scene;

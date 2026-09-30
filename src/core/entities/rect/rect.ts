@@ -9,6 +9,8 @@ import { raysFrom } from '../rays';
 import { MOVE_HANDLE, snap, type EntityKindDef } from '../types';
 
 export const MIN_RECT_SIZE = 0.05;
+/** Ceiling preset height (RC-02, OD-14), u. */
+export const CEILING_HEIGHT = 2.7;
 
 /** The plane's two in-plane axes (0 = X, 1 = Y, 2 = Z) and its normal axis. */
 export const PLANE_AXES: Record<RectEntity['plane'], { u: number; v: number; normal: number }> = {
@@ -100,4 +102,23 @@ export const rectKind: EntityKindDef<RectEntity> = {
   bounds: (r, { cam }) => projectedBounds(cam, rectCorners(r)),
   depth: (r, { cam }) => depth(cam, centreOf(rectCorners(r))),
   offsetCopy: (r) => ({ position: { ...r.position, x: r.position.x + 1 } }),
+  shapes: [
+    { id: 'ground', label: 'Floor rect', placeOn: 'surface' },
+    { id: 'wallL', label: 'Wall (L)', placeOn: 'surface' },
+    { id: 'wallR', label: 'Wall (R)', placeOn: 'surface' },
+    { id: 'ceiling', label: 'Ceiling', placeOn: CEILING_HEIGHT },
+  ],
+  create({ option, point: P, mode, layerId, id, snapStep }) {
+    const plane: RectEntity['plane'] = option === 'wallL' || option === 'wallR' ? option : 'ground';
+    const half = 0.5;
+    // A wall hanging from an underside stands down from it.
+    const z = plane !== 'ground' && mode === 'hang' ? P.z - 1 : P.z;
+    const position =
+      plane === 'ground'
+        ? { x: snap(P.x - half, snapStep), y: snap(P.y - half, snapStep), z }
+        : plane === 'wallL'
+          ? { x: snap(P.x, snapStep), y: snap(P.y - half, snapStep), z }
+          : { x: snap(P.x - half, snapStep), y: snap(P.y, snapStep), z };
+    return { id, kind: 'rect', layerId, visible: true, locked: false, plane, position, size: { x: 1, y: 1 } };
+  },
 };

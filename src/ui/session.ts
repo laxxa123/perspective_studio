@@ -6,7 +6,7 @@ import { newId } from '../core/document/ids';
 import { loadDocument, serializeDocument } from '../core/document/schema';
 import type { SceneDocument } from '../core/document/types';
 import type { DisplayOptions } from '../core/derive/display';
-import { DEFAULT_DISPLAY } from '../core/derive/display';
+import { DEFAULT_DISPLAY, withDisplayDefaults } from '../core/derive/display';
 import type { PerspectiveMode } from '../core/perspective/types';
 import type { Viewport } from '../core/viewport/viewport';
 import { thumbnail } from '../export/exporters';
@@ -20,6 +20,8 @@ export const AUTOSAVE_MS = 1000;
 interface DocPrefs {
   viewport?: Viewport;
   display?: DisplayOptions;
+  /** PL-01: working plane height, per document. */
+  workingPlane?: number | null;
 }
 const prefsKey = (id: string) => `perspective_studio.doc.${id}`;
 
@@ -79,7 +81,10 @@ function show(doc: SceneDocument, warnings: string[] = []) {
   useUiStore.getState().set({
     screen: 'editor',
     viewport: prefs.viewport ?? null,
-    display: prefs.display ?? DEFAULT_DISPLAY,
+    display: prefs.display ? withDisplayDefaults(prefs.display) : DEFAULT_DISPLAY,
+    workingPlane: typeof prefs.workingPlane === 'number' ? prefs.workingPlane : null,
+    planOpen: false,
+    multi: false,
     tool: 'select',
     selection: [],
     panel: 'none',
@@ -120,7 +125,7 @@ export async function closeDocument(): Promise<void> {
   await saveNow();
   const { doc } = useDocumentStore.getState();
   const ui = useUiStore.getState();
-  if (doc) savePrefs(doc.id, { viewport: ui.viewport ?? undefined, display: ui.display });
+  if (doc) savePrefs(doc.id, { viewport: ui.viewport ?? undefined, display: ui.display, workingPlane: ui.workingPlane });
   useDocumentStore.getState().close();
   ui.set({ screen: 'gallery', viewport: null, selection: [] });
 }

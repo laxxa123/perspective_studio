@@ -8,13 +8,14 @@ import {
   Layers,
   Lock,
   LockOpen,
+  Map as MapIcon,
   Maximize2,
   MoreVertical,
   MousePointer2,
   PenLine,
+  RectangleHorizontal,
   Redo2,
   SlidersHorizontal,
-  Square,
   SunMoon,
   Undo2,
 } from 'lucide-react';
@@ -45,19 +46,24 @@ import { Inspector } from './Inspector';
 import { LayersPanel } from './LayersPanel';
 import { OffscreenChips } from './OffscreenChips';
 import { closeDocument, saveNow, savePrefs, scheduleSave } from './session';
+import { PlanPanel } from './PlanPanel';
+import { ShapesMenu } from './ShapesMenu';
 import { ToolOptions } from './ToolOptions';
+import { shapeOptions } from '../core/entities/registry';
 import { useWindowSize } from './useWindowSize';
 
 /** Screen space kept clear of the bars when fitting. */
 export const FIT_INSETS = { top: 90, right: 56, bottom: 170, left: 56 };
+
+const shapeLabel = (shape: { kind: string; option: string }) =>
+  shapeOptions().find((o) => o.kind === shape.kind && o.id === shape.option)?.label ?? 'Shapes';
 
 /** Handles whose drag can hit the PV-2 band, so it is shaded meanwhile (§10.5). */
 const BAND_HANDLES: PerspectiveHandleId[] = ['vpV', 'horizon', 'vpL', 'vpR'];
 
 const TOOLS: { id: ToolId; label: string; icon: typeof Box; key: string }[] = [
   { id: 'select', label: 'Select', icon: MousePointer2, key: 'v' },
-  { id: 'box', label: 'Box', icon: Box, key: 'b' },
-  { id: 'rect', label: 'Rect', icon: Square, key: 'r' },
+  { id: 'shape', label: 'Shapes', icon: Box, key: 'b' },
   { id: 'sketch', label: 'Sketch', icon: PenLine, key: 's' },
   { id: 'perspective', label: 'Persp.', icon: Crosshair, key: 'p' },
 ];
@@ -68,7 +74,7 @@ export function Editor({ theme }: { theme: Theme }) {
   const revision = useDocumentStore((s) => s.revision);
   const canUndo = useDocumentStore((s) => s.history.past.length > 0);
   const canRedo = useDocumentStore((s) => s.history.future.length > 0);
-  const { viewport, tool, perspectiveLocked, dragging, selection, display, panel, toast, live, marquee } = useUiStore();
+  const { viewport, tool, perspectiveLocked, dragging, selection, display, panel, toast, live, marquee, workingPlane, planOpen, shape } = useUiStore();
   const handedness = useSettingsStore((s) => s.handedness);
   const ui = useUiStore.getState;
   const [menuOpen, setMenuOpen] = useState(false);
@@ -80,9 +86,9 @@ export function Editor({ theme }: { theme: Theme }) {
   useEffect(() => onPause(() => void saveNow()), []);
   useEffect(() => {
     if (!viewport) return;
-    const t = setTimeout(() => savePrefs(doc.id, { viewport, display }), 400);
+    const t = setTimeout(() => savePrefs(doc.id, { viewport, display, workingPlane }), 400);
     return () => clearTimeout(t);
-  }, [viewport, display, doc.id]);
+  }, [viewport, display, workingPlane, doc.id]);
 
   // ----- initial viewport -----
   useEffect(() => {
@@ -155,11 +161,12 @@ export function Editor({ theme }: { theme: Theme }) {
     return () => window.removeEventListener('keydown', onKey);
   });
 
-  const model = renderModelOf(doc, display, selection);
+  const model = renderModelOf(doc, display, selection, workingPlane);
   const selSet = useMemo(() => new Set(selection), [selection]);
 
   // ----- overlay -----
   const editingPerspective = tool === 'perspective' && !perspectiveLocked;
+  const drawing = live.length > 0;
   const overlay: Overlay = { handles: [], active: dragging, band: null, marquee, live };
   if (editingPerspective) {
     overlay.handles = pointHandles(doc.perspective).map((hd) => ({ id: hd.id, label: hd.label, family: hd.family, x: hd.point.x, y: hd.point.y, big: true }));
@@ -170,7 +177,13 @@ export function Editor({ theme }: { theme: Theme }) {
           ? forbiddenBand(doc.perspective)
           : null;
   } else if (tool === 'select') {
-    overlay.handles = selectionHandles(toolEnv).map(({ handle }) => ({ id: handle.id, family: handle.family, x: handle.point.x, y: handle.point.y }));
+    overlay.handles = selectionHandles(toolEnv).map(({ handle }) => ({
+      id: handle.id,
+      family: handle.family,
+      x: handle.point.x,
+      y: handle.point.y,
+      glyph: handle.kind === 'lift' ? ('lift' as const) : undefined,
+    }));
   }
   // Off-screen indicator for a selected entity entirely behind the camera (§6.5).
   const behind =
@@ -215,7 +228,7 @@ export function Editor({ theme }: { theme: Theme }) {
         <OffscreenChips perspective={doc.perspective} viewport={viewport} width={w} height={h} canDrag={editingPerspective} tool={perspectiveTool} theme={theme} />
       )}
 
-      <header className="topbar">
+      <header className={drawing ? 'topbar hidden' : 'topbar'}>
         <button className="icon" aria-label="Back to gallery" onClick={() => void closeDocument()}>
           <ArrowLeft size={20} />
         </button>
@@ -226,10 +239,20 @@ export function Editor({ theme }: { theme: Theme }) {
         <button className="icon" aria-label="Redo" disabled={!canRedo} onClick={() => useDocumentStore.getState().redo()}>
           <Redo2 size={20} />
         </button>
-        <button className={panel === 'layers' ? 'icon on' : 'icon'} aria-label="Layers" onClick={() => ui().set({ panel: panel === 'layers' ? 'none' : 'layers' })}>
+        {/* CV-04: quick zoom, always one tap away. */}
+        <button className="icon" aria-label="Fit page" title="Fit page" onClick={fitPaper}>
+          <RectangleHorizontal size={20} />
+        </button>
+        <button className="icon" aria-label="Fit page and all VPs" title="Fit page + all VPs (F)" onClick={fitAll}>
+          <Maximize2 size={20} />
+        </button>
+        <button className={planOpen ? 'icon on' : 'icon'} aria-label="Plan view" title="Plan view" onClick={() => ui().set({ planOpen: !planOpen })}>
+          <MapIcon size={20} />
+        </button>
+        <button className={panel === 'layers' ? 'icon on wide-only' : 'icon wide-only'} aria-label="Layers" onClick={() => ui().set({ panel: panel === 'layers' ? 'none' : 'layers' })}>
           <Layers size={20} />
         </button>
-        <button className={panel === 'display' ? 'icon on' : 'icon'} aria-label="Display" onClick={() => ui().set({ panel: panel === 'display' ? 'none' : 'display' })}>
+        <button className={panel === 'display' ? 'icon on wide-only' : 'icon wide-only'} aria-label="Display" onClick={() => ui().set({ panel: panel === 'display' ? 'none' : 'display' })}>
           <SunMoon size={20} />
         </button>
         <button className="icon" aria-label="More" onClick={() => setMenuOpen(!menuOpen)}>
@@ -240,8 +263,8 @@ export function Editor({ theme }: { theme: Theme }) {
       {menuOpen && (
         <div className="ctx-backdrop" onPointerDown={() => setMenuOpen(false)}>
           <div className="menu more" onPointerDown={(e) => e.stopPropagation()}>
-            <button onClick={() => { fitAll(); setMenuOpen(false); }}><Maximize2 size={16} /> Fit all (F)</button>
-            <button onClick={() => { fitPaper(); setMenuOpen(false); }}>Fit paper</button>
+            <button className="narrow-only" onClick={() => { ui().set({ panel: 'layers' }); setMenuOpen(false); }}><Layers size={16} /> Layers</button>
+            <button className="narrow-only" onClick={() => { ui().set({ panel: 'display' }); setMenuOpen(false); }}><SunMoon size={16} /> Display</button>
             <button onClick={() => { ui().set({ perspectiveLocked: !perspectiveLocked, tool: tool === 'perspective' && !perspectiveLocked ? 'select' : tool }); setMenuOpen(false); }}>
               {perspectiveLocked ? <LockOpen size={16} /> : <Lock size={16} />} {perspectiveLocked ? 'Unlock perspective' : 'Lock perspective'}
             </button>
@@ -263,9 +286,11 @@ export function Editor({ theme }: { theme: Theme }) {
 
       {panel === 'layers' && <LayersPanel doc={doc} />}
       {panel === 'display' && <DisplayPanel onFitPaper={fitPaper} />}
-      {panel !== 'layers' && panel !== 'display' && <Inspector doc={doc} theme={theme} />}
-
-      <div className={`bottom-stack ${handedness}`}>
+      {panel === 'shapes' && <ShapesMenu />}
+      <div className={`bottom-stack ${handedness}${drawing ? ' drawing' : ''}`}>
+        {/* Stacked above the tool bars so nothing overlaps; on phones the plan view takes the inspector's slot (OD-10, §10.1). */}
+        {planOpen && !drawing && <PlanPanel doc={doc} theme={theme} width={Math.min(w - 40, 420)} height={Math.round(Math.min(h * 0.4, 360))} />}
+        {panel !== 'layers' && panel !== 'display' && (!planOpen || w >= 820) && !drawing && <Inspector doc={doc} theme={theme} />}
         <ToolOptions doc={doc} theme={theme} />
         <nav className="toolbar">
           {TOOLS.map((t) => (
@@ -273,11 +298,15 @@ export function Editor({ theme }: { theme: Theme }) {
               key={t.id}
               className={tool === t.id ? 'tool active' : 'tool'}
               disabled={t.id === 'perspective' && perspectiveLocked}
-              onClick={() => ui().setTool(t.id)}
+              onClick={() => {
+                // UI-01: the Shapes button opens its submenu (and selects the tool).
+                if (t.id === 'shape') ui().set({ tool: 'shape', panel: panel === 'shapes' ? 'none' : 'shapes', selection: [] });
+                else ui().setTool(t.id);
+              }}
               title={`${t.label} (${t.key.toUpperCase()})`}
             >
               <t.icon size={20} />
-              <span>{t.label}</span>
+              <span>{t.id === 'shape' ? shapeLabel(shape) : t.label}</span>
             </button>
           ))}
         </nav>

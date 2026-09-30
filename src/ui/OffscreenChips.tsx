@@ -26,7 +26,7 @@ const DRAG_SLOP_PX = 6;
 
 export function OffscreenChips({ perspective, viewport, width, height, canDrag, tool, theme }: Props) {
   const press = useRef<{ id: PerspectiveHandleId; x: number; y: number; dragging: boolean } | null>(null);
-  const vps = pointHandles(perspective).filter((h) => h.id !== 'anchor');
+  const vps = pointHandles(perspective).filter((h) => h.id !== 'anchor' && h.id !== 'cv');
 
   return (
     <>

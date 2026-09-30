@@ -15,3 +15,7 @@ const byKind = new Map(KINDS.map((k) => [k.kind, k]));
 
 export const kindOf = (kind: string): EntityKindDef<EntityBase> | undefined => byKind.get(kind);
 export const registeredKinds = (): string[] => [...byKind.keys()];
+
+/** Every placeable shape, in menu order (UI-01): kind + option. */
+export const shapeOptions = () =>
+  KINDS.flatMap((k) => (k.shapes ?? []).map((o) => ({ kind: k.kind, ...o })));

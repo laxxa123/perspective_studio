@@ -21,6 +21,10 @@ export function ContextMenu({ doc }: { doc: SceneDocument }) {
   return (
     <div className="ctx-backdrop" onPointerDown={close}>
       <div className="menu ctx" style={{ left: Math.min(menu.x, window.innerWidth - 190), top: Math.min(menu.y, window.innerHeight - 220) }} onPointerDown={(ev) => ev.stopPropagation()}>
+        {item('Add to selection', () => {
+          ui.set({ multi: true });
+          ui.select([...new Set([...ui.selection, e.id])]);
+        })}
         {item('Duplicate', () => {
           const out: string[] = [];
           run(duplicateEntities([e.id], out));

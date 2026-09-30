@@ -167,10 +167,14 @@ export const boxKind: EntityKindDef<BoxEntity> = {
     const old = get(s.size, axis);
     const next = Math.max(MIN_BOX_SIZE, snap(old + (side ? d : -d), drag.snapStep));
     if (s.uniform) {
+      // BX-03 (v1.5): cube lock grows about the base centre — footprint centred, base on its surface.
       const k = next / old;
       const size = { x: s.size.x * k, y: s.size.y * k, z: s.size.z * k };
-      // The face opposite the dragged one stays put.
-      const position = side ? s.position : withAxis(s.position, axis, get(s.position, axis) + old - next);
+      const position = {
+        x: s.position.x + (s.size.x - size.x) / 2,
+        y: s.position.y + (s.size.y - size.y) / 2,
+        z: s.position.z,
+      };
       return { size, position };
     }
     const size = withAxis(s.size, axis, next);
@@ -181,4 +185,18 @@ export const boxKind: EntityKindDef<BoxEntity> = {
   bounds: (b, { cam }) => projectedBounds(cam, boxCorners(b)),
   depth: (b, { cam }) => depth(cam, centreOf(boxCorners(b))),
   offsetCopy: (b) => ({ position: { ...b.position, x: b.position.x + 1 } }),
+  shapes: [{ id: 'box', label: 'Box', placeOn: 'surface' }],
+  create({ point: P, mode, layerId, id, snapStep }) {
+    const half = DEFAULT_CUBE / 2;
+    return {
+      id,
+      kind: 'box',
+      layerId,
+      visible: true,
+      locked: false,
+      position: { x: snap(P.x - half, snapStep), y: snap(P.y - half, snapStep), z: mode === 'hang' ? P.z - DEFAULT_CUBE : P.z },
+      size: { x: DEFAULT_CUBE, y: DEFAULT_CUBE, z: DEFAULT_CUBE },
+      uniform: true,
+    };
+  },
 };

@@ -1,48 +1,114 @@
-// Object snapping for boxes: stacking on top faces (BX-06) and flush
+// Placement and object snapping: surfaces facing the eye (BX-02 revised),
+// resting and hanging (BX-06, BX-08), the working plane (PL-01), and flush
 // alignment with neighbours (§10.6).
-import { add3, sub3, type Vec2, type Vec3 } from '../math/vec';
-import { unproject } from '../perspective/camera';
+import { add3, scale3, sub3, type Vec2, type Vec3 } from '../math/vec';
+import { pictureRay, unproject } from '../perspective/camera';
 import type { Camera } from '../perspective/types';
-import type { BoxEntity, Entity } from '../document/types';
+import type { BoxEntity, Entity, RectEntity } from '../document/types';
 
 /** How close (u) a face must come to another to snap flush / to rest on it. */
 export const FLUSH_TOLERANCE = 0.12;
-const REST_EPS = 1e-6;
+/** A working plane must stay this far (u) from the eye (it is edge-on at eye level). */
+export const WORKING_PLANE_MIN_GAP = 0.05;
+const TOUCH_EPS = 1e-6;
+
+export interface Placement {
+  point: Vec3;
+  /** rest: the new object stands on it; hang: it hangs below it. */
+  mode: 'rest' | 'hang';
+  supportId: string | null;
+}
+
+interface Surface {
+  id: string;
+  z: number;
+  /** up: seen from above (tops); down: seen from below (undersides). */
+  facing: 'up' | 'down';
+  contains: (x: number, y: number) => boolean;
+}
 
 const boxesOf = (entities: Entity[]): BoxEntity[] =>
   entities.filter((e): e is BoxEntity => e.kind === 'box' && !('unknown' in e));
+const groundRectsOf = (entities: Entity[]): RectEntity[] =>
+  entities.filter((e): e is RectEntity => e.kind === 'rect' && !('unknown' in e) && (e as RectEntity).plane === 'ground');
 
 const topOf = (b: BoxEntity) => b.position.z + b.size.z;
+const footprint = (x0: number, y0: number, w: number, d: number) => (x: number, y: number) =>
+  x >= x0 && x <= x0 + w && y >= y0 && y <= y0 + d;
+
+function surfaces(entities: Entity[], excludeId?: string): Surface[] {
+  const out: Surface[] = [];
+  for (const b of boxesOf(entities)) {
+    if (b.id === excludeId || !b.visible) continue;
+    const inside = footprint(b.position.x, b.position.y, b.size.x, b.size.y);
+    out.push({ id: b.id, z: topOf(b), facing: 'up', contains: inside });
+    out.push({ id: b.id, z: b.position.z, facing: 'down', contains: inside });
+  }
+  for (const r of groundRectsOf(entities)) {
+    if (r.id === excludeId || !r.visible) continue;
+    const inside = footprint(r.position.x, r.position.y, r.size.x, r.size.y);
+    out.push({ id: r.id, z: r.position.z, facing: 'up', contains: inside });
+    out.push({ id: r.id, z: r.position.z, facing: 'down', contains: inside });
+  }
+  return out;
+}
 
 /**
- * Where a tap / drag at picture point q lands: the highest box top face under
- * it, else the ground (when q is below the horizon). Null above the horizon
- * with nothing under it (BX-02).
+ * Where a tap at picture point q places an object (BX-02 revised): the first
+ * horizontal surface along the viewing ray that faces the eye — tops below
+ * eye level (rest on them), undersides above it (hang from them) — else the
+ * ground, else the working plane, else null. Faces the eye cannot see are
+ * never targets.
  */
-export function surfaceAt(
+export function placementAt(
   entities: Entity[],
   cam: Camera,
   q: Vec2,
-  excludeId?: string,
-): { point: Vec3; supportId: string | null } | null {
-  let best: { point: Vec3; supportId: string | null } | null = null;
-  for (const b of boxesOf(entities)) {
-    if (b.id === excludeId) continue;
-    const P = unproject(cam, q, topOf(b));
-    if (!P) continue;
-    const inside =
-      P.x >= b.position.x && P.x <= b.position.x + b.size.x && P.y >= b.position.y && P.y <= b.position.y + b.size.y;
-    if (inside && (!best || P.z > best.point.z)) best = { point: P, supportId: b.id };
+  opts: { excludeId?: string; workingPlane?: number | null } = {},
+): Placement | null {
+  const { origin: C, dir } = pictureRay(cam, q);
+  const hit = (z: number) => {
+    if (Math.abs(dir.z) < 1e-12) return null;
+    const t = (z - C.z) / dir.z;
+    return t > 0 ? { t, P: add3(C, scale3(dir, t)) } : null;
+  };
+  let best: (Placement & { t: number }) | null = null;
+  for (const s of surfaces(entities, opts.excludeId)) {
+    // Facing the eye: tops below the eye, undersides above it.
+    if (s.facing === 'up' ? !(s.z < C.z) : !(s.z > C.z)) continue;
+    const h = hit(s.z);
+    if (!h || !s.contains(h.P.x, h.P.y)) continue;
+    if (!best || h.t < best.t) best = { point: h.P, mode: s.facing === 'up' ? 'rest' : 'hang', supportId: s.id, t: h.t };
   }
-  if (best) return best;
-  const G = unproject(cam, q, 0);
-  return G ? { point: G, supportId: null } : null;
+  const ground = hit(0);
+  if (ground && (!best || ground.t < best.t)) best = { point: ground.P, mode: 'rest', supportId: null, t: ground.t };
+  if (best) return { point: best.point, mode: best.mode, supportId: best.supportId };
+  const wp = opts.workingPlane;
+  if (wp !== null && wp !== undefined && Math.abs(wp - C.z) >= WORKING_PLANE_MIN_GAP) {
+    const h = hit(wp);
+    if (h) return { point: h.P, mode: wp < C.z ? 'rest' : 'hang', supportId: null };
+  }
+  return null;
 }
 
-/** Does the box rest on the ground or on another box's top face? */
+const near = (a: number, b: number) => Math.abs(a - b) < TOUCH_EPS;
+
+/** Does the box rest on the ground, a box top or a ground rect? */
 export function isResting(b: BoxEntity, others: Entity[]): boolean {
-  if (Math.abs(b.position.z) < REST_EPS) return true;
-  return boxesOf(others).some((o) => o.id !== b.id && Math.abs(topOf(o) - b.position.z) < REST_EPS);
+  if (near(b.position.z, 0)) return true;
+  return (
+    boxesOf(others).some((o) => o.id !== b.id && near(topOf(o), b.position.z)) ||
+    groundRectsOf(others).some((r) => near(r.position.z, b.position.z))
+  );
+}
+
+/** Does the box hang from a box underside or a ground-plane rect (ceiling)? (BX-08) */
+export function isHanging(b: BoxEntity, others: Entity[]): boolean {
+  const top = topOf(b);
+  return (
+    boxesOf(others).some((o) => o.id !== b.id && near(o.position.z, top)) ||
+    groundRectsOf(others).some((r) => near(r.position.z, top))
+  );
 }
 
 function flushAxis(b: BoxEntity, others: BoxEntity[], axis: 'x' | 'y'): number {
@@ -52,7 +118,6 @@ function flushAxis(b: BoxEntity, others: BoxEntity[], axis: 'x' | 'y'): number {
   let best = 0;
   let bestAbs = FLUSH_TOLERANCE;
   for (const o of others) {
-    // Only neighbours overlapping in the other horizontal direction and in height.
     const oLo = o.position[other];
     const oHi = oLo + o.size[other];
     if (b.position[other] > oHi + FLUSH_TOLERANCE || b.position[other] + b.size[other] < oLo - FLUSH_TOLERANCE) continue;
@@ -70,24 +135,29 @@ function flushAxis(b: BoxEntity, others: BoxEntity[], axis: 'x' | 'y'): number {
 }
 
 /**
- * The position a moved box snaps to: onto the top face under the pointer (or
- * the ground) when it rests on something, keeping its offset from the pointer;
- * then flush with a neighbour's face when within FLUSH_TOLERANCE.
+ * Where a moved box snaps to: a resting box re-seats onto the top face under
+ * the pointer (or the ground); a hanging box re-attaches under the underside
+ * under the pointer (BX-06, BX-08), keeping its offset from the pointer; then
+ * it snaps flush with a neighbour within FLUSH_TOLERANCE.
  */
 export function boxSnapTarget(moved: BoxEntity, entities: Entity[], cam: Camera, pointer: Vec2): Vec3 {
-  const others = boxesOf(entities).filter((o) => o.id !== moved.id);
+  const others = entities.filter((o) => o.id !== moved.id);
   let position = moved.position;
-  if (isResting(moved, others)) {
-    const surface = surfaceAt(others, cam, pointer);
+  const resting = isResting(moved, others);
+  const hanging = !resting && isHanging(moved, others);
+  if (resting || hanging) {
+    const place = placementAt(others, cam, pointer);
     const onPlane = unproject(cam, pointer, moved.position.z);
-    if (surface && onPlane && Math.abs(surface.point.z - moved.position.z) > REST_EPS) {
-      const offset = sub3(moved.position, onPlane);
-      const P = unproject(cam, pointer, surface.point.z);
-      if (P) position = { ...add3(P, offset), z: surface.point.z };
+    if (place && onPlane && place.mode === (resting ? 'rest' : 'hang')) {
+      const z = resting ? place.point.z : place.point.z - moved.size.z;
+      if (!near(z, moved.position.z)) {
+        const offset = sub3(moved.position, onPlane);
+        const P = unproject(cam, pointer, z);
+        if (P) position = { ...add3(P, offset), z };
+      }
     }
   }
+  const boxes = boxesOf(others);
   const at = { ...moved, position };
-  const dx = flushAxis(at, others, 'x');
-  const dy = flushAxis(at, others, 'y');
-  return { x: position.x + dx, y: position.y + dy, z: position.z };
+  return { x: position.x + flushAxis(at, boxes, 'x'), y: position.y + flushAxis(at, boxes, 'y'), z: position.z };
 }

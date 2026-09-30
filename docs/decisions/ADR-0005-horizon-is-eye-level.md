@@ -1,6 +1,6 @@
 # ADR-0005 — The horizon is the eye level: dragging it changes eye height
 
-- **Status:** Proposed (v1.5, 2026-09-30) — accepted when M8 implements it
+- **Status:** Accepted (0.9.0, 2026-09-30)
 - **Supersedes:** the horizon bullet of §6.4
 - **Requirements:** PS-07 (revised), PS-08, OD-3
 

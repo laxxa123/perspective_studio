@@ -1,9 +1,10 @@
 // Perspective-tool handles and dragging with clamping (PS-03, §10.5).
 import type { Vec2 } from '../math/vec';
 import type { Family, PerspectiveSystem } from './types';
+import { moveHorizon } from './eye';
 import { isValid, minVerticalDistance } from './validity';
 
-export type PerspectiveHandleId = 'vpL' | 'vpR' | 'vpV' | 'anchor' | 'horizon';
+export type PerspectiveHandleId = 'vpL' | 'vpR' | 'vpV' | 'cv' | 'anchor' | 'horizon';
 
 export interface PerspectiveHandle {
   id: PerspectiveHandleId;
@@ -20,18 +21,13 @@ export function pointHandles(ps: PerspectiveSystem): PerspectiveHandle[] {
   ];
   if (ps.mode === '3pt' && ps.vpVerticalY !== null) {
     out.push({ id: 'vpV', family: 'V', label: 'VP-V', point: { x: ps.verticalX, y: ps.vpVerticalY } });
+  } else {
+    // PS-11: in 2pt the centre of vision (principal point x) slides along the horizon.
+    out.push({ id: 'cv', label: 'Centre', point: { x: ps.verticalX, y: ps.horizonY } });
   }
-  out.push({ id: 'anchor', label: 'Anchor', point: ps.anchor });
+  // UI-09: the anchor's label on screen.
+  out.push({ id: 'anchor', label: 'Ground point', point: ps.anchor });
   return out;
-}
-
-/** In 3pt, VP-V pushed out of the PV-2 band, keeping its side of the horizon (§6.4). */
-function pushVerticalVp(ps: PerspectiveSystem): PerspectiveSystem {
-  if (ps.mode !== '3pt' || ps.vpVerticalY === null) return ps;
-  const minD = minVerticalDistance(ps) * (1 + 1e-9);
-  const d = ps.vpVerticalY - ps.horizonY;
-  if (Math.abs(d) > minD) return ps;
-  return { ...ps, vpVerticalY: ps.horizonY + (d < 0 ? -minD : minD) };
 }
 
 /** The system with handle `id` moved to `p` (before validation). */
@@ -45,8 +41,11 @@ function withHandleAt(ps: PerspectiveSystem, id: PerspectiveHandleId, p: Vec2): 
       return { ...ps, verticalX: p.x, vpVerticalY: p.y };
     case 'anchor':
       return { ...ps, anchor: p };
+    case 'cv':
+      return { ...ps, verticalX: p.x };
     case 'horizon':
-      return pushVerticalVp({ ...ps, horizonY: p.y });
+      // PS-08: the horizon is the eye level (ADR-0005).
+      return moveHorizon(ps, p.y);
   }
 }
 
@@ -58,6 +57,8 @@ function handlePoint(ps: PerspectiveSystem, id: PerspectiveHandleId, target: Vec
       return { x: ps.vpRightX, y: ps.horizonY };
     case 'vpV':
       return { x: ps.verticalX, y: ps.vpVerticalY ?? ps.horizonY };
+    case 'cv':
+      return { x: ps.verticalX, y: ps.horizonY };
     case 'anchor':
       return ps.anchor;
     case 'horizon':

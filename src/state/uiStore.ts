@@ -2,12 +2,12 @@
 import { create } from 'zustand';
 import { DEFAULT_DISPLAY, type DisplayOptions } from '../core/derive/display';
 import type { RenderItem } from '../core/derive/renderModel';
-import type { Id, RectEntity, StrokeEntity } from '../core/document/types';
+import type { Id, StrokeEntity } from '../core/document/types';
 import type { PerspectiveHandleId } from '../core/perspective';
 import type { Family } from '../core/perspective/types';
 import type { Viewport } from '../core/viewport/viewport';
 
-export type ToolId = 'select' | 'box' | 'rect' | 'sketch' | 'perspective';
+export type ToolId = 'select' | 'shape' | 'sketch' | 'perspective';
 export type Screen = 'gallery' | 'editor' | 'settings';
 export type SnapMode = 'off' | 'soft' | 'locked';
 
@@ -32,9 +32,21 @@ interface UiState {
   dragging: PerspectiveHandleId | null;
   /** Layer new entities go to, per role. */
   activeLayer: { objects: Id | null; sketch: Id | null };
-  rectPlane: RectEntity['plane'];
+  /** The shape the Shapes tool places (UI-01). */
+  shape: { kind: string; option: string };
+  /** Working plane height (PL-01), per document; null = off. */
+  workingPlane: number | null;
+  /** Plan view open (CV-05). */
+  planOpen: boolean;
+  /** Touch multi-select mode (UI-04). */
+  multi: boolean;
+  /** Tool palette expanded (UI-02); collapsed to a chip on phones by default. */
+  paletteOpen: boolean;
+  /** Perspective drag options (PS-09, PS-10). */
+  scaleLock: boolean;
+  pinSelection: boolean;
   sketch: SketchSettings;
-  panel: 'none' | 'inspector' | 'layers' | 'display';
+  panel: 'none' | 'inspector' | 'layers' | 'display' | 'shapes';
   contextMenu: { id: Id; x: number; y: number } | null;
   toast: string | null;
   /** In-progress items (live stroke), pp. */
@@ -71,7 +83,13 @@ export const useUiStore = create<UiState>((set) => ({
   perspectiveLocked: false,
   dragging: null,
   activeLayer: { objects: null, sketch: null },
-  rectPlane: 'ground',
+  shape: { kind: 'box', option: 'box' },
+  workingPlane: null,
+  planOpen: false,
+  multi: false,
+  paletteOpen: typeof window !== 'undefined' ? window.innerWidth >= 820 : true,
+  scaleLock: false,
+  pinSelection: false,
   sketch: DEFAULT_SKETCH,
   panel: 'none',
   contextMenu: null,
@@ -81,7 +99,7 @@ export const useUiStore = create<UiState>((set) => ({
   strokeWarningShown: false,
   set: (patch) => set(patch),
   setViewport: (viewport) => set({ viewport }),
-  setTool: (tool) => set((s) => ({ tool, selection: tool === 'select' ? s.selection : [], contextMenu: null })),
+  setTool: (tool) => set((s) => ({ tool, selection: tool === 'select' || tool === 'perspective' ? s.selection : [], contextMenu: null, multi: tool === 'select' ? s.multi : false })),
   select: (selection) => set({ selection, contextMenu: null }),
   setDragging: (dragging) => set({ dragging }),
   showToast: (toast) => {
