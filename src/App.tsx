@@ -1,5 +1,49 @@
+import { useEffect } from 'react';
+import { useDocumentStore } from './state/documentStore';
+import { useUiStore } from './state/uiStore';
 import { Editor } from './ui/Editor';
+import { Gallery } from './ui/Gallery';
+import { SettingsScreen } from './ui/SettingsScreen';
+import { onBackButton } from './platform/lifecycle';
+import { closeDocument } from './ui/session';
+import { restoreSettings } from './ui/settingsPersistence';
+import { useTheme } from './ui/useTheme';
+
+restoreSettings();
 
 export function App() {
-  return <Editor />;
+  const theme = useTheme();
+  const screen = useUiStore((s) => s.screen);
+  const hasDoc = useDocumentStore((s) => s.doc !== null);
+  const toast = useUiStore((s) => s.toast);
+
+  // Android back button: panels → editor → gallery (saving on the way).
+  useEffect(
+    () =>
+      onBackButton(() => {
+        const ui = useUiStore.getState();
+        if (ui.contextMenu || ui.panel !== 'none') {
+          ui.set({ contextMenu: null, panel: 'none' });
+          return true;
+        }
+        if (ui.screen === 'editor') {
+          void closeDocument();
+          return true;
+        }
+        if (ui.screen === 'settings') {
+          ui.set({ screen: 'gallery' });
+          return true;
+        }
+        return false;
+      }),
+    [],
+  );
+
+  if (screen === 'editor' && hasDoc) return <Editor theme={theme} />;
+  return (
+    <>
+      {screen === 'settings' ? <SettingsScreen /> : <Gallery />}
+      {toast && <div className="toast">{toast}</div>}
+    </>
+  );
 }

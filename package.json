@@ -1,6 +1,6 @@
 {
   "name": "perspective_studio",
-  "version": "0.4.0",
+  "version": "0.8.0",
   "description": "2D perspective drawing skill app",
   "scripts": {
     "dev": "vite",
@@ -15,13 +15,20 @@
   "author": "laxxa123",
   "dependencies": {
     "@capacitor/android": "^8.5.2",
+    "@capacitor/app": "^8.1.1",
     "@capacitor/core": "^8.5.2",
+    "@capacitor/filesystem": "^8.1.3",
     "@capacitor/haptics": "^8.0.2",
+    "@capacitor/share": "^8.0.2",
+    "idb": "^8.0.3",
+    "immer": "^11.1.18",
     "konva": "^10.7.0",
     "lucide-react": "^1.49.0",
+    "perfect-freehand": "^1.2.3",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "react-konva": "^19.3.0",
+    "zod": "^4.6.5",
     "zustand": "^5.0.15"
   },
   "devDependencies": {
@@ -34,6 +41,7 @@
     "eslint": "^10.11.0",
     "eslint-plugin-boundaries": "^7.2.0",
     "eslint-plugin-react-hooks": "^7.1.1",
+    "fake-indexeddb": "^6.2.5",
     "fast-check": "^4.10.2",
     "globals": "^17.12.0",
     "typescript": "~6.0.3",

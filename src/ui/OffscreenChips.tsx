@@ -4,7 +4,7 @@
 import { useRef } from 'react';
 import { pointHandles, type PerspectiveHandleId, type PerspectiveSystem } from '../core/perspective';
 import { centreOn, edgeIndicator, toPicture, toScreen, type Viewport } from '../core/viewport/viewport';
-import { FAMILY_COLOR } from '../render/konva/theme';
+import type { Theme } from '../theme/theme';
 import { useUiStore } from '../state/uiStore';
 import type { PerspectiveTool } from '../tools/perspectiveTool';
 
@@ -14,17 +14,17 @@ interface Props {
   width: number;
   height: number;
   canDrag: boolean;
-  onDragStart: (id: PerspectiveHandleId, pointerPp: { x: number; y: number }) => void;
   tool: PerspectiveTool;
+  theme: Theme;
 }
 
 /** Distance of the chips from the screen edge, px (clear of the bars). */
 const INSET_X = 40;
 const INSET_TOP = 84;
-const INSET_BOTTOM = 104;
+const INSET_BOTTOM = 190;
 const DRAG_SLOP_PX = 6;
 
-export function OffscreenChips({ perspective, viewport, width, height, canDrag, onDragStart, tool }: Props) {
+export function OffscreenChips({ perspective, viewport, width, height, canDrag, tool, theme }: Props) {
   const press = useRef<{ id: PerspectiveHandleId; x: number; y: number; dragging: boolean } | null>(null);
   const vps = pointHandles(perspective).filter((h) => h.id !== 'anchor');
 
@@ -42,7 +42,7 @@ export function OffscreenChips({ perspective, viewport, width, height, canDrag, 
           0,
         );
         if (!ind) return null;
-        const color = h.family ? FAMILY_COLOR[h.family] : '#343a40';
+        const color = h.family ? theme.family[h.family] : theme.anchor;
         const deg = (ind.angle * 180) / Math.PI;
         const local = (e: React.PointerEvent) => {
           const r = (e.currentTarget.parentElement as HTMLElement).getBoundingClientRect();
@@ -66,10 +66,10 @@ export function OffscreenChips({ perspective, viewport, width, height, canDrag, 
               if (!p.dragging) {
                 if (Math.hypot(e.clientX - p.x, e.clientY - p.y) < DRAG_SLOP_PX) return;
                 p.dragging = true;
-                onDragStart(p.id, toPicture(vp, local(e)));
+                tool.startDrag(p.id, toPicture(vp, local(e)));
               }
               const screen = local(e);
-              tool.move({ pp: toPicture(vp, screen), screen, pointerType: 'touch', pressure: 0.5, buttons: 1 });
+              tool.move({ pp: toPicture(vp, screen), screen, pointerType: 'touch', pressure: 0.5, buttons: 1, shift: false, pxToPp: 1 / vp.zoom });
             }}
             onPointerUp={(e) => {
               const p = press.current;
@@ -77,7 +77,8 @@ export function OffscreenChips({ perspective, viewport, width, height, canDrag, 
               if (!p) return;
               if (p.dragging) {
                 const screen = local(e);
-                tool.up({ pp: toPicture(useUiStore.getState().viewport!, screen), screen, pointerType: 'touch', pressure: 0.5, buttons: 0 });
+                const vp = useUiStore.getState().viewport!;
+                tool.up({ pp: toPicture(vp, screen), screen, pointerType: 'touch', pressure: 0.5, buttons: 0, shift: false, pxToPp: 1 / vp.zoom });
               } else {
                 useUiStore.getState().setViewport(centreOn(viewport, h.point, width, height));
               }

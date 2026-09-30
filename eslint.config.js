@@ -6,7 +6,7 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 /** Packages core/ must never import (§8.2). */
-const NOT_IN_CORE = ['react', 'react-dom', 'react-konva', 'konva', 'zustand', 'immer', '@capacitor/*'];
+const NOT_IN_CORE = ['react', 'react-dom', 'react-konva', 'konva', 'zustand', 'idb', 'lucide-react', '@capacitor/*'];
 
 export default tseslint.config(
   { ignores: ['dist', 'android', 'node_modules', 'coverage'] },
@@ -40,6 +40,7 @@ export default tseslint.config(
         { type: 'state', pattern: 'src/state/**' },
         { type: 'ui', pattern: 'src/ui/**' },
         { type: 'platform', pattern: 'src/platform/**' },
+        { type: 'theme', pattern: 'src/theme/**' },
         { type: 'app', pattern: 'src/*.{ts,tsx}', partialMatch: false },
       ],
     },
@@ -56,7 +57,7 @@ export default tseslint.config(
             {
               from: { element: { type: 'ui' } },
               allow: {
-                to: { element: { types: { anyOf: ['ui', 'tools', 'state', 'render', 'export', 'core', 'platform', 'app'] } } },
+                to: { element: { types: { anyOf: ['ui', 'tools', 'state', 'render', 'export', 'core', 'platform', 'app', 'theme'] } } },
               },
             },
             {
@@ -64,8 +65,9 @@ export default tseslint.config(
               allow: { to: { element: { types: { anyOf: ['tools', 'state', 'core', 'platform'] } } } },
             },
             { from: { element: { type: 'state' } }, allow: { to: { element: { types: { anyOf: ['state', 'core'] } } } } },
-            { from: { element: { type: 'render' } }, allow: { to: { element: { types: { anyOf: ['render', 'core'] } } } } },
-            { from: { element: { type: 'export' } }, allow: { to: { element: { types: { anyOf: ['export', 'core'] } } } } },
+            { from: { element: { type: 'render' } }, allow: { to: { element: { types: { anyOf: ['render', 'core', 'theme'] } } } } },
+            { from: { element: { type: 'theme' } }, allow: { to: { element: { types: { anyOf: ['theme', 'core'] } } } } },
+            { from: { element: { type: 'export' } }, allow: { to: { element: { types: { anyOf: ['export', 'core', 'theme'] } } } } },
             { from: { element: { type: 'platform' } }, allow: { to: { element: { type: 'platform' } } } },
             { from: { element: { type: 'app' } }, allow: { to: { element: { types: { anyOf: ['app', 'ui', 'state', 'core', 'platform'] } } } } },
             // External packages: allowed everywhere except the core list above.

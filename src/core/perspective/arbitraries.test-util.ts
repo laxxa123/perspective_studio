@@ -4,7 +4,9 @@ import { v3, type Vec3 } from '../math/vec';
 import type { PerspectiveSystem } from './types';
 import { isValid, minVerticalDistance } from './validity';
 
-const num = (min: number, max: number) => fc.double({ min, max, noNaN: true, noDefaultInfinity: true });
+// JSON cannot store −0, so documents never hold it: generate +0 instead.
+const num = (min: number, max: number) =>
+  fc.double({ min, max, noNaN: true, noDefaultInfinity: true }).map((x) => (x === 0 ? 0 : x));
 
 export const validPerspective: fc.Arbitrary<PerspectiveSystem> = fc
   .record({

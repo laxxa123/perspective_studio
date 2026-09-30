@@ -134,3 +134,28 @@ export function perspectiveFromCamera(cam: Camera, mode: PerspectiveSystem['mode
     eyeHeight: cam.C.z,
   };
 }
+
+/** The world-space viewing ray through picture point q (origin = camera centre). */
+export const pictureRay = (cam: Camera, q: Vec2): { origin: Vec3; dir: Vec3 } => ({
+  origin: cam.C,
+  dir: mulTransposeVec(cam.M, v3(q.x - cam.p.x, q.y - cam.p.y, cam.f)),
+});
+
+/** Camera-space depth of a world point (painter's ordering, §9). */
+export const depth = (cam: Camera, P: Vec3): number => toCamera(cam, P).z;
+
+/**
+ * Parameter s of the point A + s·d on a world line that comes closest to the
+ * viewing ray through q — how far a handle dragged to q moves along its
+ * family direction (§10.6). Null when the ray is parallel to the line.
+ */
+export function closestOnAxis(cam: Camera, q: Vec2, A: Vec3, d: Vec3): number | null {
+  const { origin, dir: r } = pictureRay(cam, q);
+  const w0 = sub3(A, origin);
+  const a = dot3(d, d);
+  const b = dot3(d, r);
+  const c = dot3(r, r);
+  const denom = a * c - b * b;
+  if (Math.abs(denom) < EPS * a * c) return null;
+  return (b * dot3(r, w0) - c * dot3(d, w0)) / denom;
+}

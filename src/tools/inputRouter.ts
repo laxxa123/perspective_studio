@@ -1,6 +1,7 @@
 // The single input router (CV-02, §8.6, §10.3): normalizes pointer events,
-// handles pan / zoom gestures itself, and hands everything else to the active
-// tool. Tools never see raw DOM events.
+// handles gestures itself (two-finger pan / pinch, two-finger tap = undo,
+// three-finger tap = redo, wheel), and hands everything else to the active
+// tool, one call per coalesced sample (SK-02). Tools never see raw events.
 import { dist2, type Vec2 } from '../core/math/vec';
 import { panBy, toPicture, zoomAt, type Viewport } from '../core/viewport/viewport';
 import type { Tool, ToolInput } from './types';
@@ -9,23 +10,27 @@ interface RouterDeps {
   getViewport: () => Viewport;
   setViewport: (v: Viewport) => void;
   getTool: () => Tool;
+  undo: () => void;
+  redo: () => void;
+  /** A pen has been seen (palm rejection). */
+  onPen?: () => void;
 }
 
 type PointerKind = ToolInput['pointerType'];
+const kindOf = (e: PointerEvent): PointerKind => (e.pointerType === 'pen' ? 'pen' : e.pointerType === 'touch' ? 'touch' : 'mouse');
 
-const kindOf = (e: PointerEvent): PointerKind =>
-  e.pointerType === 'pen' ? 'pen' : e.pointerType === 'touch' ? 'touch' : 'mouse';
-
-/** Wheel zoom speed per pixel of wheel delta. */
 const WHEEL_ZOOM = 0.0015;
-/** Trackpad pinch (ctrl+wheel) is finer-grained, so it zooms faster per delta. */
 const PINCH_ZOOM = 0.01;
+/** Multi-finger taps: max duration and movement. */
+const TAP_MS = 300;
+const TAP_MOVE_PX = 12;
 
 export function attachInputRouter(el: HTMLElement, deps: RouterDeps): () => void {
   const touches = new Map<number, Vec2>();
   let toolPointer: number | null = null;
   let gesture: { center: Vec2; d: number } | null = null;
-  let mousePan: Vec2 | null = null;
+  let tap: { start: number; fingers: number; moved: number } | null = null;
+  let pan: Vec2 | null = null;
 
   const local = (e: { clientX: number; clientY: number }): Vec2 => {
     const r = el.getBoundingClientRect();
@@ -33,12 +38,15 @@ export function attachInputRouter(el: HTMLElement, deps: RouterDeps): () => void
   };
   const input = (e: PointerEvent): ToolInput => {
     const screen = local(e);
+    const v = deps.getViewport();
     return {
       screen,
-      pp: toPicture(deps.getViewport(), screen),
+      pp: toPicture(v, screen),
       pointerType: kindOf(e),
       pressure: e.pressure,
       buttons: e.buttons,
+      shift: e.shiftKey,
+      pxToPp: 1 / v.zoom,
     };
   };
   const pinchState = () => {
@@ -47,32 +55,44 @@ export function attachInputRouter(el: HTMLElement, deps: RouterDeps): () => void
   };
 
   const down = (e: PointerEvent) => {
-    if (kindOf(e) === 'touch') touches.set(e.pointerId, local(e));
-    // Two fingers: pan / pinch, and the tool's action (if any) is cancelled.
+    const kind = kindOf(e);
+    if (kind === 'pen') deps.onPen?.();
+    if (kind === 'touch') {
+      touches.set(e.pointerId, local(e));
+      if (!tap || touches.size === 1) tap = { start: e.timeStamp, fingers: touches.size, moved: 0 };
+      else tap.fingers = Math.max(tap.fingers, touches.size);
+    }
     if (touches.size >= 2) {
       if (toolPointer !== null) {
         deps.getTool().cancel();
         toolPointer = null;
       }
+      pan = null;
       gesture = pinchState();
       return;
     }
     if (gesture) return;
-    // Middle mouse button pans on desktop.
-    if (kindOf(e) === 'mouse' && e.button === 1) {
-      mousePan = local(e);
+    const tool = deps.getTool();
+    // Middle mouse button pans; so does a finger when the tool asks (palm rejection).
+    if ((kind === 'mouse' && e.button === 1) || (kind === 'touch' && tool.touchPans?.())) {
+      pan = local(e);
       el.setPointerCapture(e.pointerId);
       e.preventDefault();
       return;
     }
-    if (kindOf(e) === 'mouse' && e.button !== 0) return;
+    if (kind === 'mouse' && e.button !== 0) return;
     toolPointer = e.pointerId;
     el.setPointerCapture(e.pointerId);
-    deps.getTool().down(input(e));
+    tool.down(input(e));
   };
 
   const move = (e: PointerEvent) => {
-    if (kindOf(e) === 'touch' && touches.has(e.pointerId)) touches.set(e.pointerId, local(e));
+    if (kindOf(e) === 'touch' && touches.has(e.pointerId)) {
+      const prev = touches.get(e.pointerId)!;
+      const now = local(e);
+      if (tap) tap.moved = Math.max(tap.moved, dist2(prev, now));
+      touches.set(e.pointerId, now);
+    }
     if (gesture && touches.size >= 2) {
       const next = pinchState();
       let v = panBy(deps.getViewport(), next.center.x - gesture.center.x, next.center.y - gesture.center.y);
@@ -81,25 +101,34 @@ export function attachInputRouter(el: HTMLElement, deps: RouterDeps): () => void
       deps.setViewport(v);
       return;
     }
-    if (mousePan) {
+    if (pan) {
       const p = local(e);
-      deps.setViewport(panBy(deps.getViewport(), p.x - mousePan.x, p.y - mousePan.y));
-      mousePan = p;
+      deps.setViewport(panBy(deps.getViewport(), p.x - pan.x, p.y - pan.y));
+      pan = p;
       return;
     }
-    if (e.pointerId === toolPointer) deps.getTool().move(input(e));
+    if (e.pointerId !== toolPointer) return;
+    const tool = deps.getTool();
+    const samples = typeof e.getCoalescedEvents === 'function' ? e.getCoalescedEvents() : [];
+    for (const s of samples.length ? samples : [e]) tool.move(input(s));
   };
 
   const end = (e: PointerEvent, cancelled: boolean) => {
-    touches.delete(e.pointerId);
+    const wasTouch = touches.delete(e.pointerId);
+    if (wasTouch && touches.size === 0 && tap) {
+      if (!cancelled && e.timeStamp - tap.start < TAP_MS && tap.moved < TAP_MOVE_PX) {
+        if (tap.fingers === 2) deps.undo();
+        else if (tap.fingers === 3) deps.redo();
+      }
+      tap = null;
+    }
     if (gesture) {
-      // The gesture ends when fingers lift; the remaining finger does nothing.
       if (touches.size === 0) gesture = null;
       else if (touches.size >= 2) gesture = pinchState();
       return;
     }
-    if (mousePan) {
-      mousePan = null;
+    if (pan) {
+      pan = null;
       return;
     }
     if (e.pointerId === toolPointer) {
@@ -113,13 +142,12 @@ export function attachInputRouter(el: HTMLElement, deps: RouterDeps): () => void
 
   const wheel = (e: WheelEvent) => {
     e.preventDefault();
-    const at = local(e);
     if (e.shiftKey && !e.ctrlKey) {
       deps.setViewport(panBy(deps.getViewport(), -e.deltaY, 0));
       return;
     }
     const k = e.ctrlKey || e.metaKey ? PINCH_ZOOM : WHEEL_ZOOM;
-    deps.setViewport(zoomAt(deps.getViewport(), at, Math.exp(-e.deltaY * k)));
+    deps.setViewport(zoomAt(deps.getViewport(), local(e), Math.exp(-e.deltaY * k)));
   };
 
   el.addEventListener('pointerdown', down);

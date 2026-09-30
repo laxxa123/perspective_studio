@@ -1,12 +1,8 @@
 // Perspective tool (PS-03, §10.4, §10.5): drags VP-L, VP-R, VP-V, the horizon
 // and the anchor, clamped to valid systems, with a haptic tick on clamp.
-import { dist2, sub2, add2, type Vec2 } from '../core/math/vec';
-import {
-  dragHandle,
-  pointHandles,
-  type PerspectiveHandleId,
-  type PerspectiveSystem,
-} from '../core/perspective';
+// A drag is one SetPerspective command (one history entry).
+import { add2, dist2, sub2, type Vec2 } from '../core/math/vec';
+import { dragHandle, pointHandles, type PerspectiveHandleId, type PerspectiveSystem } from '../core/perspective';
 import { toScreen, type Viewport } from '../core/viewport/viewport';
 import type { HapticsPort } from '../platform/haptics';
 import type { Tool } from './types';
@@ -16,14 +12,19 @@ export const HANDLE_HIT_PX = 26;
 /** Touch half-width of the horizon line, screen px. */
 export const HORIZON_HIT_PX = 20;
 
-interface Deps {
+export interface PerspectiveDeps {
   getPerspective: () => PerspectiveSystem;
-  setPerspective: (ps: PerspectiveSystem) => void;
   getViewport: () => Viewport;
+  /** Starts the drag transaction. */
+  begin: () => void;
+  /** Live change within the transaction. */
+  preview: (ps: PerspectiveSystem) => void;
+  commit: () => void;
+  cancel: () => void;
   setDragging: (h: PerspectiveHandleId | null) => void;
   haptics: HapticsPort;
-  /** Called once per finished drag (M3: becomes a SetPerspective command). */
-  commit?: (before: PerspectiveSystem, after: PerspectiveSystem) => void;
+  /** Called when a drag starts (SK-06 warning). */
+  onDragStart?: () => void;
 }
 
 /** The handle under a screen point: point handles first, then the horizon. */
@@ -52,13 +53,15 @@ export interface PerspectiveTool extends Tool {
   startDrag(id: PerspectiveHandleId, pointerPp: Vec2): void;
 }
 
-export function createPerspectiveTool(deps: Deps): PerspectiveTool {
-  let drag: { id: PerspectiveHandleId; grab: Vec2; before: PerspectiveSystem; clamped: boolean } | null = null;
+export function createPerspectiveTool(deps: PerspectiveDeps): PerspectiveTool {
+  let drag: { id: PerspectiveHandleId; grab: Vec2; clamped: boolean; current: PerspectiveSystem } | null = null;
 
   const startDrag = (id: PerspectiveHandleId, pointerPp: Vec2) => {
     const ps = deps.getPerspective();
-    drag = { id, grab: sub2(handlePosition(ps, id, pointerPp), pointerPp), before: ps, clamped: false };
+    drag = { id, grab: sub2(handlePosition(ps, id, pointerPp), pointerPp), clamped: false, current: ps };
+    deps.begin();
     deps.setDragging(id);
+    deps.onDragStart?.();
   };
 
   return {
@@ -69,20 +72,21 @@ export function createPerspectiveTool(deps: Deps): PerspectiveTool {
     },
     move(i) {
       if (!drag) return;
-      const r = dragHandle(deps.getPerspective(), drag.id, add2(i.pp, drag.grab));
+      const r = dragHandle(drag.current, drag.id, add2(i.pp, drag.grab));
       if (r.clamped && !drag.clamped) deps.haptics.tick();
       drag.clamped = r.clamped;
-      deps.setPerspective(r.ps);
+      drag.current = r.ps;
+      deps.preview(r.ps);
     },
     up() {
       if (!drag) return;
-      deps.commit?.(drag.before, deps.getPerspective());
+      deps.commit();
       drag = null;
       deps.setDragging(null);
     },
     cancel() {
       if (!drag) return;
-      deps.setPerspective(drag.before);
+      deps.cancel();
       drag = null;
       deps.setDragging(null);
     },

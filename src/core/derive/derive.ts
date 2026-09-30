@@ -1,26 +1,27 @@
-// Document + camera → RenderModel (§8.3). M2: paper, perspective guides and
-// the read-only test box that proves live re-projection.
-import { deriveCamera, projectSegment } from '../perspective/camera';
-import type { Camera, Family, PerspectiveSystem } from '../perspective/types';
-import type { Vec3 } from '../math/vec';
+// Document + camera → RenderModel (§8.3), memoized per entity.
+import { kindOf } from '../entities/registry';
+import type { DeriveCtx } from '../entities/types';
+import type { Entity, Id, KnownEntity, Paper, SceneDocument } from '../document/types';
+import { deriveCamera } from '../perspective/camera';
+import { guideRays } from './fans';
+import type { Camera, PerspectiveSystem } from '../perspective/types';
 import { boundsOf, type Rect } from '../viewport/viewport';
+import type { DisplayOptions } from './display';
 import type { RenderItem, RenderModel } from './renderModel';
-
-export interface Paper {
-  width: number;
-  height: number;
-}
 
 /** Horizon half-length beyond the paper, pp (the canvas is unbounded). */
 const HORIZON_REACH = 1e5;
 
-export function deriveGuides(ps: PerspectiveSystem, paper: Paper): RenderItem[] {
-  const items: RenderItem[] = [
-    { key: 'paper', role: 'paper', points: [0, 0, paper.width, 0, paper.width, paper.height, 0, paper.height], closed: true },
-    { key: 'horizon', role: 'horizon', points: [-HORIZON_REACH, ps.horizonY, paper.width + HORIZON_REACH, ps.horizonY] },
-    { key: 'vp:L', role: 'vp', family: 'L', points: [ps.vpLeftX, ps.horizonY] },
-    { key: 'vp:R', role: 'vp', family: 'R', points: [ps.vpRightX, ps.horizonY] },
-  ];
+export function deriveGuides(ps: PerspectiveSystem, paper: Paper, display: DisplayOptions): RenderItem[] {
+  const items: RenderItem[] = [];
+  if (display.paperFrame) {
+    items.push({ key: 'paper', role: 'paper', points: [0, 0, paper.width, 0, paper.width, paper.height, 0, paper.height], closed: true });
+  }
+  if (!display.guides) return items;
+  if (display.vpFans) items.push(...guideRays(ps, paper));
+  items.push({ key: 'horizon', role: 'horizon', points: [-HORIZON_REACH, ps.horizonY, paper.width + HORIZON_REACH, ps.horizonY] });
+  items.push({ key: 'vp:L', role: 'vp', family: 'L', points: [ps.vpLeftX, ps.horizonY] });
+  items.push({ key: 'vp:R', role: 'vp', family: 'R', points: [ps.vpRightX, ps.horizonY] });
   if (ps.mode === '3pt' && ps.vpVerticalY !== null) {
     items.push({ key: 'vp:V', role: 'vp', family: 'V', points: [ps.verticalX, ps.vpVerticalY] });
   }
@@ -28,37 +29,61 @@ export function deriveGuides(ps: PerspectiveSystem, paper: Paper): RenderItem[] 
   return items;
 }
 
-/** The 12 edges of an axis-aligned box, with their families (§3). */
-function boxEdges(position: Vec3, size: Vec3): [Vec3, Vec3, Family][] {
-  const c = (i: number): Vec3 => ({
-    x: position.x + (i & 1 ? size.x : 0),
-    y: position.y + (i & 2 ? size.y : 0),
-    z: position.z + (i & 4 ? size.z : 0),
-  });
-  const pairs: [number, number, Family][] = [
-    [0, 1, 'R'], [2, 3, 'R'], [4, 5, 'R'], [6, 7, 'R'],
-    [0, 2, 'L'], [1, 3, 'L'], [4, 6, 'L'], [5, 7, 'L'],
-    [0, 4, 'V'], [1, 5, 'V'], [2, 6, 'V'], [3, 7, 'V'],
-  ];
-  return pairs.map(([i, j, f]) => [c(i), c(j), f]);
+interface CacheEntry {
+  ps: PerspectiveSystem;
+  display: DisplayOptions;
+  selected: boolean;
+  items: RenderItem[];
 }
 
-/** M2 test box: read-only, not part of any document (removed in M3). */
-export const TEST_BOX = { position: { x: 0, y: 0, z: 0 }, size: { x: 1, y: 1, z: 1 } };
+/** Per-entity memo keyed by (entity reference, perspective reference) (§8.3). */
+export type DeriveCache = WeakMap<Entity, CacheEntry>;
+export const newDeriveCache = (): DeriveCache => new WeakMap();
 
-export function deriveTestBox(cam: Camera): RenderItem[] {
-  const out: RenderItem[] = [];
-  boxEdges(TEST_BOX.position, TEST_BOX.size).forEach(([a, b, family], i) => {
-    const seg = projectSegment(cam, a, b);
-    if (seg) out.push({ key: `test-box:e${i}`, entityId: 'test-box', role: 'edge', family, points: [seg[0].x, seg[0].y, seg[1].x, seg[1].y] });
-  });
-  return out;
+function deriveEntity(e: Entity, ctx: DeriveCtx, cache?: DeriveCache): RenderItem[] {
+  const hit = cache?.get(e);
+  if (hit && hit.ps === ctx.ps && hit.display === ctx.display && hit.selected === ctx.selected) return hit.items;
+  const def = 'unknown' in e ? undefined : kindOf(e.kind);
+  const items = def ? def.derive(e as KnownEntity, ctx) : [];
+  cache?.set(e, { ps: ctx.ps, display: ctx.display, selected: ctx.selected, items });
+  return items;
 }
 
-export function deriveScene(ps: PerspectiveSystem, paper: Paper): RenderModel {
-  const cam = deriveCamera(ps);
-  const items = [...deriveGuides(ps, paper), ...deriveTestBox(cam)];
-  return { items, bounds: paperBounds(paper) };
+/** Visible entities of a layer in draw order; world objects in painter's order (BX-07). */
+export function drawOrder(doc: SceneDocument, layerId: Id, cam: Camera, display: DisplayOptions): KnownEntity[] {
+  const layer = doc.layers.find((l) => l.id === layerId);
+  if (!layer) return [];
+  const list = layer.order
+    .map((id) => doc.entities[id])
+    .filter((e): e is KnownEntity => !!e && !('unknown' in e) && e.visible);
+  if (layer.role !== 'objects') return list;
+  const ctx: DeriveCtx = { cam, ps: doc.perspective, display, selected: false };
+  // Farther first; stable for equal depths (keeps the layer order).
+  return list
+    .map((e, i) => ({ e, i, d: kindOf(e.kind)?.depth(e, ctx) ?? 0 }))
+    .sort((a, b) => b.d - a.d || a.i - b.i)
+    .map((x) => x.e);
+}
+
+export function deriveDocument(
+  doc: SceneDocument,
+  display: DisplayOptions,
+  selection: ReadonlySet<Id> = new Set(),
+  cache?: DeriveCache,
+): RenderModel {
+  const cam = deriveCamera(doc.perspective);
+  const items = deriveGuides(doc.perspective, doc.paper, display);
+  for (const layer of doc.layers) {
+    if (!layer.visible) continue;
+    if (layer.role === 'objects' && !display.objects) continue;
+    for (const e of drawOrder(doc, layer.id, cam, display)) {
+      const ctx: DeriveCtx = { cam, ps: doc.perspective, display, selected: selection.has(e.id) };
+      for (const it of deriveEntity(e, ctx, cache)) {
+        items.push({ ...it, data: { ...it.data, layer: layer.id, layerOpacity: layer.opacity } });
+      }
+    }
+  }
+  return { items, bounds: paperBounds(doc.paper) };
 }
 
 export const paperBounds = (paper: Paper): Rect => ({ x: 0, y: 0, width: paper.width, height: paper.height });

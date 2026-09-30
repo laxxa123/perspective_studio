@@ -1,8 +1,8 @@
 # PERSPECTIVE\_STUDIO — Foundation Requirements
 
-> **Status:** v1.3 · Foundation document · Owner: sole developer/user **Audience:** Claude Code (primary), developer (secondary) **Location in repo:** `docs/REQUIREMENTS.md`
+> **Status:** v1.4 · Foundation document · Owner: sole developer/user **Audience:** Claude Code (primary), developer (secondary) **Location in repo:** `docs/REQUIREMENTS.md`
 
-**Revisions:** v1.3 (M2, 2026-09-30) — M0 closed (ADR-0002); OD-3 eye height tuned to 2.2 u; §10.3 / §10.5 details fixed in M2 (below); §16 M2 status. · v1.2 (M1, 2026-09-30) — §6.3 constraint constants fixed in `core/math/tolerance.ts`; §16 M1 status. · v1.1 (M0, 2026-09-30) — §13 TypeScript pinned to 6.0; §14 records the delivery actually used (CI on push to `main`, app id, versioning, signing key); §16 M0 status. · v1.0 — foundation document.
+**Revisions:** v1.4 (0.8.0, 2026-09-30) — M3–M6 built in one delivery at the developer's request; §16.1 records what was built and the choices made. · v1.3 (M2, 2026-09-30) — M0 closed (ADR-0002); OD-3 eye height tuned to 2.2 u; §10.3 / §10.5 details fixed in M2 (below); §16 M2 status. · v1.2 (M1, 2026-09-30) — §6.3 constraint constants fixed in `core/math/tolerance.ts`; §16 M1 status. · v1.1 (M0, 2026-09-30) — §13 TypeScript pinned to 6.0; §14 records the delivery actually used (CI on push to `main`, app id, versioning, signing key); §16 M0 status. · v1.0 — foundation document.
 
 ---
 
@@ -878,31 +878,55 @@ Each milestone is small, demoable, and closes with a tagged release.
 - PS-02…06, CV-01…03. Perspective tool, off-screen indicators, invalid-region shading, 2pt/3pt.  
 - A hard-coded test box renders (read-only) to prove live re-projection.  
 - ✅ Accept: drag every control; box responds live at 60 fps; clamping works; zoom never changes geometry.  
-- **Status (0.4.0):** built — PS-02…06, CV-01…03, hard-coded 1 u test box. Awaiting the device checklist `docs/checklists/M2.md`. CV-03 stores the viewport per document id in LocalStorage (one working document until M4); the perspective system itself is not persisted until DOC-02 (M4). Runtime dependencies: ADR-0003.
+- **Status:** built in 0.4.0 (PS-02…06, CV-01…03); the test box was replaced by real boxes in 0.8.0. Device checklist `docs/checklists/M2.md`.
 
 ### M3 — Boxes
 
 - BX-01…05, LY-01, PS-07, command/history scaffold.  
-- ✅ Accept: place 6 cubes, move, lift, resize, cube-lock, duplicate, delete; move VP-L/VP-R/VP-V/horizon → all correct; construction/clean toggles.
+- ✅ Accept: place 6 cubes, move, lift, resize, cube-lock, duplicate, delete; move VP-L/VP-R/VP-V/horizon → all correct; construction/clean toggles.  
+- **Status (0.8.0):** built; device checklist `docs/checklists/M3-M6.md`.
 
 ### M4 — Document
 
 - DOC-01…05, EXP-01…02, gallery.  
-- ✅ Accept: kill the app mid-edit → reopen, nothing lost; export/import JSON round-trips identically; PNG & SVG match the screen; undo/redo every M3 action.
+- ✅ Accept: kill the app mid-edit → reopen, nothing lost; export/import JSON round-trips identically; PNG & SVG match the screen; undo/redo every M3 action.  
+- **Status (0.8.0):** built; device checklist `docs/checklists/M3-M6.md`.
 
 ### M5 — Scenes: stacking, rects, layers
 
 - BX-06, BX-07, RC-01, LY-02.  
-- ✅ Accept: stack 3 cubes and a tall box; place ground/wall rects; layer visibility/lock/reorder; all exact under VP changes.
+- ✅ Accept: stack 3 cubes and a tall box; place ground/wall rects; layer visibility/lock/reorder; all exact under VP changes.  
+- **Status (0.8.0):** built; device checklist `docs/checklists/M3-M6.md`.
 
 ### M6 — Sketch
 
 - SK-01…06. Spike for stroke rendering library → ADR.  
-- ✅ Accept: pen draws with pressure, touch pans; snap Off/Soft/Locked behave per SK-04; 5,000 strokes smooth; sketch over the "Guides" backdrop.
+- ✅ Accept: pen draws with pressure, touch pans; snap Off/Soft/Locked behave per SK-04; 5,000 strokes smooth; sketch over the "Guides" backdrop.  
+- **Status (0.8.0):** built; stroke renderer decided in ADR-0004 (no stylus available: pressure simulated for finger input). Device checklist `docs/checklists/M3-M6.md`; NFR-P-02 still to be measured.
 
 ### M7 — Learning (to be specified)
 
 - Write LX requirements first (this document), then build.
+
+### 16.1 As built in 0.8.0 (M3–M6 in one delivery)
+
+Choices made where this document leaves room, and known deviations:
+
+- **Boxes (BX-01…07).** Resize handles at the centre of the visible face of each family (W along R, D along L, H along V); the opposite face stays put; Cube lock scales all three. The lift handle sits on the vertical edge nearest the camera. Body drag moves the box on its base plane with 0.1 u grid snap (OD-6, Settings); a box resting on the ground or on a top face re-seats onto the top face under the finger (stacking, BX-06) and snaps flush to a neighbour within 0.12 u. The Box tool places a 1 u cube centred on the tap, on the highest top face under it or on the ground. Painter's order by camera depth of the centre within each layer (BX-07).
+- **Rects (RC-01).** A Rect tool with a plane chooser (Ground / Wall L / Wall R); 1 × 1 u when placed; two resize handles (the +u and +v edges); moves on its base plane.
+- **Selection.** Tap selects; Shift+tap adds (desktop); mouse / pen drag on empty canvas draws a marquee (desktop, §10.4). On a phone, multi-select comes from the marquee only with a pen/mouse; deleting several is done from the inspector. Locked entities and entities on hidden or locked layers are not pickable.
+- **Long press (§10.3)** on an entity: Duplicate, Stack on top (a copy on its top face, boxes), Bring forward, Delete.
+- **Commands / history (DOC-01).** Immer patches, 200 entries, one entry per drag; undo / redo buttons, Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y, two-finger tap = undo, three-finger tap = redo.
+- **Display (§10.7).** Presets Construction (guides, rays for the selection, hidden edges), Clean (edges and face fills), Guides (horizon, VPs, VP guide-line fans, no objects — the sketching backdrop, SK-05); fine toggles: rays none / selected / all, hidden edges, face fills, VP guide lines, paper frame, guides, objects. Not built: ground grid (see B-04) and world-unit labels.
+- **Rendering (§9).** Konva layers: guides (paper, horizon, VPs, anchor, fans), one document layer that draws the document's layers in their order (so a reordered sketch layer can sit below objects, LY-02), and one overlay layer (live stroke, marquee, handles). Line weights in screen px; stroke widths in pp. The sketch layer is not yet cached as a bitmap (NFR-P-02).
+- **Persistence (DOC-02…05).** idb stores `documents` and `thumbnails`; autosave 1 s after the last change, on app pause and when leaving the editor; the gallery shows thumbnails (320 px PNG). Import accepts one document or a backup; every file is fully validated before anything is stored; an imported id that already exists gets a new id. Backup all writes `Documents/PerspectiveStudio/perspective_studio_backup_<date>.json`. Viewport and display prefs are saved per document in LocalStorage.
+- **Export (EXP-01…02).** The paper area in the current display mode, without selection or handles. SVG is serialized from the RenderModel; PNG rasterizes that SVG at 1× / 2× / 4× (instead of the Konva stage) so PNG and SVG match exactly. On Android the file goes to the share sheet.
+- **Layers (LY-01…02).** Default "Objects" and "Sketch"; add objects or sketch layers; rename (double-tap), reorder, visibility, lock, opacity, delete (with its entities; the last layer of a role cannot be deleted); tap a layer name to make it the active layer for new entities of its role; entity list with tap-to-select; move an entity to another layer from the inspector.
+- **Sketch (SK-01…06).** Pencil / pen / marker presets, 6 colours, width in screen px (stored in pp). Pressure from a pen; constant pressure (finger) is simulated (ADR-0004). Coalesced pointer events are fed one by one. Eraser removes whole strokes it sweeps (SK-03). Snap Off / Soft (6°, OD-7) / Locked with Auto / L / R / V; Auto picks the family after 12 screen px. Once a pen has been used, fingers pan in the Sketch tool (palm rejection). SK-06: a one-time note per opened document when the perspective is dragged in a document with strokes.
+- **Settings (§10.8).** Theme light / dark / system; grid snap; after placing a box: back to Select (OD-5) or stay; toolbar left / centre / right. Paper size stays 1200 × 800 (OD-2), no UI.
+- **Screens.** Gallery → editor → back (top-left arrow or Android back, which first closes panels). A selected entity entirely behind the camera shows a note (§6.5).
+- **Styling.** One global stylesheet with CSS variables (light / dark) instead of CSS Modules (§13) — a deliberate simplification for a small UI; icons from Lucide.
+- **Launcher icon** from the developer's logo (`docs/brand/`).
 
 ---
 
