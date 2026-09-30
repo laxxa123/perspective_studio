@@ -34,7 +34,7 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run typecheck
-      - run: npm test
+      - run: npm run test:coverage
 
       # Version name from package.json plus the run number, so every build is newer.
       - name: Compute version

@@ -1,8 +1,8 @@
 # PERSPECTIVE\_STUDIO — Foundation Requirements
 
-> **Status:** v1.1 · Foundation document · Owner: sole developer/user **Audience:** Claude Code (primary), developer (secondary) **Location in repo:** `docs/REQUIREMENTS.md`
+> **Status:** v1.2 · Foundation document · Owner: sole developer/user **Audience:** Claude Code (primary), developer (secondary) **Location in repo:** `docs/REQUIREMENTS.md`
 
-**Revisions:** v1.1 (M0, 2026-09-30) — §13 TypeScript pinned to 6.0; §14 records the delivery actually used (CI on push to `main`, app id, versioning, signing key); §16 M0 status. · v1.0 — foundation document.
+**Revisions:** v1.2 (M1, 2026-09-30) — §6.3 constraint constants fixed in `core/math/tolerance.ts`; §16 M1 status. · v1.1 (M0, 2026-09-30) — §13 TypeScript pinned to 6.0; §14 records the delivery actually used (CI on push to `main`, app id, versioning, signing key); §16 M0 status. · v1.0 — foundation document.
 
 ---
 
@@ -232,6 +232,8 @@ These live in `core/perspective`. No other module may compute projections.
 | PV-3 | `xR − xL ≥ minSpread` | Horizontal VPs can't collapse together. |
 | PV-4 | `anchor.y > horizonY + margin` (and in 3pt, anchor projects in front of camera) | The ground point must be below the horizon. |
 | PV-5 | `eyeHeight > 0` | — |
+
+Constants (in `core/math/tolerance.ts`): PV-1 margin \= 1% of `xR − xL`; PV-2 `ε` \= 0.05; PV-3 `minSpread` \= 50 pp; PV-4 margin \= 4 pp; PV-5 minimum \= 0.001 u. In 2pt, `vpVerticalY` must be `null`. The repair (`clampPerspective`) fixes, in order: spread (PV-3, around the midpoint), VP-V's x (PV-1), VP-V's distance from the horizon keeping its side (PV-2), anchor y (PV-4), eye height (PV-5); a valid system is returned unchanged.
 
 During a drag, the Perspective tool **clamps** proposed values to the nearest valid configuration and visually shades the invalid region (§10.5). Loading a file with an invalid PS repairs it deterministically and logs a warning.
 
@@ -859,7 +861,8 @@ Each milestone is small, demoable, and closes with a tagged release.
 ### M1 — Perspective core (no UI)
 
 - `core/math`, `core/perspective` per §6. All §6.6 invariants.  
-- ✅ Accept: property tests pass (≥ 1,000 cases each); coverage ≥ 90%.
+- ✅ Accept: property tests pass (≥ 1,000 cases each); coverage ≥ 90%.  
+- **Status (0.3.0):** done. `core/math` (vectors, 3×3, homogeneous lines, tolerances) and `core/perspective` (solver, validity + clamp, project / unproject / near-plane clipping, VP re-derivation, §6.4 horizon and mode edits); PS-T1…PS-T6 at 1,000 cases each, core line coverage 100%, enforced in CI (`npm run test:coverage`). PS-T6 is checked at projection level until the render model exists (M3).
 
 ### M2 — Canvas & perspective setup
 
