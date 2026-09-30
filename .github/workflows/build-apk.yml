@@ -1,0 +1,106 @@
+name: Build Android APK
+
+on:
+  push:
+    # Only main: work lands there directly (requirements section 11), so
+    # building session branches too would publish every change twice.
+    branches:
+      - main
+    paths-ignore:
+      - "**.md"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      # Capacitor 8's Android template compiles with Java 21.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+
+      # Version name from package.json plus the run number, so every build is newer.
+      - name: Compute version
+        id: version
+        run: |
+          base=$(node -p "require('./package.json').version")
+          echo "name=${base}-build.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+
+      - run: npm run build
+        env:
+          APP_VERSION: ${{ steps.version.outputs.name }}
+
+      - run: npx cap sync android
+
+      # Sign with one fixed key so every build installs as an update over the
+      # last. Same scheme as wp_studio: the key is injected through user-level
+      # Gradle properties, which override the build type's signing config.
+      - name: Restore signing key
+        env:
+          DEBUG_KEYSTORE_BASE64: ${{ secrets.DEBUG_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$DEBUG_KEYSTORE_BASE64" ]; then
+            echo "::error::Repository secret DEBUG_KEYSTORE_BASE64 is not set."
+            exit 1
+          fi
+          keystore="$RUNNER_TEMP/signing.keystore"
+          echo "$DEBUG_KEYSTORE_BASE64" | base64 -d > "$keystore"
+          mkdir -p ~/.gradle
+          {
+            echo "android.injected.signing.store.file=$keystore"
+            echo "android.injected.signing.store.password=android"
+            echo "android.injected.signing.key.alias=androiddebugkey"
+            echo "android.injected.signing.key.password=android"
+          } >> ~/.gradle/gradle.properties
+          fp=$(keytool -list -v -keystore "$keystore" -storepass android -alias androiddebugkey \
+            | grep 'SHA256:' | head -1 | sed -E 's/.*SHA256:[[:space:]]*//')
+          echo "Signing key SHA-256: $fp"
+          echo "KEY_SHA256=$fp" >> "$GITHUB_ENV"
+
+      - name: Build release APK
+        working-directory: android
+        run: >
+          ./gradlew assembleRelease --no-daemon
+          -PappVersionName=${{ steps.version.outputs.name }}
+          -PappVersionCode=${{ github.run_number }}
+
+      # Refuse to publish an APK that isn't signed with the fixed key.
+      - name: Verify APK signature
+        run: |
+          apk=android/app/build/outputs/apk/release/app-release.apk
+          apksigner=$(ls -d "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
+          apk_fp=$("$apksigner" verify --print-certs "$apk" \
+            | grep 'certificate SHA-256 digest:' | head -1 | sed -E 's/.*digest:[[:space:]]*//')
+          key_fp=$(echo "$KEY_SHA256" | tr -d ':' | tr 'A-F' 'a-f')
+          echo "APK certificate SHA-256: $apk_fp"
+          if [ "$apk_fp" != "$key_fp" ]; then
+            echo "::error::APK is not signed with the DEBUG_KEYSTORE_BASE64 key."
+            exit 1
+          fi
+          cp "$apk" perspective_studio.apk
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.name }}
+          name: perspective_studio ${{ steps.version.outputs.name }}
+          target_commitish: ${{ github.sha }}
+          body: "Built from ${{ github.ref_name }} @ ${{ github.sha }}"
+          files: perspective_studio.apk
+          make_latest: true

@@ -1,0 +1,10 @@
+html, body, #root { margin: 0; height: 100%; overflow: hidden; background: #fbfbf8; }
+body { font-family: system-ui, sans-serif; touch-action: none; }
+.toolbar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1;
+  display: flex; gap: 12px; align-items: center;
+  padding: max(8px, env(safe-area-inset-top)) 16px 8px;
+  background: rgba(255, 255, 255, 0.85);
+}
+.version { color: #868e96; font-size: 12px; }
+.toolbar button { margin-left: auto; }
