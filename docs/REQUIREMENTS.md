@@ -942,7 +942,7 @@ Each milestone is small, demoable, and closes with a tagged release.
 
 ### M8 — Scene & viewing revision (from the v1.5 review)
 
-- PS-08…11, CV-04, CV-05, BX-02 (revised), BX-03 (revised), BX-06 (extended), BX-08, RC-02, PL-01, UI-01…09; OD-3 re-tuned; ADR-0005.
+- PS-08…11, CV-04, CV-05, BX-02 (revised), BX-03 (revised), BX-06 (extended), BX-08, RC-02, PL-01, UI-01…09; OD-3 re-tuned; ADR-0005. Delivered in one release (developer's decision, 2026-09-30).
 - ✅ Accept: dragging the horizon slides it along a tall box (eye level) with boxes keeping their size; a table sits below, a hanging lamp above and a tower across the horizon, all placed directly; the Shapes submenu places box and rects; Fit page / Fit page + VPs are one tap; the sketch palette collapses and never covers the drawing while sketching; the plan view shows the eye, its view wedge and footprints and follows every change; PS-T1…T6 still pass.
 
 ### 16.1 As built in 0.8.0 (M3–M6 in one delivery)
@@ -1079,12 +1079,12 @@ Read first: docs/REQUIREMENTS.md, docs/decisions/\*.
 | OD-5 | After placing a box, stay in Box tool or return to Select | Return to Select (setting). |
 | OD-6 | Object grid snap step | 0.1 u, on. |
 | OD-7 | Soft-snap angle threshold | 6°. |
-| OD-8 | One-finger drag on empty canvas in Select | Does nothing (§10.3: pan is two-finger). |
+| OD-8 | One-finger drag on empty canvas in Select | Does nothing (§10.3: pan is two-finger). **Confirmed by the developer (2026-09-30).** |
 | OD-9 | UI label for the anchor | "Ground point". |
-| OD-10 | Plan view on phones | Inset panel in the inspector's slot, about 40% of the screen height, resizable. |
-| OD-11 | Scale lock (PS-09) and pin selection (PS-10) | Both available, both off by default. |
+| OD-10 | Plan view on phones | Inset panel in the inspector's slot, about 40% of the screen height, resizable. **Confirmed.** |
+| OD-11 | Scale lock (PS-09) and pin selection (PS-10) | Both available, both off by default. **Confirmed: both in M8, with UI-07 and PS-11.** |
 | OD-12 | Plan view orientation | Eye at the bottom, looking up the screen (view direction up), so left/right match the picture. |
-| OD-13 | Plan view interaction in M8 | Read-only plus tap-to-select; moving objects in the plan view is later. |
+| OD-13 | Plan view interaction in M8 | Read-only plus tap-to-select; moving objects in the plan view is later. **Confirmed.** |
 | OD-14 | Default ceiling height (RC-02) / working-plane height (PL-01) | 2.7 u / 2.4 u (above the default 1.6 u eye, so it catches taps above the horizon). |
 
 ---
