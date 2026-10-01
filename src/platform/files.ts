@@ -85,3 +85,16 @@ export function pickFile(accept: string): Promise<File | null> {
     input.click();
   });
 }
+
+/** Lets the user pick several files (e.g. photos); an empty list when cancelled. */
+export function pickFiles(accept: string): Promise<File[]> {
+  return new Promise((resolve) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = accept;
+    input.multiple = true;
+    input.onchange = () => resolve([...(input.files ?? [])]);
+    input.addEventListener('cancel', () => resolve([]));
+    input.click();
+  });
+}

@@ -3,6 +3,23 @@
 User-visible changes per release. Versions: `package.json` semver; each
 milestone release bumps the minor version, and CI appends `-build.<run>`.
 
+## 0.16.0 — PUBLISH (Phase 1: Tiles)
+
+- **PUBLISH is open** on the home screen — the WP Studio app, rebuilt inside
+  CREATIVE. Tabs: Tiles · Publish · WP · Settings (the last three are coming
+  next).
+- **Tiles:** tap + for a 9:16 tile. Add pictures, text, spirals and drawings;
+  everything saves itself.
+- **Media library:** photos from the phone are cleaned (no location or
+  camera data), kept once even if imported twice, and get a stable canonical
+  name ready for WordPress. Trim with presets (1:1, 4:5, 9:16 …); resize and
+  turn with large handles — pictures are never stretched.
+- **Text** in Roboto (thin to black) or Ms Madi, written in a calm
+  full-screen writer; **spiral** text along a coil.
+- **Draw** on a tile with SKETCH's brushes, pressure and gestures.
+- **Soft snapping** to the centre, the margins and other elements, with
+  guide lines; align to the margins in one tap; layers, lock, undo / redo.
+
 ## 0.15.0 — CUBE design rework
 
 - **Faces stay put**: dragging or resizing artwork no longer moves faces; faces

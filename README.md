@@ -5,12 +5,15 @@ modules. **PERSPECTIVE** — set a horizon and vanishing points, construct exact
 perspective objects, sketch over them — is the first; **CUBE** — a studio for
 six-face cube / net spatial-reasoning questions with a question bank — is the
 second; **SKETCH** — freehand drawing on a GPU raster engine with pressure-aware
-brushes, layers, perspective grids and PNG export — is the third.
+brushes, layers, perspective grids and PNG export — is the third; **PUBLISH**
+— visual tiles composed from pictures, text, spirals and drawings, published
+to WordPress (the successor of WP Studio) — is the fourth.
 
 - App: [docs/CREATIVE.md](docs/CREATIVE.md)
 - PERSPECTIVE requirements: [docs/modules/perspective/REQUIREMENTS.md](docs/modules/perspective/REQUIREMENTS.md)
 - CUBE requirements: [docs/modules/cube/REQUIREMENTS.md](docs/modules/cube/REQUIREMENTS.md)
 - SKETCH requirements: [docs/modules/sketch/REQUIREMENTS.md](docs/modules/sketch/REQUIREMENTS.md)
+- PUBLISH requirements: [docs/modules/publish/REQUIREMENTS.md](docs/modules/publish/REQUIREMENTS.md)
 - Decisions: [docs/decisions/](docs/decisions/)
 - Changes: [docs/CHANGELOG.md](docs/CHANGELOG.md)
 

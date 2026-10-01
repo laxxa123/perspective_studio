@@ -22,7 +22,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['src/core/**/*.ts', 'src/modules/sketch/**/*.{ts,tsx}'],
+    files: ['src/core/**/*.ts', 'src/modules/sketch/**/*.{ts,tsx}', 'src/modules/publish/**/*.{ts,tsx}'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'error', // NFR-M-01
     },
@@ -49,6 +49,9 @@ export default tseslint.config(
         { type: 'sketch-core', pattern: 'src/modules/sketch/core/**' },
         { type: 'sketch-engine', pattern: 'src/modules/sketch/{engine,input}/**' },
         { type: 'sketch', pattern: 'src/modules/sketch/**' },
+        // PUBLISH: a pure core and the module; it reuses SKETCH's brush engine as a library (ADR-0010).
+        { type: 'publish-core', pattern: 'src/modules/publish/core/**' },
+        { type: 'publish', pattern: 'src/modules/publish/**' },
         { type: 'app', pattern: 'src/*.{ts,tsx}', partialMatch: false },
       ],
     },
@@ -77,7 +80,7 @@ export default tseslint.config(
             { from: { element: { type: 'theme' } }, allow: { to: { element: { types: { anyOf: ['theme', 'core'] } } } } },
             { from: { element: { type: 'export' } }, allow: { to: { element: { types: { anyOf: ['export', 'core', 'theme'] } } } } },
             { from: { element: { type: 'platform' } }, allow: { to: { element: { type: 'platform' } } } },
-            { from: { element: { type: 'app' } }, allow: { to: { element: { types: { anyOf: ['app', 'ui', 'state', 'core', 'platform', 'suite', 'cube', 'sketch'] } } } } },
+            { from: { element: { type: 'app' } }, allow: { to: { element: { types: { anyOf: ['app', 'ui', 'state', 'core', 'platform', 'suite', 'cube', 'sketch', 'publish'] } } } } },
             // CUBE never imports PERSPECTIVE (modules are independent); its core is pure (CUBE §22).
             { from: { element: { type: 'cube-core' } }, allow: { to: { element: { type: 'cube-core' } } } },
             { from: { element: { type: 'cube' } }, allow: { to: { element: { types: { anyOf: ['cube', 'cube-core', 'platform'] } } } } },
@@ -85,6 +88,9 @@ export default tseslint.config(
             { from: { element: { type: 'sketch-core' } }, allow: { to: { element: { type: 'sketch-core' } } } },
             { from: { element: { type: 'sketch-engine' } }, allow: { to: { element: { types: { anyOf: ['sketch-engine', 'sketch-core'] } } } } },
             { from: { element: { type: 'sketch' } }, allow: { to: { element: { types: { anyOf: ['sketch', 'sketch-engine', 'sketch-core', 'platform'] } } } } },
+            // PUBLISH may use SKETCH's UI-free engine and core (never its UI or storage).
+            { from: { element: { type: 'publish-core' } }, allow: { to: { element: { types: { anyOf: ['publish-core', 'sketch-core'] } } } } },
+            { from: { element: { type: 'publish' } }, allow: { to: { element: { types: { anyOf: ['publish', 'publish-core', 'sketch-engine', 'sketch-core', 'platform'] } } } } },
             // The suite shell (CREATIVE.md): its own files, UI state to open a module.
             { from: { element: { type: 'suite' } }, allow: { to: { element: { types: { anyOf: ['suite', 'state', 'platform', 'theme'] } } } } },
             // External packages: allowed everywhere except the core list above.
@@ -98,7 +104,7 @@ export default tseslint.config(
               disallow: { to: { module: { origin: 'external', source: [...NOT_IN_CORE, 'three', '@capacitor-community/*'] } } },
             },
             {
-              from: { element: { types: { anyOf: ['sketch-core', 'sketch-engine'] } } },
+              from: { element: { types: { anyOf: ['sketch-core', 'sketch-engine', 'publish-core'] } } },
               disallow: { to: { module: { origin: 'external', source: [...NOT_IN_CORE, 'three', '@capacitor-community/*'] } } },
             },
           ],
@@ -115,7 +121,7 @@ export default tseslint.config(
   },
   {
     // core/ is pure: no DOM (§8.2); the same for SKETCH's core.
-    files: ['src/core/**/*.ts', 'src/modules/sketch/core/**/*.ts'],
+    files: ['src/core/**/*.ts', 'src/modules/sketch/core/**/*.ts', 'src/modules/publish/core/**/*.ts'],
     languageOptions: { globals: {} },
   },
 );
