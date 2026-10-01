@@ -62,3 +62,14 @@ export function pickTextFile(accept: string): Promise<string | null> {
     input.click();
   });
 }
+
+/** Lets the user pick a file (e.g. an image from the gallery); null when cancelled. */
+export function pickFile(accept: string): Promise<File | null> {
+  return new Promise((resolve) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = accept;
+    input.onchange = () => resolve(input.files?.[0] ?? null);
+    input.click();
+  });
+}

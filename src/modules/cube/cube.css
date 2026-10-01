@@ -1,0 +1,103 @@
+/* CUBE module (CUBE §46): calm, spacious, the cube and artwork dominate.
+   Reuses CREATIVE's tokens (--canvas, --surface, --accent …). */
+.cube-module { height: 100vh; height: 100dvh; display: flex; flex-direction: column; background: var(--canvas); overflow: hidden; }
+.cube-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: max(8px, env(safe-area-inset-top)) 10px 6px; }
+.cube-head h1 { flex: 0 0 auto; font-size: 17px; letter-spacing: 0.18em; font-weight: 600; }
+.cube-pages { display: flex; gap: 2px; flex-wrap: nowrap; overflow-x: auto; order: 3; flex: 1 1 100%; scrollbar-width: none; }
+.cube-pages .seg { flex: 0 0 auto; min-height: 36px; }
+.save-status { margin-left: auto; }
+.save-status { display: inline-flex; gap: 4px; align-items: center; font-size: 12px; color: var(--muted); min-width: 64px; justify-content: flex-end; }
+.spin { animation: cube-spin 1s linear infinite; }
+@keyframes cube-spin { to { transform: rotate(360deg); } }
+.cube-main { flex: 1; min-height: 0; overflow: auto; }
+
+.studio { display: flex; flex-direction: column; min-height: 100%; }
+.steps { display: flex; gap: 4px; padding: 0 10px 6px; }
+.studio-grid {
+  flex: 1; min-height: 0; display: grid; gap: 8px; padding: 0 8px 8px;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 52vh 36vh auto;
+  grid-template-areas: 'tools' 'net' 'cube' 'props';
+}
+.cube-tools { grid-area: tools; display: flex; flex-wrap: wrap; gap: 2px; padding: 4px; background: var(--bar); border-radius: 12px; box-shadow: var(--shadow); }
+.tool-btn { flex-direction: column; gap: 1px; min-width: 50px; min-height: 48px; padding: 2px 4px; font-size: 10px; border: 0; background: transparent; }
+.tool-btn.active { background: var(--accent); color: #fff; }
+.tool-sep { width: 1px; background: var(--line); margin: 4px 2px; }
+.net-canvas { grid-area: net; position: relative; background: var(--surface); border-radius: 14px; box-shadow: var(--shadow); overflow: hidden; touch-action: none; min-height: 260px; }
+.net-status { position: absolute; left: 10px; bottom: 8px; font-size: 12px; padding: 4px 10px; border-radius: 12px; background: var(--bar); box-shadow: var(--shadow); pointer-events: none; max-width: calc(100% - 90px); }
+.net-status.ok { color: #2f9e44; }
+.net-status.bad { color: var(--danger); }
+.net-fit { position: absolute; right: 8px; bottom: 6px; }
+.cube3d { grid-area: cube; position: relative; background: radial-gradient(circle at 50% 40%, var(--surface), var(--canvas)); border-radius: 14px; box-shadow: var(--shadow); overflow: hidden; min-height: 200px; touch-action: none; }
+.cube3d canvas { width: 100%; height: 100%; display: block; touch-action: none; }
+.cube3d-views { position: absolute; left: 6px; right: 6px; bottom: 6px; display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; }
+.cube3d-views .seg { background: var(--bar); min-height: 34px; }
+.cube3d-note { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--danger); font-size: 13px; pointer-events: none; }
+.cube-props { grid-area: props; display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; background: var(--bar); border-radius: 12px; box-shadow: var(--shadow); }
+.props-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.props-row.wrap { flex-wrap: wrap; }
+.props-row strong { margin-right: auto; }
+.cube-props .swatches { gap: 4px; }
+.cube-props button.swatch { width: 30px; min-width: 30px; min-height: 30px; }
+button.swatch.none { background: linear-gradient(135deg, transparent 45%, var(--danger) 47%, var(--danger) 53%, transparent 55%), var(--surface); }
+.slider { display: grid; grid-template-columns: 120px 1fr; align-items: center; gap: 8px; font-size: 12px; }
+.slider input { width: 100%; min-width: 0; min-height: 28px; }
+.small { font-size: 11px; margin: 0; }
+.stamp-grid { display: flex; flex-wrap: wrap; gap: 4px; }
+button.stamp { width: 44px; min-width: 44px; min-height: 44px; padding: 0; font-weight: 700; font-size: 16px; }
+button.stamp.active { border-color: var(--accent); background: var(--accent-soft); }
+
+.studio-question { flex: 1; min-height: 0; overflow: auto; display: grid; gap: 10px; padding: 0 8px 16px; grid-template-columns: 1fr; }
+.studio-question .cube3d { height: 220px; }
+.builder { display: flex; flex-direction: column; gap: 12px; }
+.builder.empty { padding: 20px; color: var(--danger); }
+.builder section { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow); padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+.builder h3 { margin: 0; font-size: 13px; }
+.builder .prompt { font-weight: 600; margin: 4px 0; }
+.builder-settings .primary { align-self: flex-start; }
+.chip-sm { min-height: 30px; font-size: 11px; padding: 0 8px; border-radius: 15px; gap: 4px; }
+.chip-sm.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.stem { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.figure { max-width: 100%; height: auto; display: block; }
+.stem .figure { max-height: 220px; }
+.builder section.options { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; background: transparent; box-shadow: none; padding: 0; }
+.option { background: var(--surface); border: 2px solid transparent; border-radius: 14px; box-shadow: var(--shadow); padding: 6px; display: flex; flex-direction: column; gap: 4px; align-items: stretch; }
+.option.correct { border-color: #2f9e44; }
+.option.bad { border-color: var(--danger); }
+.option .figure { max-height: 150px; margin: 0 auto; }
+.option-head { display: flex; justify-content: space-between; align-items: center; gap: 4px; }
+.option-actions { display: flex; flex-wrap: wrap; gap: 2px; justify-content: center; }
+.option-actions .seg { min-height: 34px; padding: 0 6px; }
+.tag { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; background: var(--accent-soft); color: var(--accent); border-radius: 8px; padding: 2px 6px; }
+.explanation ul, .validation ul { margin: 0; padding-left: 18px; font-size: 12px; display: flex; flex-direction: column; gap: 4px; }
+
+.bank { display: grid; gap: 10px; padding: 0 10px 16px; grid-template-columns: 1fr; }
+.bank-filters { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.bank-filters input[type='search'] { flex: 1; min-width: 160px; }
+.bank-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; max-height: 40vh; overflow: auto; }
+.bank-item { width: 100%; justify-content: flex-start; gap: 10px; flex-wrap: wrap; text-align: left; }
+.bank-item.active { border-color: var(--accent); background: var(--accent-soft); }
+.bank-detail { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow); padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+.sheet { width: 100%; height: auto; background: #fff; border-radius: 8px; }
+.json { font-size: 11px; background: var(--canvas); padding: 8px; border-radius: 8px; overflow: auto; max-height: 40vh; }
+.placeholder { padding: 40px 20px; text-align: center; }
+.placeholder h2 { font-size: 20px; text-transform: none; letter-spacing: 0; color: var(--ink); }
+.cube-main .empty { padding: 20px; }
+
+@media (min-width: 900px) {
+  .cube-pages { order: 0; flex: 1 1 auto; }
+  .studio { height: 100%; min-height: 0; }
+  .cube-props { max-height: 30vh; overflow: auto; }
+  .studio-grid {
+    grid-template-columns: 76px minmax(0, 1fr) minmax(300px, 34%);
+    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-areas: 'tools net cube' 'tools props props';
+  }
+  .cube-tools { flex-direction: column; flex-wrap: nowrap; overflow-y: auto; }
+  .tool-sep { width: auto; height: 1px; margin: 2px 4px; }
+  .studio-question { grid-template-columns: minmax(280px, 34%) 1fr; align-items: start; }
+  .studio-question .cube3d { height: 360px; position: sticky; top: 0; }
+  .bank { grid-template-columns: minmax(280px, 36%) 1fr; align-items: start; }
+  .bank-filters { grid-column: 1 / -1; }
+  .bank-list { max-height: calc(100vh - 170px); }
+}

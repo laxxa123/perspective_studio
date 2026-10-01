@@ -3,6 +3,27 @@
 User-visible changes per release. Versions: `package.json` semver; each
 milestone release bumps the minor version, and CI appends `-build.<run>`.
 
+## 0.13.0 — CUBE (Phase 1)
+
+- **CUBE is open**: tap Cube on the home screen.
+- **Design a cube**: pick a net (cross, offset cross, zig-zag, long strip, or
+  drag faces into your own), colour faces, draw (pen, line, arrow, rectangle,
+  ellipse, polygon), add text, stamps and gallery images. Anything drawn
+  across a fold becomes one continuous pattern. The app tells you at once
+  whether the net folds into a cube.
+- **Live 3D cube** next to the net: turn it, zoom, standard views; tap a face
+  in either view to select it in both.
+- **Build questions**: Net → Cube or Cube → Net, five options with one correct
+  answer and four deliberate distractors (opposite faces touching, wrong
+  corner, turned or mirrored face, impossible net, broken pattern …). Edit
+  anything, set difficulty on eight skills, check the explanation; the app
+  refuses ambiguous questions.
+- **Question Bank**: commit gives a permanent id (CUBE-Q-000001); edits become
+  new versions; search, filter, preview, duplicate, make a variant, export PNG
+  or JSON.
+- Work is saved automatically; everything works offline. Test and Analysis
+  are placeholders for later phases.
+
 ## 0.12.0 — CREATIVE
 
 - The app is now called **CREATIVE** (name under the icon and on the home

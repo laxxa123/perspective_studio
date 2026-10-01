@@ -8,8 +8,8 @@ import type { Family } from '../core/perspective/types';
 import type { Viewport } from '../core/viewport/viewport';
 
 export type ToolId = 'select' | 'shape' | 'sketch' | 'perspective';
-/** home = the suite (CREATIVE.md §2); gallery / editor = the Perspective module. */
-export type Screen = 'home' | 'gallery' | 'editor' | 'settings';
+/** home = CREATIVE's home (CREATIVE.md §2); gallery / editor = PERSPECTIVE; cube = CUBE. */
+export type Screen = 'home' | 'gallery' | 'editor' | 'settings' | 'cube';
 export type SnapMode = 'off' | 'soft' | 'locked';
 
 export interface SketchSettings {

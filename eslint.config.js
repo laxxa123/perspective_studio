@@ -42,6 +42,9 @@ export default tseslint.config(
         { type: 'platform', pattern: 'src/platform/**' },
         { type: 'theme', pattern: 'src/theme/**' },
         { type: 'suite', pattern: 'src/suite/**' },
+        // CUBE (CREATIVE.md §3): a pure core (model, geometry, question, SVG) and the rest of the module.
+        { type: 'cube-core', pattern: 'src/modules/cube/{model,geometry,question,render}/**' },
+        { type: 'cube', pattern: 'src/modules/cube/**' },
         { type: 'app', pattern: 'src/*.{ts,tsx}', partialMatch: false },
       ],
     },
@@ -70,7 +73,10 @@ export default tseslint.config(
             { from: { element: { type: 'theme' } }, allow: { to: { element: { types: { anyOf: ['theme', 'core'] } } } } },
             { from: { element: { type: 'export' } }, allow: { to: { element: { types: { anyOf: ['export', 'core', 'theme'] } } } } },
             { from: { element: { type: 'platform' } }, allow: { to: { element: { type: 'platform' } } } },
-            { from: { element: { type: 'app' } }, allow: { to: { element: { types: { anyOf: ['app', 'ui', 'state', 'core', 'platform', 'suite'] } } } } },
+            { from: { element: { type: 'app' } }, allow: { to: { element: { types: { anyOf: ['app', 'ui', 'state', 'core', 'platform', 'suite', 'cube'] } } } } },
+            // CUBE never imports PERSPECTIVE (modules are independent); its core is pure (CUBE §22).
+            { from: { element: { type: 'cube-core' } }, allow: { to: { element: { type: 'cube-core' } } } },
+            { from: { element: { type: 'cube' } }, allow: { to: { element: { types: { anyOf: ['cube', 'cube-core', 'platform'] } } } } },
             // The suite shell (CREATIVE.md): its own files, UI state to open a module.
             { from: { element: { type: 'suite' } }, allow: { to: { element: { types: { anyOf: ['suite', 'state', 'platform', 'theme'] } } } } },
             // External packages: allowed everywhere except the core list above.
@@ -78,6 +84,10 @@ export default tseslint.config(
             {
               from: { element: { type: 'core' } },
               disallow: { to: { module: { origin: 'external', source: NOT_IN_CORE } } },
+            },
+            {
+              from: { element: { type: 'cube-core' } },
+              disallow: { to: { module: { origin: 'external', source: [...NOT_IN_CORE, 'three', '@capacitor-community/*'] } } },
             },
           ],
         },

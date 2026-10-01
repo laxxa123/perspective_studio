@@ -2,11 +2,13 @@
 
 *Ideas to creation.* A private, single-user, offline Android app made of
 modules. **PERSPECTIVE** — set a horizon and vanishing points, construct exact
-perspective objects, sketch over them — is the first; **CUBE** is next.
+perspective objects, sketch over them — is the first; **CUBE** — a studio for
+six-face cube / net spatial-reasoning questions with a question bank — is the
+second.
 
 - App: [docs/CREATIVE.md](docs/CREATIVE.md)
 - PERSPECTIVE requirements: [docs/modules/perspective/REQUIREMENTS.md](docs/modules/perspective/REQUIREMENTS.md)
-- CUBE: [docs/modules/cube/](docs/modules/cube/)
+- CUBE requirements: [docs/modules/cube/REQUIREMENTS.md](docs/modules/cube/REQUIREMENTS.md)
 - Decisions: [docs/decisions/](docs/decisions/)
 - Changes: [docs/CHANGELOG.md](docs/CHANGELOG.md)
 

@@ -13,6 +13,7 @@ export function SuiteHome() {
   const ui = useUiStore.getState;
   const open = (m: SuiteModule) => {
     if (m.entry === 'perspective') ui().set({ screen: 'gallery' });
+    else if (m.entry === 'cube') ui().set({ screen: 'cube' });
     else soon(m.title);
   };
 

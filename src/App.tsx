@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { useDocumentStore } from './state/documentStore';
 import { useUiStore } from './state/uiStore';
 import { Editor } from './ui/Editor';
@@ -9,6 +9,9 @@ import { onBackButton } from './platform/lifecycle';
 import { closeDocument } from './ui/session';
 import { restoreSettings } from './ui/settingsPersistence';
 import { useTheme } from './ui/useTheme';
+import { loadCubeModule } from './modules/cube';
+
+const CubeModule = lazy(loadCubeModule);
 
 restoreSettings();
 
@@ -35,6 +38,10 @@ export function App() {
           ui.set({ screen: ui.back });
           return true;
         }
+        if (ui.screen === 'cube') {
+          ui.set({ screen: 'home' });
+          return true;
+        }
         if (ui.screen === 'gallery') {
           ui.set({ screen: 'home' });
           return true;
@@ -45,6 +52,13 @@ export function App() {
   );
 
   if (screen === 'editor' && hasDoc) return <Editor theme={theme} />;
+  if (screen === 'cube') {
+    return (
+      <Suspense fallback={<p className="muted" style={{ padding: 20 }}>Opening CUBE…</p>}>
+        <CubeModule onExit={() => useUiStore.getState().set({ screen: 'home' })} />
+      </Suspense>
+    );
+  }
   return (
     <>
       {screen === 'settings' ? <SettingsScreen /> : screen === 'home' ? <SuiteHome /> : <Gallery />}

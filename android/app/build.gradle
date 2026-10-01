@@ -2,6 +2,12 @@ apply plugin: 'com.android.application'
 
 android {
     namespace = "com.perspectivestudio.app"
+    // CUBE: SQLCipher (via @capacitor-community/sqlite) ships a duplicate build-data.properties.
+    packaging {
+        resources {
+            excludes += ['build-data.properties']
+        }
+    }
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
         applicationId "com.perspectivestudio.app"

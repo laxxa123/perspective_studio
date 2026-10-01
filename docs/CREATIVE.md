@@ -1,6 +1,6 @@
 # CREATIVE — main app document
 
-> **App version:** 0.12.0 · **Document version:** 1.1 (2026-10-01) · Owner: sole developer/user · Location: `docs/CREATIVE.md`
+> **App version:** 0.13.0 · **Document version:** 1.2 (2026-10-01) · Owner: sole developer/user · Location: `docs/CREATIVE.md`
 
 CREATIVE is the app; its tools are **modules** (plugins). This document holds
 what belongs to the app as a whole: the home screen, how modules plug in, the
@@ -9,7 +9,7 @@ functions modules will share, and what every new module's requirements must
 settle up front. Each module has its own requirements in
 `docs/modules/<id>/REQUIREMENTS.md`.
 
-**Revisions:** 1.1 (0.12.0, 2026-10-01) — the app is named **CREATIVE** and the first module **PERSPECTIVE** (was "Perspective Studio"); docs reorganised per module (`docs/modules/`); CUBE registered as the next module, its stack recorded and its integration decision opened (CR-OD-1); new-module requirements checklist (§7). · 1.0 (0.11.0, 2026-10-01) — home screen, module registry, PERSPECTIVE as the first module (ADR-0007).
+**Revisions:** 1.2 (0.13.0, 2026-10-01) — CUBE Phase 1 built as an in-app module (ADR-0008): CR-OD-1 and CR-OD-2 decided; module list, code layout and history updated. · 1.1 (0.12.0, 2026-10-01) — the app is named **CREATIVE** and the first module **PERSPECTIVE** (was "Perspective Studio"); docs reorganised per module (`docs/modules/`); CUBE registered as the next module, its stack recorded and its integration decision opened (CR-OD-1); new-module requirements checklist (§7). · 1.0 (0.11.0, 2026-10-01) — home screen, module registry, PERSPECTIVE as the first module (ADR-0007).
 
 ---
 
@@ -31,12 +31,13 @@ Built from the developer's mockup (`docs/brand/suite-home-mockup.png`).
   "SKETCH · EXPLORE · ANALYZE · PUBLISH"; ⋮ menu (Settings, version).
 - A 3 × 3 grid of module tiles: Studio · Cube · **Perspective** · Publish ·
   Sketch · Sequence · Sensitivity · Toolbox · More.
-- **PERSPECTIVE** opens its scene gallery. Every other tile shows
+- **PERSPECTIVE** opens its scene gallery; **CUBE** opens CUBE (Studio ·
+  Question Bank · Test · Analysis). Every other tile shows
   "<Module> — coming soon." until its module ships.
 - Bottom navigation: **Home** · **Library** (coming soon, CR-C2) ·
   **Settings** (shared settings screen).
-- Android back: editor → gallery → home → leaves the app. A module's first
-  screen has a back arrow to Home.
+- Android back: editor → gallery → home, CUBE → home, home → leaves the app.
+  A module's first screen has a back arrow to Home.
 - Launcher label: **CREATIVE**.
 
 ## 3. Modules as plugins (CR-02, ADR-0007)
@@ -51,8 +52,13 @@ Built from the developer's mockup (`docs/brand/suite-home-mockup.png`).
 - **Code layout:** the app shell lives in `src/suite/` (lint element `suite`,
   may use only `state`, `platform`, `theme`). PERSPECTIVE's code is the
   existing `src/{core,state,tools,render,export,ui,platform,theme}` tree.
-  Further modules built on the same web stack go under `src/modules/<id>/`.
-  A module on a different stack (CUBE) depends on CR-OD-1.
+  Further modules go under `src/modules/<id>/` — CUBE is the first
+  (`src/modules/cube/`). A module is lazy-loaded from `App.tsx` (its own
+  chunk), receives an `onExit` callback, may use `src/platform/` and the CSS
+  tokens, and never imports another module (lint elements `cube-core`, `cube`
+  in `eslint.config.js`; a module's pure core has no UI / storage imports).
+- **Data:** each module keeps its own storage — PERSPECTIVE in IndexedDB,
+  CUBE in SQLite (`cube`) on Android (IndexedDB in a browser). No sharing.
 - **Docs layout:**
 
   ```
@@ -69,7 +75,7 @@ Built from the developer's mockup (`docs/brand/suite-home-mockup.png`).
 | Module | Id | Status | Version | Stack | Requirements |
 | :-- | :-- | :-- | :-- | :-- | :-- |
 | Studio | `studio` | coming soon | — | — | — |
-| **Cube** | `cube` | **requirements in progress** | — | React Native · TypeScript · Skia · Filament · SQLite | `docs/modules/cube/` (awaiting) |
+| **Cube** | `cube` | **live (Phase 1: Studio, Question Bank)** | **0.13.0** | React · TypeScript · Konva · Three.js · SQLite (Capacitor) | `docs/modules/cube/REQUIREMENTS.md` (v1.1) |
 | **Perspective** | `perspective` | **live** | **0.12.0** | React · TypeScript · Konva · Vite · Capacitor · IndexedDB | `docs/modules/perspective/REQUIREMENTS.md` (v1.9) |
 | Publish | `publish` | coming soon | — | — | — |
 | Sketch | `sketch` | coming soon | — | — | — |
@@ -91,6 +97,7 @@ Built from the developer's mockup (`docs/brand/suite-home-mockup.png`).
 
 | App | Date | Change |
 | :-- | :-- | :-- |
+| 0.13.0 | 2026-10-01 | CUBE module (Phase 1) on its tile; lazy-loaded; SQLite plugin added to the Android build (ADR-0008). |
 | 0.12.0 | 2026-10-01 | Named CREATIVE (launcher label, home header); module renamed PERSPECTIVE; docs per module; CUBE registered (requirements pending). |
 | 0.11.0 | 2026-10-01 | Home screen, module registry, Library / Settings navigation; Perspective becomes the first module (ADR-0007). |
 
@@ -110,7 +117,9 @@ Built from the developer's mockup (`docs/brand/suite-home-mockup.png`).
 
 ### 5.3 CUBE
 
-Not released. Requirements in progress.
+| Version | Date | Phase | Requirements | Summary |
+| :-- | :-- | :-- | :-- | :-- |
+| 0.13.0 | 2026-10-01 | 1 — Studio | v1.1 | Cube / net studio, geometry engine, live 3D cube, question builder (Net → Cube, Cube → Net, five options, D01–D09 distractors), validation, permanent ids and versions, Question Bank, SQLite, autosave. Test / Analysis placeholders. |
 
 ## 6. Shared functions (planned, CR-C*)
 
@@ -120,7 +129,7 @@ To be specified before they are built; `PARKED` until then.
 | :-- | :-- | :-- |
 | CR-C1 | Settings | Split into app-wide (theme, handedness) and per-module sections. |
 | CR-C2 | Library | Every module's saved work in one place (thumbnails, search, open in its module). |
-| CR-C3 | Storage and backup | One backup / restore covering all modules (incl. CUBE's SQLite if it is a separate app). |
+| CR-C3 | Storage and backup | One backup / restore covering all modules (PERSPECTIVE's IndexedDB and CUBE's SQLite). |
 | CR-C4 | Export and share | Shared PNG / SVG / JSON / share-sheet conventions. |
 | CR-C5 | Theme and design tokens | One token set (colours incl. family L/R/V, type, spacing) for every module and stack. |
 | CR-C6 | About and updates | Version, per-module versions, release notes. |
@@ -153,8 +162,8 @@ To be specified before they are built; `PARKED` until then.
 
 | # | Question | Default until decided |
 | :-- | :-- | :-- |
-| CR-OD-1 | How CUBE (React Native · Skia · Filament · SQLite) joins CREATIVE, whose host is Capacitor + React web. (a) CUBE is its own React Native app (own app id, same signing key, own tag prefix `cube-v*`), launched from the CUBE tile by intent, with "Install CUBE" when missing; (b) CREATIVE's host moves to React Native and PERSPECTIVE runs in a WebView; (c) CUBE uses the web stack. | (a) recommended; nothing built until decided. CUBE tile stays "coming soon". |
-| CR-OD-2 | Where CUBE's code lives | Same repository, `apps/cube/` (own `package.json`, own CI workflow building only on changes there), if CR-OD-1 = (a). |
+| CR-OD-1 | How CUBE joins CREATIVE | **Decided (2026-10-01):** an in-app module on the existing web stack — React, TypeScript, Konva, Three.js, SQLite via Capacitor (CUBE spec §3, §5; ADR-0008). React Native, Skia and Filament are not used. |
+| CR-OD-2 | Where CUBE's code lives | **Decided:** `src/modules/cube/`, same build and release as the app. |
 
 ## 9. Change management
 
