@@ -4,8 +4,10 @@
 import { create } from 'zustand';
 import type { CubeModel, FaceId } from '../model/CubeModel';
 import type { Question } from '../model/QuestionModel';
+import { normaliseNet } from '../model/edit';
 
-export type Tool = 'select' | 'net' | 'pen' | 'line' | 'arrow' | 'rect' | 'ellipse' | 'polygon' | 'text' | 'stamp' | 'image' | 'eraser';
+export type Tool = 'select' | 'net' | 'pen' | 'shape' | 'text' | 'stamp' | 'image' | 'fill' | 'eraser';
+export type ShapeKind = 'line' | 'arrow' | 'rect' | 'ellipse' | 'polygon';
 export type Page = 'studio' | 'bank' | 'test' | 'analysis';
 export type Step = 'design' | 'question';
 
@@ -23,6 +25,22 @@ export interface Style {
   width: number;
   stamp: string;
   sides: number;
+  /** The Shape tool's current shape. */
+  shape: ShapeKind;
+  /** Stamp / text size in face units (S, M, L). */
+  size: number;
+  /** The Fill tool's face colour. */
+  faceFill: string;
+}
+
+/** An image being placed as a board-wide skin (CUBE v1.2): board units, centre + size + rotation. */
+export interface Skin {
+  assetId: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  rotation: number;
 }
 
 const HISTORY_LIMIT = 100;
@@ -39,6 +57,10 @@ interface CubeState {
   selected: ElementRef | null;
   tool: Tool;
   style: Style;
+  /** An image being placed (before it is trimmed to the faces). */
+  skin: Skin | null;
+  /** The 3D cube pop-up is open. */
+  show3d: boolean;
   question: Question | null;
   /** The bank question being edited (commit adds a version, CUBE §33). */
   editing: { questionId: string; version: number } | null;
@@ -71,7 +93,9 @@ export const useCubeStore = create<CubeState>((set, get) => ({
   selectedFace: null,
   selected: null,
   tool: 'select',
-  style: { stroke: '#212529', fill: '#1c7ed6', width: 0.04, stamp: 'star', sides: 6 },
+  style: { stroke: '#212529', fill: '#1c7ed6', width: 0.04, stamp: 'star', sides: 6, shape: 'rect', size: 0.4, faceFill: '#adb5bd' },
+  skin: null,
+  show3d: false,
   question: null,
   editing: null,
   assets: {},
@@ -103,7 +127,7 @@ export const useCubeStore = create<CubeState>((set, get) => ({
     if (!model || !future.length) return;
     set({ model: future[0], past: [...past, model], future: future.slice(1), selected: null });
   },
-  load: (m) => set({ model: m, past: [], future: [], pending: null, selected: null, selectedFace: null }),
+  load: (m) => set({ model: normaliseNet(m), past: [], future: [], pending: null, selected: null, selectedFace: null, skin: null }),
   addAsset: (id, data) => set({ assets: { ...get().assets, [id]: data } }),
   showToast: (t) => {
     clearTimeout(toastTimer);

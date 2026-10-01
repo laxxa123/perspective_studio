@@ -3,6 +3,7 @@
 import { compose, faceToNet, invert, mapTransform } from '../geometry/Orientation';
 import { coveredFaces, fragmentsFor } from '../geometry/PatternContinuity';
 import { PRESETS } from '../geometry/NetShapes';
+import { normaliseCells } from '../geometry/Board';
 import { FACE_IDS, type ArtworkElement, type CubeModel, type FaceId, type FaceModel, type NetCell, type Transform2, type Turns } from './CubeModel';
 
 export interface Ref {
@@ -93,6 +94,12 @@ export function reorder(m: CubeModel, ref: Ref, delta: 1 | -1): CubeModel {
 // ----- the net -----
 
 const setCells = (m: CubeModel, cells: NetCell[]): CubeModel => ({ ...m, net: { cells } });
+
+/** Puts the net at the board's top-left corner (older drafts may sit anywhere). */
+export function normaliseNet(m: CubeModel): CubeModel {
+  const cells = normaliseCells(m.net.cells);
+  return cells === m.net.cells ? m : setCells(m, cells);
+}
 
 /** Moves a face to a grid cell; a face already there swaps places with it. */
 export function moveCell(m: CubeModel, face: FaceId, col: number, row: number): CubeModel {

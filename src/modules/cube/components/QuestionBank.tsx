@@ -1,7 +1,8 @@
-// Question Bank → Cube (CUBE §37, §38, §47): search, filter, preview, edit
-// (as a new version), duplicate, variant, metadata, versions, export.
+// Question Bank → Cube (CUBE §37, §38, §47; v1.2): search, filter, ten
+// questions a page; a question opens its details right under it — preview,
+// edit (as a new version), duplicate, variant, metadata, versions, export.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Copy, Download, FileJson, Pencil, Shuffle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Copy, Download, FileJson, Pencil, Shuffle } from 'lucide-react';
 import { DIFFICULTY_DIMENSIONS, type Question } from '../model/QuestionModel';
 import type { QuestionSummary } from '../database/QuestionRepository';
 import { assetsFor, initStorage, listBank, questions, variantOf } from '../services/CubeService';
@@ -12,6 +13,7 @@ import { shareFile } from '../../../platform/files';
 
 const fail = (e: unknown) => useCubeStore.getState().showToast(e instanceof Error ? e.message : String(e));
 const DATE = (iso: string) => new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+const PAGE = 10;
 
 export function QuestionBank() {
   const [list, setList] = useState<QuestionSummary[] | null>(null);
@@ -25,6 +27,7 @@ export function QuestionBank() {
   const [version, setVersion] = useState<number | null>(null);
   const [detail, setDetail] = useState<{ q: Question; assets: Record<string, string>; versions: { version: number; createdAt: string }[] } | null>(null);
   const [showJson, setShowJson] = useState(false);
+  const [page, setPage] = useState(0);
   const st = useCubeStore.getState;
 
   const refresh = useCallback(() => listBank().then(setList, fail), []);
@@ -54,6 +57,20 @@ export function QuestionBank() {
     .filter((s) => distractor === 'any' || s.distractors.includes(distractor))
     .filter((s) => !patternOnly || s.patterns > 0)
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  const pages = Math.max(1, Math.ceil(shown.length / PAGE));
+  const current = Math.min(page, pages - 1);
+  const visible = shown.slice(current * PAGE, current * PAGE + PAGE);
+  const toggle = (id: string) => {
+    setShowJson(false);
+    setVersion(null);
+    if (openId === id) {
+      setOpenId(null);
+      setDetail(null);
+    } else {
+      setDetail(null);
+      setOpenId(id);
+    }
+  };
 
   const edit = (q: Question, assets: Record<string, string>) => {
     st().load(q.spatialModel);
@@ -110,76 +127,89 @@ export function QuestionBank() {
 
       {list && !list.length && <p className="muted empty">No questions yet. Build one in the Studio and commit it.</p>}
       <ul className="bank-list">
-        {shown.map((s) => (
+        {visible.map((s) => (
           <li key={s.id}>
-            <button className={openId === s.id ? 'bank-item active' : 'bank-item'} onClick={() => { setOpenId(s.id); setVersion(null); setShowJson(false); }}>
+            <button className={openId === s.id ? 'bank-item active' : 'bank-item'} aria-expanded={openId === s.id} onClick={() => toggle(s.id)}>
               <strong>{s.id}</strong>
               <span>{s.title || (s.type === 'net_to_cube' ? 'Net → Cube' : 'Cube → Net')}</span>
               <span className="muted small">
                 v{s.version} · {DATE(s.updatedAt)}
               </span>
             </button>
+            {openId === s.id && detail && detail.q.questionId === s.id && (
+              <section className="bank-detail">
+                  <header className="props-row">
+                    <strong>
+                      {detail.q.questionId} · v{detail.q.version}
+                    </strong>
+                    <button className="seg" onClick={() => edit(detail.q, detail.assets)}>
+                      <Pencil size={16} /> Edit
+                    </button>
+                    <button className="seg" onClick={async () => {
+                      try {
+                        const c = await questions.duplicate(detail.q.questionId!);
+                        await refresh();
+                        setPage(0);
+                setOpenId(c.questionId);
+                        st().showToast(`Duplicated as ${c.questionId}.`);
+                      } catch (e) {
+                        fail(e);
+                      }
+                    }}>
+                      <Copy size={16} /> Duplicate
+                    </button>
+                    <button className="seg" onClick={async () => {
+                      try {
+                        const v = await variantOf(detail.q, Math.floor(Math.random() * 1e9));
+                        st().load(v.spatialModel);
+                        st().set({ question: v, editing: null, assets: { ...st().assets, ...detail.assets }, page: 'studio', step: 'question' });
+                        st().showToast('Variant ready in the Studio — review and commit.');
+                      } catch (e) {
+                        fail(e);
+                      }
+                    }}>
+                      <Shuffle size={16} /> Variant
+                    </button>
+                    <button className="seg" onClick={() => exportPng(detail.q, detail.assets)}>
+                      <Download size={16} /> PNG
+                    </button>
+                    <button className="seg" onClick={() => exportJson(detail.q)}>
+                      <FileJson size={16} /> JSON
+                    </button>
+                  </header>
+                  <img className="sheet" src={svgUrl(questionSheetSvg(detail.q, detail.assets))} alt="Question preview" />
+                  <p className="muted small">
+                    Answer: option {detail.q.answer.correctOption} · {detail.q.dna.distractors.join(', ')}
+                  </p>
+                  <div className="props-row wrap">
+                    <span className="muted">Versions</span>
+                    {detail.versions.map((v) => (
+                      <button key={v.version} className={detail.q.version === v.version ? 'chip-sm active' : 'chip-sm'} title={DATE(v.createdAt)} onClick={() => setVersion(v.version)}>
+                        v{v.version}
+                      </button>
+                    ))}
+                  </div>
+                  <button className="seg" onClick={() => setShowJson(!showJson)}>
+                    {showJson ? 'Hide' : 'Show'} metadata
+                  </button>
+                  {showJson && <pre className="json">{JSON.stringify({ difficulty: detail.q.difficulty, dna: detail.q.dna, rules: detail.q.rules, answer: detail.q.answer, explanation: detail.q.explanation }, null, 2)}</pre>}
+                </section>
+            )}
           </li>
         ))}
       </ul>
-
-      {detail && openId && (
-        <section className="bank-detail">
-          <header className="props-row">
-            <strong>
-              {detail.q.questionId} · v{detail.q.version}
-            </strong>
-            <button className="seg" onClick={() => edit(detail.q, detail.assets)}>
-              <Pencil size={16} /> Edit
-            </button>
-            <button className="seg" onClick={async () => {
-              try {
-                const c = await questions.duplicate(detail.q.questionId!);
-                await refresh();
-                setOpenId(c.questionId);
-                st().showToast(`Duplicated as ${c.questionId}.`);
-              } catch (e) {
-                fail(e);
-              }
-            }}>
-              <Copy size={16} /> Duplicate
-            </button>
-            <button className="seg" onClick={async () => {
-              try {
-                const v = await variantOf(detail.q, Math.floor(Math.random() * 1e9));
-                st().load(v.spatialModel);
-                st().set({ question: v, editing: null, assets: { ...st().assets, ...detail.assets }, page: 'studio', step: 'question' });
-                st().showToast('Variant ready in the Studio — review and commit.');
-              } catch (e) {
-                fail(e);
-              }
-            }}>
-              <Shuffle size={16} /> Variant
-            </button>
-            <button className="seg" onClick={() => exportPng(detail.q, detail.assets)}>
-              <Download size={16} /> PNG
-            </button>
-            <button className="seg" onClick={() => exportJson(detail.q)}>
-              <FileJson size={16} /> JSON
-            </button>
-          </header>
-          <img className="sheet" src={svgUrl(questionSheetSvg(detail.q, detail.assets))} alt="Question preview" />
-          <p className="muted small">
-            Answer: option {detail.q.answer.correctOption} · {detail.q.dna.distractors.join(', ')}
-          </p>
-          <div className="props-row wrap">
-            <span className="muted">Versions</span>
-            {detail.versions.map((v) => (
-              <button key={v.version} className={detail.q.version === v.version ? 'chip-sm active' : 'chip-sm'} title={DATE(v.createdAt)} onClick={() => setVersion(v.version)}>
-                v{v.version}
-              </button>
-            ))}
-          </div>
-          <button className="seg" onClick={() => setShowJson(!showJson)}>
-            {showJson ? 'Hide' : 'Show'} metadata
+      {pages > 1 && (
+        <nav className="bank-pager" aria-label="Pages">
+          <button className="seg" disabled={current === 0} onClick={() => (setPage(current - 1), setOpenId(null))} aria-label="Previous 10">
+            <ChevronLeft size={16} />
           </button>
-          {showJson && <pre className="json">{JSON.stringify({ difficulty: detail.q.difficulty, dna: detail.q.dna, rules: detail.q.rules, answer: detail.q.answer, explanation: detail.q.explanation }, null, 2)}</pre>}
-        </section>
+          <span className="muted small">
+            {current * PAGE + 1}–{Math.min(shown.length, current * PAGE + PAGE)} of {shown.length}
+          </span>
+          <button className="seg" disabled={current >= pages - 1} onClick={() => (setPage(current + 1), setOpenId(null))} aria-label="Next 10">
+            <ChevronRight size={16} />
+          </button>
+        </nav>
       )}
     </div>
   );

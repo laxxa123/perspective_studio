@@ -3,6 +3,23 @@
 User-visible changes per release. Versions: `package.json` semver; each
 milestone release bumps the minor version, and CI appends `-build.<run>`.
 
+## 0.15.0 — CUBE design rework
+
+- **Faces stay put**: dragging or resizing artwork no longer moves faces; faces
+  move only with the Net tool.
+- The net sits on a **4 × 4 board** that is always shown; **Fit** fits it.
+- **New** starts a blank cube (Undo brings the previous one back).
+- **Soft snap points** on every face: shapes, stamps and text land on them, so
+  sizes and positions repeat; stamps and text come in S / M / L.
+- **Draw anywhere** on the board with Pen or Shape; whatever falls outside the
+  faces is trimmed away. The five shape tools are now one **Shape** tool.
+- **Fill** tool: colour faces with one tap (four colours; white clears).
+- **Pictures** first cover the whole board; move, scale and turn them, then
+  Done trims them to the faces.
+- **3D** opens as a pop-up from the tool bar; the Question step uses the full
+  screen for its cards.
+- **Question Bank**: details open right under the question; 10 questions a page.
+
 ## 0.14.0 — SKETCH (Phase 1)
 
 - **SKETCH is open**: tap Sketch on the home screen and draw at once on a 9:16

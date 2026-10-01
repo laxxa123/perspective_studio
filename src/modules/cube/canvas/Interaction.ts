@@ -3,20 +3,9 @@
 import type { ArtworkElement } from '../model/CubeModel';
 import { stampById } from '../model/Stamps';
 import { uid } from '../model/ids';
-import type { Style, Tool } from '../state/useCubeStore';
+import type { ShapeKind, Style } from '../state/useCubeStore';
 
 type P = { x: number; y: number };
-
-/** Snap targets in face units: edges, centre, quarter lines (CUBE §18). */
-const SNAP_LINES = [0, 0.25, 0.5, 0.75, 1];
-export const SNAP_DIST = 0.035;
-
-export function snapValue(v: number): number {
-  for (const s of SNAP_LINES) if (Math.abs(v - s) < SNAP_DIST) return s;
-  return v;
-}
-
-export const snapPoint = (p: P): P => ({ x: snapValue(p.x), y: snapValue(p.y) });
 
 /** Snaps a direction to multiples of 45° when close (lines, arrows). */
 export function snapAngle(a: P, b: P): P {
@@ -52,7 +41,7 @@ export function penElement(points: P[], style: Style): ArtworkElement | null {
 }
 
 /** A drag-drawn shape (line, arrow, rectangle, ellipse, regular polygon). */
-export function shapeElement(tool: Tool, a: P, b0: P, style: Style): ArtworkElement | null {
+export function shapeElement(tool: ShapeKind, a: P, b0: P, style: Style): ArtworkElement | null {
   const b = tool === 'line' || tool === 'arrow' ? snapAngle(a, b0) : b0;
   const w = Math.abs(b.x - a.x);
   const h = Math.abs(b.y - a.y);
@@ -83,8 +72,6 @@ export function shapeElement(tool: Tool, a: P, b0: P, style: Style): ArtworkElem
       });
       return { ...base(style, w, h, c), kind: 'path', origin: 'polygon', path: `M ${pts.join(' L ')} Z`, fill: style.fill };
     }
-    default:
-      return null;
   }
 }
 

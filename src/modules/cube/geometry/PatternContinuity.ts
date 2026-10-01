@@ -10,18 +10,23 @@ const COVER_EPS = 0.02;
 
 /** The faces an element (placed on face `anchor` with transform `t`) overlaps on the net. */
 export function coveredFaces(el: Pick<ArtworkElement, 'w' | 'h'>, t: Transform2, anchor: FaceId, net: NetLayout): FaceId[] {
+  const out = overlappingFaces(el, t, anchor, net);
+  return out.length ? out : [anchor];
+}
+
+/** Like `coveredFaces`, but empty when the element lies entirely off the net (drawn on the bare board). */
+export function overlappingFaces(el: Pick<ArtworkElement, 'w' | 'h'>, t: Transform2, anchor: FaceId, net: NetLayout): FaceId[] {
   const a = net.cells.find((c) => c.face === anchor);
-  if (!a) return [anchor];
+  if (!a) return [];
   const m = faceToNet(a);
   const pts = boxCorners(t, el.w, el.h).map((p) => applyAffine(m, p));
   const x0 = Math.min(...pts.map((p) => p.x));
   const x1 = Math.max(...pts.map((p) => p.x));
   const y0 = Math.min(...pts.map((p) => p.y));
   const y1 = Math.max(...pts.map((p) => p.y));
-  const out = net.cells
+  return net.cells
     .filter((c) => Math.min(x1, c.col + 1) - Math.max(x0, c.col) > COVER_EPS && Math.min(y1, c.row + 1) - Math.max(y0, c.row) > COVER_EPS)
     .map((c) => c.face);
-  return out.length ? out : [anchor];
 }
 
 /** The fragment transforms of an element anchored on `anchor`, for each face it covers on the current net. */

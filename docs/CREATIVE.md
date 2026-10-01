@@ -1,6 +1,6 @@
 # CREATIVE — main app document
 
-> **App version:** 0.14.0 · **Document version:** 1.3 (2026-10-01) · Owner: sole developer/user · Location: `docs/CREATIVE.md`
+> **App version:** 0.15.0 · **Document version:** 1.4 (2026-10-01) · Owner: sole developer/user · Location: `docs/CREATIVE.md`
 
 CREATIVE is the app; its tools are **modules** (plugins). This document holds
 what belongs to the app as a whole: the home screen, how modules plug in, the
@@ -9,7 +9,7 @@ functions modules will share, and what every new module's requirements must
 settle up front. Each module has its own requirements in
 `docs/modules/<id>/REQUIREMENTS.md`.
 
-**Revisions:** 1.3 (0.14.0, 2026-10-01) — SKETCH Phase 1 built as an in-app module with its own WebGL2 raster engine (ADR-0009): CR-OD-3 decided; module list, code layout, data and history updated. · 1.2 (0.13.0, 2026-10-01) — CUBE Phase 1 built as an in-app module (ADR-0008): CR-OD-1 and CR-OD-2 decided; module list, code layout and history updated. · 1.1 (0.12.0, 2026-10-01) — the app is named **CREATIVE** and the first module **PERSPECTIVE** (was "Perspective Studio"); docs reorganised per module (`docs/modules/`); CUBE registered as the next module, its stack recorded and its integration decision opened (CR-OD-1); new-module requirements checklist (§7). · 1.0 (0.11.0, 2026-10-01) — home screen, module registry, PERSPECTIVE as the first module (ADR-0007).
+**Revisions:** 1.4 (0.15.0, 2026-10-01) — CUBE design rework (CUBE requirements v1.2); module list and history updated. · 1.3 (0.14.0, 2026-10-01) — SKETCH Phase 1 built as an in-app module with its own WebGL2 raster engine (ADR-0009): CR-OD-3 decided; module list, code layout, data and history updated. · 1.2 (0.13.0, 2026-10-01) — CUBE Phase 1 built as an in-app module (ADR-0008): CR-OD-1 and CR-OD-2 decided; module list, code layout and history updated. · 1.1 (0.12.0, 2026-10-01) — the app is named **CREATIVE** and the first module **PERSPECTIVE** (was "Perspective Studio"); docs reorganised per module (`docs/modules/`); CUBE registered as the next module, its stack recorded and its integration decision opened (CR-OD-1); new-module requirements checklist (§7). · 1.0 (0.11.0, 2026-10-01) — home screen, module registry, PERSPECTIVE as the first module (ADR-0007).
 
 ---
 
@@ -78,7 +78,7 @@ Built from the developer's mockup (`docs/brand/suite-home-mockup.png`).
 | Module | Id | Status | Version | Stack | Requirements |
 | :-- | :-- | :-- | :-- | :-- | :-- |
 | Studio | `studio` | coming soon | — | — | — |
-| **Cube** | `cube` | **live (Phase 1: Studio, Question Bank)** | **0.13.0** | React · TypeScript · Konva · Three.js · SQLite (Capacitor) | `docs/modules/cube/REQUIREMENTS.md` (v1.1) |
+| **Cube** | `cube` | **live (Phase 1: Studio, Question Bank)** | **0.15.0** | React · TypeScript · Konva · Three.js · SQLite (Capacitor) | `docs/modules/cube/REQUIREMENTS.md` (v1.2) |
 | **Perspective** | `perspective` | **live** | **0.12.0** | React · TypeScript · Konva · Vite · Capacitor · IndexedDB | `docs/modules/perspective/REQUIREMENTS.md` (v1.9) |
 | Publish | `publish` | coming soon | — | — | — |
 | **Sketch** | `sketch` | **live (Phase 1)** | **0.14.0** | React · TypeScript · custom WebGL2 tiled raster engine · Pointer Events · IndexedDB | `docs/modules/sketch/REQUIREMENTS.md` (v1.1) |
@@ -100,6 +100,7 @@ Built from the developer's mockup (`docs/brand/suite-home-mockup.png`).
 
 | App | Date | Change |
 | :-- | :-- | :-- |
+| 0.15.0 | 2026-10-01 | CUBE design rework (board, snap points, fill, image skin, 3D pop-up, bank paging). |
 | 0.14.0 | 2026-10-01 | SKETCH module (Phase 1) on its tile; lazy-loaded; no new dependency (ADR-0009). |
 | 0.13.0 | 2026-10-01 | CUBE module (Phase 1) on its tile; lazy-loaded; SQLite plugin added to the Android build (ADR-0008). |
 | 0.12.0 | 2026-10-01 | Named CREATIVE (launcher label, home header); module renamed PERSPECTIVE; docs per module; CUBE registered (requirements pending). |
@@ -124,6 +125,7 @@ Built from the developer's mockup (`docs/brand/suite-home-mockup.png`).
 | Version | Date | Phase | Requirements | Summary |
 | :-- | :-- | :-- | :-- | :-- |
 | 0.13.0 | 2026-10-01 | 1 — Studio | v1.1 | Cube / net studio, geometry engine, live 3D cube, question builder (Net → Cube, Cube → Net, five options, D01–D09 distractors), validation, permanent ids and versions, Question Bank, SQLite, autosave. Test / Analysis placeholders. |
+| 0.15.0 | 2026-10-01 | 1 — Studio | v1.2 | Design rework from device testing: 4 × 4 board, faces move only with Net (drag bug fixed), soft snap points, S / M / L sizes, draw anywhere and trim, one Shape tool, Fill tool, image as a board skin, New, 3D pop-up, full-width question cards, bank details inline and 10 a page. |
 
 ### 5.4 SKETCH
 

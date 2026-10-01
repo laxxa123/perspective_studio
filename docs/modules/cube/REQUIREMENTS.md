@@ -1,6 +1,6 @@
-> **Document:** CUBE requirements · **Version:** v1.1 (0.13.0, 2026-10-01) · **Location:** `docs/modules/cube/REQUIREMENTS.md` · **Part of:** CREATIVE (`docs/CREATIVE.md`)
+> **Document:** CUBE requirements · **Version:** v1.2 (0.15.0, 2026-10-01) · **Location:** `docs/modules/cube/REQUIREMENTS.md` · **Part of:** CREATIVE (`docs/CREATIVE.md`)
 >
-> **Revisions:** v1.1 (0.13.0, 2026-10-01) — Phase 1 built; §62 records what was built and the choices made where this specification leaves room. · v1.0 (2026-10-01) — Phase 1 Product & Engineering Specification, as written by the developer (§1–§61 below, unchanged).
+> **Revisions:** v1.2 (0.15.0, 2026-10-01) — Design-step rework after device testing (§62.10): 4 × 4 board, draw anywhere and trim to the faces, soft snap points, Fill tool, one Shape tool, image as a board-wide skin, New, 3D pop-up; full-width question cards; Question Bank details under each question, 10 a page; faces no longer move when artwork is dragged. · v1.1 (0.13.0, 2026-10-01) — Phase 1 built; §62 records what was built and the choices made where this specification leaves room. · v1.0 (2026-10-01) — Phase 1 Product & Engineering Specification, as written by the developer (§1–§61 below, unchanged).
 
 # CUBE Module — Phase 1 Product & Engineering Specification
 
@@ -1879,16 +1879,19 @@ Choices made where this specification leaves room, and known limits. Code: `src/
 
 - Elements: `path` (pen, line, arrow, rectangle, ellipse, regular polygon), `stamp` (14 shapes, `model/Stamps.ts`, extensible; letters / digits are text stamps), `text`, `image`. Geometry in element-local units, placed by a face-local transform (centre x, y, rotation, scale) — never screen coordinates (§15).
 - **Surface patterns (§16, §17).** An element that crosses a fold becomes one `SurfacePattern`: the source element, its anchor face, and a face-local fragment per covered face (clipped to that face). No copies. Moving it re-anchors it on the face it was dragged on. `continuityKept()` checks whether a cube keeps every pattern's faces in their relative place and orientation (used by D08).
-- **Images (§19).** Picked from the gallery (Image tool) or pasted; scaled to ≤ 1024 px; stored once under a stable id `asset-<uuid>` in `cube_assets`; elements reference the id. Crop by fractions; move / scale / rotate with the transformer; opacity.
-- **Snapping (§18).** Element centres snap to face edges, centre and quarter lines; rotation snaps to 45° steps; lines and arrows snap to 45°. Automatic, no settings.
+- **Images (§19, v1.2).** Picked from the gallery (Image tool) or pasted; scaled to ≤ 1024 px; stored once under a stable id `asset-<uuid>` in `cube_assets`; elements reference the id. A new picture is laid over the **whole board as a skin** (faint outside the faces, solid over them); the author moves, scales and turns it, then **Done** trims it to the faces — one surface pattern across every face it covers (Cancel drops it). Afterwards it moves / scales / turns with the transformer like any element; opacity. (Crop fractions are still read from older drafts; the crop sliders are gone.)
+- **Drawing on the board (v1.2).** Pen and shapes may start anywhere on the board; the drawing belongs to the face under its middle (else the nearest face) and everything outside the faces is trimmed by the faces' clips. A drawing entirely on the bare board is refused with a notice.
+- **Snapping (§18, v1.2).** Each face shows **soft snap points** (a 5 × 5 grid: edges, quarters, centre) while Select, Shape, Text or Stamp is active. Shape corners, stamp and text taps and element moves are pulled onto a point within 0.07 face units, so placements and sizes repeat; stamps and text come in S / M / L (0.25 / 0.4 / 0.6 of a face). Rotation snaps to 45° steps; lines and arrows to 45°.
+- **Fill tool (v1.2):** tap a face to fill it — white (clears) and four tones (light grey, black, red, blue). The same colours in the face properties.
 - Face properties: colour, transparency, symmetry; turn a face on the net; clear.
 
 ## 62.4 Studio UX (§9–§11, §20, §21, §43–§46)
 
 - Tabs: **Studio · Question Bank · Test · Analysis** (Test / Analysis: Phase 2 / Phase 3 placeholders only). Studio has two steps: **1 · Design cube**, **2 · Question**.
-- Phone: tools (wrapping), net canvas, 3D cube and properties stacked (page scrolls). Wide screens: tools left, net centre, cube right, properties below.
-- Net canvas: tap a face to select it, tap an element to select it (transformer handles: move, scale, rotate); **Net** tool drags faces to grid cells (dropping on a face swaps them); presets Classic cross, Offset cross, Zig-zag, Long strip; Custom = any arrangement. Validity shown live ("✓ Valid cube net" / "⚠ Net cannot form a cube — reason"); offending faces outlined red. Two-finger pinch / pan, wheel zoom, Fit.
-- 3D cube: drag to turn, pinch / wheel to zoom, Reset (corner view), Front, Top, Right; tap a face to select it. Faces are unlit (true colours) and shaded by how squarely they face the viewer; the selected face is tinted. Selection is one value in the store, shown by both views (§21).
+- Tools (v1.2): **New** (a blank cube; the previous one is one Undo away), Undo, Redo, **3D** (pop-up) · Select, Net, Pen, **Shape** (line, arrow, rectangle, ellipse, polygon — chosen below the board), Text, Stamp, Image, **Fill**, Eraser. Phone: two rows of tools, the board, properties below (page scrolls). Wide screens: tools left, board centre, properties right.
+- Net canvas (v1.2): the net sits on an always-visible **4 × 4 hairline board** (larger only for a net that does not fit, e.g. a loaded 2 × 5 variant); **Fit** fits the board. Tap a face to select it, tap an element to select it (transformer handles: move, scale, rotate). **Faces move only with the Net tool**, to board cells (dropping on a face swaps them); dragging artwork never moves a face. Presets Classic cross, Offset cross, Zig-zag, Long strip; Custom = any arrangement. Older drafts are moved to the board's top-left corner on load. Validity shown live ("✓ Valid cube net" / "⚠ Net cannot form a cube — reason"); offending faces outlined red. Two-finger pinch / pan, wheel zoom.
+- 3D cube (v1.2: a pop-up from the 3D tool in Design; not shown in Question): drag to turn, pinch / wheel to zoom, Reset (corner view), Front, Top, Right; tap a face to select it.
+- Question step (v1.2): the builder uses the full width (option cards two per row on a phone). Faces are unlit (true colours) and shaded by how squarely they face the viewer; the selected face is tinted. Selection is one value in the store, shown by both views (§21).
 - Undo / redo: 100 steps covering every model change; a drag is one step. Keyboard Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y on desktop.
 - Autosave (§42): 0.8 s after any change and when the app goes to the background; "Saving… / Saved" in the header; the draft (model, question, editing state) is restored on reopen.
 
@@ -1905,7 +1908,8 @@ Choices made where this specification leaves room, and known limits. Code: `src/
 
 ## 62.6 Question Bank (§37, §38, §47)
 
-- Search (id, title); filters: type, skill ≥ level, distractor type, has patterns; newest first.
+- Search (id, title); filters: type, skill ≥ level, distractor type, has patterns; newest first; **10 questions a page** with previous / next (v1.2).
+- Tapping a question opens its details **right under it** (tap again to close).
 - Preview (a question sheet: prompt, stem, five numbered options), answer and distractors, versions (tap to view one), metadata (difficulty, DNA, rules, answer, explanation).
 - Edit (opens it in the Studio; commit = new version), Duplicate (new id), Variant (same skill profile: artwork reshuffled across faces when there are no patterns, palette colours permuted, another of the 11 nets, fresh distractors of the same kinds; opens in the Studio for review), export **PNG** (question sheet) and **JSON** (canonical question).
 
@@ -1933,3 +1937,24 @@ Choices made where this specification leaves room, and known limits. Code: `src/
 | §11 "Custom" preset | Any arrangement made with the Net tool is custom; there is no separate Custom button. |
 | §13 "crop" for images | Fraction sliders (x, y, w, h) instead of a crop handle. |
 | CREATIVE.md CR-OD-1 (how CUBE joins) | In-app module on the existing web stack, as this specification's §3 and §5 require (no React Native / Skia / Filament). |
+
+## 62.10 Design rework (v1.2, release 0.15.0)
+
+From device testing of 0.13.0. Covered in §62.3, §62.4 and §62.6 above; in short:
+
+| Asked | Built |
+| :-- | :-- |
+| A New icon that clears the work in progress | **New** in the tool bar: a blank cube (cross net); the question and edit state are cleared; Undo restores the previous cube. |
+| Always show a 4 × 4 hairline grid; Fit fits it | The board (§62.4). Faces move between its cells with Net only. |
+| Shapes hard to place at a repeatable size; soft snap points per face | 5 × 5 soft snap points shown on every face; shape corners, stamps, text and moves snap; S / M / L stamp and text sizes. |
+| Pen anywhere on the grid, trimmed to the faces | Pen and shapes start anywhere on the board; off-face parts are trimmed. |
+| Colour fill for faces (4 colours) | **Fill** tool: white + four tones. |
+| Picture as a full-grid skin, adjusted before trimming | Image skin with Done / Cancel (§62.3). |
+| Faces displaced while manipulating shapes | Fixed: an element's drag events bubbled to its face, which took the element's position as its new cell. Element drags now stop at the element, and a face only moves on its own drag with the Net tool. |
+| 3D rotation in Design as a pop-up; none in Question | 3D tool → pop-up; removed from the Question step. |
+| Full screen for question cards | The builder spans the width. |
+| Bank: details under each question, or 10 at a time | Both: details open under the question; 10 a page. |
+| Avoid usability bloat | The five shape tools became one Shape tool (two rows of tools on a phone instead of three); crop sliders removed (the skin replaces them); snap points appear only with tools that place things. |
+
+The CubeModel and question JSON are unchanged (`creative.cube.model.v1`, `creative.cube.question.v1`).
+
