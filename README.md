@@ -1,10 +1,12 @@
-# PERSPECTIVE_STUDIO
+# CREATIVE
 
-A 2D perspective drawing skill app: set a horizon and three vanishing points,
-construct mathematically exact perspective objects (cubes first), and later
-sketch over them. Private, single user, offline.
+*Ideas to creation.* A private, single-user, offline Android app made of
+modules. **PERSPECTIVE** — set a horizon and vanishing points, construct exact
+perspective objects, sketch over them — is the first; **CUBE** is next.
 
-- Requirements: [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md)
+- App: [docs/CREATIVE.md](docs/CREATIVE.md)
+- PERSPECTIVE requirements: [docs/modules/perspective/REQUIREMENTS.md](docs/modules/perspective/REQUIREMENTS.md)
+- CUBE: [docs/modules/cube/](docs/modules/cube/)
 - Decisions: [docs/decisions/](docs/decisions/)
 - Changes: [docs/CHANGELOG.md](docs/CHANGELOG.md)
 

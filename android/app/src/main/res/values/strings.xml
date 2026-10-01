@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Perspective Studio</string>
-    <string name="title_activity_main">Perspective Studio</string>
+    <string name="app_name">CREATIVE</string>
+    <string name="title_activity_main">CREATIVE</string>
     <string name="package_name">com.perspectivestudio.app</string>
     <string name="custom_url_scheme">com.perspectivestudio.app</string>
 </resources>

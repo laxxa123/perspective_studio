@@ -50,7 +50,7 @@ export interface LoadResult {
  * (§7.7). Throws with a readable message when the file cannot be opened.
  */
 export function loadDocument(raw: unknown): LoadResult {
-  if (typeof raw !== 'object' || raw === null) throw new Error('Not a PERSPECTIVE_STUDIO document.');
+  if (typeof raw !== 'object' || raw === null) throw new Error('Not a PERSPECTIVE scene file.');
   const migrated = migrate(raw as Record<string, unknown>, SCHEMA_VERSION);
   const parsed = documentSchema.safeParse(migrated);
   if (!parsed.success) throw new Error(`Invalid document: ${parsed.error.issues[0]?.path.join('.')} ${parsed.error.issues[0]?.message}`);

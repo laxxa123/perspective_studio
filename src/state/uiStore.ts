@@ -8,7 +8,7 @@ import type { Family } from '../core/perspective/types';
 import type { Viewport } from '../core/viewport/viewport';
 
 export type ToolId = 'select' | 'shape' | 'sketch' | 'perspective';
-/** home = the suite (SUITE.md §2); gallery / editor = the Perspective module. */
+/** home = the suite (CREATIVE.md §2); gallery / editor = the Perspective module. */
 export type Screen = 'home' | 'gallery' | 'editor' | 'settings';
 export type SnapMode = 'off' | 'soft' | 'locked';
 

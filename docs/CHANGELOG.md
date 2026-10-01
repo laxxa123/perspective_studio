@@ -3,6 +3,12 @@
 User-visible changes per release. Versions: `package.json` semver; each
 milestone release bumps the minor version, and CI appends `-build.<run>`.
 
+## 0.12.0 — CREATIVE
+
+- The app is now called **CREATIVE** (name under the icon and on the home
+  screen); the perspective tool is the **PERSPECTIVE** module.
+- Preparation for **CUBE**, the next module (requirements in progress).
+
 ## 0.11.0 — Creative Suite home
 
 - The app now opens on the **Creative Suite** home screen — "Ideas to

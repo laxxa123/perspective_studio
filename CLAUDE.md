@@ -1,6 +1,8 @@
-# CLAUDE.md — PERSPECTIVE_STUDIO
+# CLAUDE.md — CREATIVE (app) · PERSPECTIVE (first module)
 
-Read first: docs/SUITE.md (the app: suite home, module plugins, per-module version history), docs/REQUIREMENTS.md (the Perspective Studio module), docs/decisions/*.
+Read first: docs/CREATIVE.md (the app CREATIVE: home screen, module plugins, per-module version history, open decisions), docs/modules/<id>/REQUIREMENTS.md (the module you work on; PERSPECTIVE today, CUBE next), docs/decisions/*.
+
+Names: the app is **CREATIVE**; modules are **PERSPECTIVE**, **CUBE**, …. Never rename the app id `com.perspectivestudio.app`, the repository or the signing key.
 
 ## Rules
 
@@ -14,7 +16,8 @@ Read first: docs/SUITE.md (the app: suite home, module plugins, per-module versi
 - Schema change = schemaVersion bump + migration + fixture test.
 - No new dependency without an ADR.
 - Geometry changes require passing property tests (§6.6). Never loosen a tolerance to make a test pass without an ADR.
-- Update docs/REQUIREMENTS.md (Perspective) or docs/SUITE.md (suite, other modules) in the same change when behaviour changes; add each release to SUITE.md §5.
+- Update docs/modules/perspective/REQUIREMENTS.md (Perspective) or docs/CREATIVE.md (suite, other modules) in the same change when behaviour changes; add each release to CREATIVE.md §5.
+- CUBE (React Native · Skia · Filament · SQLite) has its own stack: write no CUBE code until CR-OD-1 (docs/CREATIVE.md §8) is decided.
 - New modules are plugins: `src/modules/<id>/` + one entry in `src/suite/modules.ts` + `docs/modules/<id>/REQUIREMENTS.md`. Modules never import each other.
 - Prefer small, surgical diffs. Don't reformat or refactor unrelated code.
 - Use glossary terms exactly (VP-L, VP-R, VP-V, family L/R/V, picture plane, world, anchor).

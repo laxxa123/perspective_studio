@@ -111,7 +111,7 @@ export function Gallery() {
         <button className="icon" aria-label="Back to home" onClick={() => ui().set({ screen: 'home' })}>
           <ArrowLeft size={20} />
         </button>
-        <h1>Perspective Studio</h1>
+        <h1>PERSPECTIVE</h1>
         <button className="icon" title="Import JSON" aria-label="Import" onClick={importFile}>
           <FileUp size={20} />
         </button>

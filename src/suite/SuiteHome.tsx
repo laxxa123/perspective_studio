@@ -1,6 +1,6 @@
-// The suite's home screen (SUITE.md §2): a grid of module tiles and a bottom
-// navigation (Home · Library · Settings). Perspective opens the Perspective
-// Studio module; modules not built yet say "Coming soon".
+// CREATIVE's home screen (CREATIVE.md §2): a grid of module tiles and a bottom
+// navigation (Home · Library · Settings). PERSPECTIVE opens the PERSPECTIVE
+// module; modules not built yet say "Coming soon".
 import { useState } from 'react';
 import { Home, LayoutGrid, MoreVertical, Settings as SettingsIcon } from 'lucide-react';
 import { useUiStore } from '../state/uiStore';
@@ -28,7 +28,7 @@ export function SuiteHome() {
             <div className="muted about">Version {__APP_VERSION__}</div>
           </div>
         )}
-        <p className="eyebrow">Creative suite</p>
+        <p className="eyebrow">Creative</p>
         <h1>Ideas to creation</h1>
         <p className="tagline">Sketch · Explore · Analyze · Publish</p>
       </header>

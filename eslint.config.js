@@ -71,7 +71,7 @@ export default tseslint.config(
             { from: { element: { type: 'export' } }, allow: { to: { element: { types: { anyOf: ['export', 'core', 'theme'] } } } } },
             { from: { element: { type: 'platform' } }, allow: { to: { element: { type: 'platform' } } } },
             { from: { element: { type: 'app' } }, allow: { to: { element: { types: { anyOf: ['app', 'ui', 'state', 'core', 'platform', 'suite'] } } } } },
-            // The suite shell (SUITE.md): its own files, UI state to open a module.
+            // The suite shell (CREATIVE.md): its own files, UI state to open a module.
             { from: { element: { type: 'suite' } }, allow: { to: { element: { types: { anyOf: ['suite', 'state', 'platform', 'theme'] } } } } },
             // External packages: allowed everywhere except the core list above.
             { allow: { to: { module: { origin: 'external' } } } },

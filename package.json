@@ -1,6 +1,6 @@
 {
   "name": "perspective_studio",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "description": "2D perspective drawing skill app",
   "scripts": {
     "dev": "vite",

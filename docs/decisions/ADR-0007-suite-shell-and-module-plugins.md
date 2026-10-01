@@ -1,7 +1,8 @@
 # ADR-0007 — The app is a suite; Perspective Studio is its first module
 
 - **Status:** Accepted (0.11.0, 2026-10-01)
-- **Requirements:** SUITE.md §2–§3 (SU-01, SU-02); REQUIREMENTS.md §10.8 (v1.8)
+- **Requirements:** CREATIVE.md §2–§3 (CR-01, CR-02); modules/perspective/REQUIREMENTS.md §10.8 (v1.8)
+- **Note (0.12.0):** the app is now named CREATIVE and this module PERSPECTIVE; docs/SUITE.md became docs/CREATIVE.md.
 
 ## Context
 
@@ -22,8 +23,8 @@ built later, separately, as independent plugin modules.
   large, risky diff for no behaviour change). New modules go under
   `src/modules/<id>/`.
 - Same app id, signing key and release pipeline: one APK, one version
-  number; each module's own version is recorded in `docs/SUITE.md`.
-- `docs/SUITE.md` is the main app document: home screen, plugin contract,
+  number; each module's own version is recorded in `docs/CREATIVE.md`.
+- `docs/CREATIVE.md` is the main app document: home screen, plugin contract,
   module list, per-module version history, shared functions.
 
 ## Consequences

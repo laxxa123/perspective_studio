@@ -19,7 +19,7 @@ export function migrate(
 ): Record<string, unknown> {
   let doc = raw;
   let v = typeof doc.schemaVersion === 'number' ? doc.schemaVersion : NaN;
-  if (!Number.isInteger(v) || v < 1) throw new Error('Not a PERSPECTIVE_STUDIO document (no schemaVersion).');
+  if (!Number.isInteger(v) || v < 1) throw new Error('Not a PERSPECTIVE scene file (no schemaVersion).');
   if (v > target) throw new Error(`This file is from a newer version of the app (schema ${v}).`);
   while (v < target) {
     const m = migrations.find((x) => x.from === v);

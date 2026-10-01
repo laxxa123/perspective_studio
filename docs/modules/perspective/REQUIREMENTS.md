@@ -1,8 +1,8 @@
-# PERSPECTIVE\_STUDIO — Foundation Requirements
+# PERSPECTIVE — module requirements (CREATIVE)
 
-> **Status:** v1.8 · Foundation document · Owner: sole developer/user **Audience:** Claude Code (primary), developer (secondary) **Location in repo:** `docs/REQUIREMENTS.md` · **Part of:** the Creative Suite — see `docs/SUITE.md` (main app document)
+> **Status:** v1.9 · Foundation document · Owner: sole developer/user **Audience:** Claude Code (primary), developer (secondary) **Location in repo:** `docs/modules/perspective/REQUIREMENTS.md` · **Part of:** CREATIVE — see `docs/CREATIVE.md` (main app document)
 
-**Revisions:** v1.8 (0.11.0, 2026-10-01) — Perspective Studio becomes the first module of the Creative Suite (ADR-0007, `docs/SUITE.md`): the app opens on the suite home; the PERSPECTIVE tile opens this module's gallery, which has a back arrow to Home (§10.8); module version history moves to SUITE.md §5.2. · v1.7 (0.10.0, 2026-10-01) — M9 built in one release: the eye is the stored setting (ADR-0006, schema 2) with VPs at infinity (PS-12, PS-14); View turn / tilt sliders orbit the eye (PS-13); usability clean-up from the developer's review: VP capsules replaced by small hints (UI-10), no VP guide-line fans — rays only on object edges (UI-11), thin origin axes (UI-05 revised), sketch options wrap, four brush sizes (SK-07); decisions in OD-15, conflicts in §16.5. · v1.6 (0.9.0, 2026-09-30) — M8 built; §16.3 as built; ADR-0005 accepted; PS-09 reference corrected (see §16.3); OD-3 anchor (600, 500); render roles `grid`, `cone`. · v1.5 (2026-09-30, requirements only) — scene & viewing revision from the developer's review: horizon = eye level (PS-08, ADR-0005), placement above the horizon, hanging, working plane, Shapes submenu, quick zoom, collapsible sketch palette, plan view, origin marker, floor grid; new milestone M8; conflicts reviewed in §16.2; open decisions OD-8…OD-14. · v1.4 (0.8.0, 2026-09-30) — M3–M6 built in one delivery at the developer's request; §16.1 records what was built and the choices made. · v1.3 (M2, 2026-09-30) — M0 closed (ADR-0002); OD-3 eye height tuned to 2.2 u; §10.3 / §10.5 details fixed in M2 (below); §16 M2 status. · v1.2 (M1, 2026-09-30) — §6.3 constraint constants fixed in `core/math/tolerance.ts`; §16 M1 status. · v1.1 (M0, 2026-09-30) — §13 TypeScript pinned to 6.0; §14 records the delivery actually used (CI on push to `main`, app id, versioning, signing key); §16 M0 status. · v1.0 — foundation document.
+**Revisions:** v1.9 (0.12.0, 2026-10-01) — the module is named **PERSPECTIVE** (was PERSPECTIVE\_STUDIO / Perspective Studio) inside the app **CREATIVE**; this document moved to `docs/modules/perspective/`, its checklists to `docs/modules/perspective/checklists/`; error messages say "PERSPECTIVE scene file". Older revision notes keep the old name. · v1.8 (0.11.0, 2026-10-01) — Perspective Studio becomes the first module of the Creative Suite (ADR-0007, `docs/CREATIVE.md`): the app opens on the suite home; the PERSPECTIVE tile opens this module's gallery, which has a back arrow to Home (§10.8); module version history moves to CREATIVE.md §5.2. · v1.7 (0.10.0, 2026-10-01) — M9 built in one release: the eye is the stored setting (ADR-0006, schema 2) with VPs at infinity (PS-12, PS-14); View turn / tilt sliders orbit the eye (PS-13); usability clean-up from the developer's review: VP capsules replaced by small hints (UI-10), no VP guide-line fans — rays only on object edges (UI-11), thin origin axes (UI-05 revised), sketch options wrap, four brush sizes (SK-07); decisions in OD-15, conflicts in §16.5. · v1.6 (0.9.0, 2026-09-30) — M8 built; §16.3 as built; ADR-0005 accepted; PS-09 reference corrected (see §16.3); OD-3 anchor (600, 500); render roles `grid`, `cone`. · v1.5 (2026-09-30, requirements only) — scene & viewing revision from the developer's review: horizon = eye level (PS-08, ADR-0005), placement above the horizon, hanging, working plane, Shapes submenu, quick zoom, collapsible sketch palette, plan view, origin marker, floor grid; new milestone M8; conflicts reviewed in §16.2; open decisions OD-8…OD-14. · v1.4 (0.8.0, 2026-09-30) — M3–M6 built in one delivery at the developer's request; §16.1 records what was built and the choices made. · v1.3 (M2, 2026-09-30) — M0 closed (ADR-0002); OD-3 eye height tuned to 2.2 u; §10.3 / §10.5 details fixed in M2 (below); §16 M2 status. · v1.2 (M1, 2026-09-30) — §6.3 constraint constants fixed in `core/math/tolerance.ts`; §16 M1 status. · v1.1 (M0, 2026-09-30) — §13 TypeScript pinned to 6.0; §14 records the delivery actually used (CI on push to `main`, app id, versioning, signing key); §16 M0 status. · v1.0 — foundation document.
 
 ---
 
@@ -718,10 +718,10 @@ Fine toggles: rays none/selected/all · hidden edges · face fills · grid on gr
 
 ### 10.8 Screens
 
-0. **Suite home** *(v1.8, outside this module — `docs/SUITE.md` §2)*: the app opens there; the PERSPECTIVE tile opens this module's Gallery.  
+0. **Suite home** *(v1.8, outside this module — `docs/CREATIVE.md` §2)*: the app opens there; the PERSPECTIVE tile opens this module's Gallery.  
 1. **Gallery** (the module's home): grid of scene thumbnails, "New scene" (choose 2pt/3pt preset), long-press to rename/duplicate/delete/export. *(v1.8: a back arrow returns to the suite home; Android back goes editor → gallery → suite home.)*  
 2. **Editor** (above).  
-3. **Settings**: theme (light/dark/system), default snapping, handedness of toolbar, about/version. *(v1.8: also reached from the suite home; Back returns to where it was opened. Split into suite-wide and module settings is SUITE.md SU-C1.)*
+3. **Settings**: theme (light/dark/system), default snapping, handedness of toolbar, about/version. *(v1.8: also reached from the suite home; Back returns to where it was opened. Split into suite-wide and module settings is CREATIVE.md CR-C1.)*
 
 No onboarding flow. A new scene opens with a valid 3-point system and one cube so the user can immediately drag a VP.
 
@@ -915,7 +915,7 @@ Versions: latest stable at project start, pinned via lockfile. Upgrades are deli
 | Unit | math, solver, clamp, migrations, commands, snapping, each entity kind's derive/handles | Vitest |
 | Golden | Fixed documents → SVG export snapshot (detects any geometry regression) | Vitest snapshot |
 | Integration | Tool state machines driven by synthetic pointer sequences against stores | Vitest |
-| Device | Manual checklist per milestone on the Android device (stylus, gestures, fps) | `docs/checklists/Mx.md` |
+| Device | Manual checklist per milestone on the Android device (stylus, gestures, fps) | `docs/modules/perspective/checklists/Mx.md` |
 
 A milestone is **done** only when its acceptance checklist (§16) passes and all tests are green.
 
@@ -944,31 +944,31 @@ Each milestone is small, demoable, and closes with a tagged release.
 - PS-02…06, CV-01…03. Perspective tool, off-screen indicators, invalid-region shading, 2pt/3pt.  
 - A hard-coded test box renders (read-only) to prove live re-projection.  
 - ✅ Accept: drag every control; box responds live at 60 fps; clamping works; zoom never changes geometry.  
-- **Status:** built in 0.4.0 (PS-02…06, CV-01…03); the test box was replaced by real boxes in 0.8.0. Device checklist `docs/checklists/M2.md`.
+- **Status:** built in 0.4.0 (PS-02…06, CV-01…03); the test box was replaced by real boxes in 0.8.0. Device checklist `docs/modules/perspective/checklists/M2.md`.
 
 ### M3 — Boxes
 
 - BX-01…05, LY-01, PS-07, command/history scaffold.  
 - ✅ Accept: place 6 cubes, move, lift, resize, cube-lock, duplicate, delete; move VP-L/VP-R/VP-V/horizon → all correct; construction/clean toggles.  
-- **Status (0.8.0):** built; device checklist `docs/checklists/M3-M6.md`.
+- **Status (0.8.0):** built; device checklist `docs/modules/perspective/checklists/M3-M6.md`.
 
 ### M4 — Document
 
 - DOC-01…05, EXP-01…02, gallery.  
 - ✅ Accept: kill the app mid-edit → reopen, nothing lost; export/import JSON round-trips identically; PNG & SVG match the screen; undo/redo every M3 action.  
-- **Status (0.8.0):** built; device checklist `docs/checklists/M3-M6.md`.
+- **Status (0.8.0):** built; device checklist `docs/modules/perspective/checklists/M3-M6.md`.
 
 ### M5 — Scenes: stacking, rects, layers
 
 - BX-06, BX-07, RC-01, LY-02.  
 - ✅ Accept: stack 3 cubes and a tall box; place ground/wall rects; layer visibility/lock/reorder; all exact under VP changes.  
-- **Status (0.8.0):** built; device checklist `docs/checklists/M3-M6.md`.
+- **Status (0.8.0):** built; device checklist `docs/modules/perspective/checklists/M3-M6.md`.
 
 ### M6 — Sketch
 
 - SK-01…06. Spike for stroke rendering library → ADR.  
 - ✅ Accept: pen draws with pressure, touch pans; snap Off/Soft/Locked behave per SK-04; 5,000 strokes smooth; sketch over the "Guides" backdrop.  
-- **Status (0.8.0):** built; stroke renderer decided in ADR-0004 (no stylus available: pressure simulated for finger input). Device checklist `docs/checklists/M3-M6.md`; NFR-P-02 still to be measured.
+- **Status (0.8.0):** built; stroke renderer decided in ADR-0004 (no stylus available: pressure simulated for finger input). Device checklist `docs/modules/perspective/checklists/M3-M6.md`; NFR-P-02 still to be measured.
 
 ### M7 — Learning (to be specified)
 
@@ -979,13 +979,13 @@ Each milestone is small, demoable, and closes with a tagged release.
 - PS-08…11, CV-04, CV-05, BX-02 (revised), BX-03 (revised), BX-06 (extended), BX-08, RC-02, PL-01, UI-01…09; OD-3 re-tuned; ADR-0005. Delivered in one release (developer's decision, 2026-09-30).
 - ✅ Accept: dragging the horizon slides it along a tall box (eye level) with boxes keeping their size; a table sits below, a hanging lamp above and a tower across the horizon, all placed directly; the Shapes submenu places box and rects; Fit page / Fit page + VPs are one tap; the sketch palette collapses and never covers the drawing while sketching; the plan view shows the eye, its view wedge and footprints and follows every change; PS-T1…T6 still pass.
 
-- **Status (0.9.0):** built; device checklist `docs/checklists/M8.md`.
+- **Status (0.9.0):** built; device checklist `docs/modules/perspective/checklists/M8.md`.
 
 ### M9 — The eye and the View (from the v1.7 review)
 
 - PS-12…14, PS-05 / UI-02 / UI-05 / SK-05 revised, UI-10, UI-11, SK-07; ADR-0006; schema 2. Delivered in one release (developer's decision 15, 2026-10-01).
 - ✅ Accept: an old scene opens unchanged (migration 001); View → Top shows the scene straight down with VP-V at the centre and no horizon; L / R show a face square on with that family parallel; the knobs follow VP drags; Revert restores the view, Apply is one undo step; no VP capsules or fans; the sketch options fit a phone; PS-T1…T6 still pass.
-- **Status (0.10.0):** built; device checklist `docs/checklists/M9.md`.
+- **Status (0.10.0):** built; device checklist `docs/modules/perspective/checklists/M9.md`.
 
 ### 16.1 As built in 0.8.0 (M3–M6 in one delivery)
 
@@ -1076,11 +1076,11 @@ The app will pivot. These rules keep the structure stable while features change.
 
 CLAUDE.md                       \# operating rules for Claude Code (seed in §18)
 
-docs/REQUIREMENTS.md            \# this file
+docs/modules/perspective/REQUIREMENTS.md            \# this file
 
 docs/decisions/ADR-NNNN-\*.md    \# one decision per file: context, decision, consequences
 
-docs/checklists/Mx.md           \# device acceptance checklists
+docs/modules/perspective/checklists/Mx.md           \# device acceptance checklists
 
 docs/CHANGELOG.md               \# user-visible changes per release
 
@@ -1114,7 +1114,7 @@ docs/CHANGELOG.md               \# user-visible changes per release
 
 \# CLAUDE.md — PERSPECTIVE\_STUDIO
 
-Read first: docs/REQUIREMENTS.md, docs/decisions/\*.
+Read first: docs/modules/perspective/REQUIREMENTS.md, docs/decisions/\*.
 
 \#\# Rules
 
@@ -1138,7 +1138,7 @@ Read first: docs/REQUIREMENTS.md, docs/decisions/\*.
 
 \- Geometry changes require passing property tests (§6.6). Never loosen a tolerance to make a test pass without an ADR.
 
-\- Update docs/REQUIREMENTS.md in the same change when behaviour changes.
+\- Update docs/modules/perspective/REQUIREMENTS.md in the same change when behaviour changes.
 
 \- Prefer small, surgical diffs. Don't reformat or refactor unrelated code.
 

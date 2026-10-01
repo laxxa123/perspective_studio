@@ -43,7 +43,7 @@ export function SettingsScreen() {
       </section>
       <section>
         <h2>About</h2>
-        <p className="muted">Perspective Studio {__APP_VERSION__}. Private, offline, single user.</p>
+        <p className="muted">CREATIVE {__APP_VERSION__} · PERSPECTIVE module. Private, offline, single user.</p>
       </section>
     </div>
   );
