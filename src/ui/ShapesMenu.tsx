@@ -11,7 +11,7 @@ export const DEFAULT_WORKING_PLANE = 2.4;
 export function ShapesMenu() {
   const shape = useUiStore((s) => s.shape);
   const wp = useUiStore((s) => s.workingPlane);
-  const eye = useDocumentStore((s) => s.doc?.perspective.eyeHeight ?? 1.6);
+  const eye = useDocumentStore((s) => s.doc?.eye.position.z ?? 1.6);
   const set = useUiStore.getState().set;
   const close = () => set({ panel: 'none' });
   const setPlane = (h: number) => {

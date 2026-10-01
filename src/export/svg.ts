@@ -24,11 +24,9 @@ function itemSvg(it: RenderItem, theme: Theme, px: number): string {
     case 'vp':
       return `<circle cx="${n(it.points[0])}" cy="${n(it.points[1])}" r="${n(WEIGHTS.vpRadius * px)}" fill="${fam}"/>`;
     case 'anchor':
-      return `<polyline points="${pts(it.points)}" fill="none" stroke="${fam}" stroke-width="${n(2 * px)}"/>`;
+      return `<polyline points="${pts(it.points)}" fill="none" stroke="${fam}" stroke-width="${n(WEIGHTS.originAxis * px)}"/>`;
     case 'ray': {
-      const fan = it.key.startsWith('fan:');
-      const dash = it.data?.dashed ? ` stroke-dasharray="${n(6 * px)} ${n(6 * px)}"` : '';
-      return `<polyline points="${pts(it.points)}" fill="none" stroke="${withAlpha(fam, fan ? theme.fanAlpha : theme.rayAlpha)}" stroke-width="${n((fan ? WEIGHTS.fan : WEIGHTS.ray) * px)}"${dash}/>`;
+      return `<polyline points="${pts(it.points)}" fill="none" stroke="${withAlpha(fam, theme.rayAlpha)}" stroke-width="${n(WEIGHTS.ray * px)}"/>`;
     }
     case 'grid':
       return `<polyline points="${pts(it.points)}" fill="none" stroke="${it.data?.working ? withAlpha(theme.selection, 0.35) : withAlpha(fam, it.data?.major ? 0.35 : 0.14)}" stroke-width="${n((it.data?.major ? 1 : 0.6) * px)}"/>`;

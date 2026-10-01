@@ -77,19 +77,16 @@ function ItemNode({ it, theme, s, selected, dim }: { it: RenderItem; theme: Them
           listening={false}
         />
       );
-    case 'ray': {
-      const fan = it.key.startsWith('fan:');
+    case 'ray':
       return (
         <Line
           points={it.points}
-          stroke={withAlpha(fam, fan ? theme.fanAlpha : theme.rayAlpha)}
-          strokeWidth={fan ? WEIGHTS.fan : WEIGHTS.ray}
+          stroke={withAlpha(fam, theme.rayAlpha)}
+          strokeWidth={WEIGHTS.ray}
           strokeScaleEnabled={false}
-          dash={it.data?.dashed ? [6 / s, 6 / s] : undefined}
           listening={false}
         />
       );
-    }
     case 'grid':
       return (
         <Line
@@ -103,18 +100,8 @@ function ItemNode({ it, theme, s, selected, dim }: { it: RenderItem; theme: Them
     case 'cone':
       return <Line points={it.points} closed stroke={theme.muted} strokeWidth={1} strokeScaleEnabled={false} dash={[8 / s, 6 / s]} listening={false} />;
     case 'anchor':
-      return (
-        <Arrow
-          points={it.points}
-          stroke={fam}
-          fill={fam}
-          strokeWidth={2}
-          strokeScaleEnabled={false}
-          pointerLength={9 / s}
-          pointerWidth={7 / s}
-          listening={false}
-        />
-      );
+      // UI-05 (v1.7): thin axes, no arrowheads.
+      return <Line points={it.points} stroke={fam} strokeWidth={WEIGHTS.originAxis} strokeScaleEnabled={false} lineCap="round" listening={false} />;
     case 'stroke':
       return (
         <Line

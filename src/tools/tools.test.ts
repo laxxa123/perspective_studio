@@ -4,8 +4,8 @@ import { DEFAULT_DISPLAY } from '../core/derive/display';
 import { deriveDocument } from '../core/derive/derive';
 import { newDocument } from '../core/document/factory';
 import type { BoxEntity, SceneDocument, StrokeEntity } from '../core/document/types';
-import { deriveCamera, project } from '../core/perspective/camera';
-import { DEFAULT_PERSPECTIVE, type PerspectiveSystem } from '../core/perspective';
+import { project } from '../core/perspective/camera';
+import { cameraFromEye, DEFAULT_PERSPECTIVE, perspectiveOf, type PerspectiveSystem } from '../core/perspective';
 import { toScreen, type Viewport } from '../core/viewport/viewport';
 import { DEFAULT_SKETCH, type SketchSettings } from '../state/uiStore';
 import type { ToolEnv } from './env';
@@ -25,7 +25,7 @@ function fakeEnv(sketch: Partial<SketchSettings> = {}) {
   const toast = vi.fn();
   const env: ToolEnv = {
     doc: () => doc,
-    cam: () => deriveCamera(doc.perspective),
+    cam: () => cameraFromEye(doc.eye),
     display: () => DEFAULT_DISPLAY,
     model: () => deriveDocument(doc, DEFAULT_DISPLAY, new Set(selection)),
     selection: () => selection,
@@ -220,7 +220,7 @@ describe('sketch tool (SK-01, SK-03, SK-04)', () => {
 
   it('soft-snaps a nearly straight stroke toward a VP', () => {
     const t = fakeEnv({ snap: 'soft' });
-    const ps = t.get().perspective;
+    const ps = perspectiveOf(t.get().eye)!;
     const a = { x: 600, y: 600 };
     const b = { x: a.x + (ps.vpRightX - a.x) * 0.2, y: a.y + (ps.horizonY - a.y) * 0.2 };
     expect(drawLine(t, a, b).constraint).toEqual({ family: 'R', mode: 'soft' });

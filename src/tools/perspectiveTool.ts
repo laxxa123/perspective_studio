@@ -23,7 +23,8 @@ export const HANDLE_HIT_PX = 26;
 export const HORIZON_HIT_PX = 20;
 
 export interface PerspectiveDeps {
-  getPerspective: () => PerspectiveSystem;
+  /** The VP-handle form of the eye; null when a stored VP is at infinity (no handles, PS-14). */
+  getPerspective: () => PerspectiveSystem | null;
   getViewport: () => Viewport;
   /** Starts the drag transaction. */
   begin: () => void;
@@ -45,7 +46,8 @@ export interface PerspectiveDeps {
 const VP_HANDLES: PerspectiveHandleId[] = ['vpL', 'vpR', 'vpV', 'cv'];
 
 /** The handle under a screen point: point handles first, then the horizon. */
-export function hitHandle(ps: PerspectiveSystem, v: Viewport, screen: Vec2): PerspectiveHandleId | null {
+export function hitHandle(ps: PerspectiveSystem | null, v: Viewport, screen: Vec2): PerspectiveHandleId | null {
+  if (!ps) return null;
   let best: PerspectiveHandleId | null = null;
   let bestD = HANDLE_HIT_PX;
   for (const h of pointHandles(ps)) {
@@ -82,6 +84,7 @@ export function createPerspectiveTool(deps: PerspectiveDeps): PerspectiveTool {
 
   const startDrag = (id: PerspectiveHandleId, pointerPp: Vec2) => {
     const ps = deps.getPerspective();
+    if (!ps) return;
     const P = VP_HANDLES.includes(id) ? (deps.pinTarget?.() ?? null) : null;
     const q = P ? project(deriveCamera(ps), P) : null;
     drag = {

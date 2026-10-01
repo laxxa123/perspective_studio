@@ -15,6 +15,7 @@ import {
   updateEntity,
   updateLayer,
 } from './commands';
+import { perspectiveOf } from '../perspective/view';
 import { begin, commit, emptyHistory, execute, HISTORY_LIMIT, preview, redo, undo } from './history';
 
 const doc0 = newDocument({ name: 'T' });
@@ -81,8 +82,8 @@ describe('commands & history (§8.5, DOC-01)', () => {
     expect(execute(d, emptyHistory(), deleteLayer(objectsId)).doc.layers).toHaveLength(2);
   });
 
-  it('sets the perspective', () => {
-    const ps = { ...doc0.perspective, horizonY: 300 };
-    expect(execute(doc0, emptyHistory(), setPerspective(ps)).doc.perspective.horizonY).toBe(300);
+  it('stores a VP-handle edit as the eye it describes', () => {
+    const ps = { ...perspectiveOf(doc0.eye)!, eyeHeight: 3 };
+    expect(execute(doc0, emptyHistory(), setPerspective(ps)).doc.eye.position.z).toBeCloseTo(3, 9);
   });
 });

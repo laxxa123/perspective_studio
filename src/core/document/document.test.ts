@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { newDocument } from './factory';
 import { migrate, type Migration } from './migrations';
 import { loadDocument, serializeDocument } from './schema';
+import { cameraFromEye, clampPerspective, DEFAULT_PERSPECTIVE, deriveCamera, perspectiveOf, project, type PerspectiveSystem } from '../perspective';
+import { v3 } from '../math/vec';
+import v1Fixture from './fixtures/v1.json';
 
 describe('documents (§7, DOC-04)', () => {
   const doc = newDocument({ name: 'Scene', now: new Date('2026-09-30T00:00:00Z') });
@@ -41,11 +44,39 @@ describe('documents (§7, DOC-04)', () => {
     expect(() => loadDocument(orphan)).toThrow(/missing layer/);
   });
 
-  it('repairs an invalid perspective deterministically with a warning (§6.3)', () => {
-    const bad = { ...doc, perspective: { ...doc.perspective, vpVerticalY: 300 } };
+  it('repairs an invalid eye deterministically with a warning', () => {
+    const bad = { ...doc, eye: { ...doc.eye, tilt: 120, position: { ...doc.eye.position, z: -1 } } };
     const r = loadDocument(bad);
-    expect(r.warnings[0]).toMatch(/PV-2/);
-    expect(loadDocument(bad).doc.perspective).toEqual(r.doc.perspective);
+    expect(r.warnings[0]).toMatch(/tilt/);
+    expect(r.doc.eye.tilt).toBe(90);
+    expect(r.doc.eye.position.z).toBeGreaterThan(0);
+    expect(loadDocument(bad).doc.eye).toEqual(r.doc.eye);
+  });
+
+  it('migrates the v1 fixture to the eye, keeping its picture (fixtures/v1.json, ADR-0006)', () => {
+    const r = loadDocument(JSON.parse(JSON.stringify(v1Fixture)));
+    expect(r.warnings).toEqual([]);
+    expect(r.doc.schemaVersion).toBe(2);
+    const was = deriveCamera(v1Fixture.perspective as PerspectiveSystem);
+    const now = cameraFromEye(r.doc.eye);
+    for (const P of [v3(-0.5, -0.5, 0), v3(0.5, 0.5, 1), v3(3, -2, 0.4)]) {
+      const a = project(was, P)!;
+      const b = project(now, P)!;
+      expect(b.x).toBeCloseTo(a.x, 6);
+      expect(b.y).toBeCloseTo(a.y, 6);
+    }
+    expect(r.doc.eye.position.z).toBeCloseTo(2.2, 9);
+  });
+
+  it('migrates schema 1 (perspective system) to the eye (ADR-0006)', () => {
+    const v1 = { ...JSON.parse(JSON.stringify(doc)), schemaVersion: 1, perspective: { ...DEFAULT_PERSPECTIVE, vpVerticalY: 300 } };
+    delete v1.eye;
+    const r = loadDocument(v1);
+    expect(r.doc.schemaVersion).toBe(2);
+    // The invalid system was repaired (§6.3) on the way; the eye gives back its VPs.
+    const ps = perspectiveOf(r.doc.eye)!;
+    expect(ps.vpLeftX).toBeCloseTo(clampPerspective(v1.perspective).vpLeftX, 6);
+    expect(ps.eyeHeight).toBeCloseTo(DEFAULT_PERSPECTIVE.eyeHeight, 9);
   });
 
   it('repairs layer orders to match entities', () => {

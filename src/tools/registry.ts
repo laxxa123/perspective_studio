@@ -3,7 +3,7 @@
 import { setPerspective } from '../core/commands/commands';
 import type { Layer } from '../core/document/types';
 import { haptics } from '../platform/haptics';
-import { cameraOf, renderModelOf } from '../state/derived';
+import { cameraOf, perspectiveFor, renderModelOf } from '../state/derived';
 import type { KnownEntity } from '../core/document/types';
 import { pinPointOf } from '../core/entities/pin';
 import { useDocumentStore } from '../state/documentStore';
@@ -36,7 +36,7 @@ function targetLayer(role: Layer['role']): string | null {
 
 export const toolEnv: ToolEnv = {
   doc: () => docState().doc!,
-  cam: () => cameraOf(docState().doc!.perspective),
+  cam: () => cameraOf(docState().doc!.eye),
   display: () => ui().display,
   model: () => renderModelOf(docState().doc!, ui().display, ui().selection, ui().workingPlane),
   selection: () => ui().selection,
@@ -67,7 +67,7 @@ export const toolEnv: ToolEnv = {
 };
 
 export const perspectiveTool: PerspectiveTool = createPerspectiveTool({
-  getPerspective: () => docState().doc!.perspective,
+  getPerspective: () => perspectiveFor(docState().doc!.eye),
   getViewport: () => ui().viewport!,
   begin: () => docState().begin('Change perspective'),
   preview: (ps) => docState().preview(setPerspective(ps).recipe),
@@ -81,7 +81,7 @@ export const perspectiveTool: PerspectiveTool = createPerspectiveTool({
     if (!ui().pinSelection || ui().selection.length !== 1) return null;
     const e = docState().doc!.entities[ui().selection[0]];
     if (!e || 'unknown' in e) return null;
-    return pinPointOf(e as KnownEntity, cameraOf(docState().doc!.perspective));
+    return pinPointOf(e as KnownEntity, cameraOf(docState().doc!.eye));
   },
   onDragStart: () => {
     // SK-06: once per document, when it has strokes.

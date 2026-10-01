@@ -1,6 +1,6 @@
 // Viewing aids in the picture (UI-05, UI-06, UI-07, PL-01): derived from the
 // camera like any geometry, so they are exact.
-import { projectSegment, project, vanishingPoint } from '../perspective/camera';
+import { projectSegment } from '../perspective/camera';
 import type { Camera, Family } from '../perspective/types';
 import { v3, type Vec3 } from '../math/vec';
 import type { RenderItem } from './renderModel';
@@ -9,8 +9,8 @@ import type { RenderItem } from './renderModel';
 export const GRID_HALF = 10;
 export const GRID_STEP = 1;
 
-/** UI-05: three 1 u family-coloured axes from the origin; optionally extended to their VPs. */
-export function originMarker(cam: Camera, extendToVps: boolean): RenderItem[] {
+/** UI-05: three thin 1 u family-coloured axes from the origin (v1.7: no arrowheads, no extensions to the VPs). */
+export function originMarker(cam: Camera): RenderItem[] {
   const o = v3(0, 0, 0);
   const axes: [Family, Vec3][] = [
     ['R', v3(1, 0, 0)],
@@ -18,15 +18,9 @@ export function originMarker(cam: Camera, extendToVps: boolean): RenderItem[] {
     ['V', v3(0, 0, 1)],
   ];
   const out: RenderItem[] = [];
-  const at = project(cam, o);
   for (const [family, end] of axes) {
     const seg = projectSegment(cam, o, end);
-    if (!seg) continue;
-    out.push({ key: `origin:${family}`, role: 'anchor', family, points: [seg[0].x, seg[0].y, seg[1].x, seg[1].y], data: { arrow: 1 } });
-    if (extendToVps && at) {
-      const vp = vanishingPoint(cam, family);
-      if (vp.w !== 0) out.push({ key: `origin:${family}:ext`, role: 'ray', family, points: [at.x, at.y, vp.x / vp.w, vp.y / vp.w], data: { dashed: 1 } });
-    }
+    if (seg) out.push({ key: `origin:${family}`, role: 'anchor', family, points: [seg[0].x, seg[0].y, seg[1].x, seg[1].y] });
   }
   return out;
 }

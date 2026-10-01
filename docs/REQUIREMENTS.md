@@ -1,8 +1,8 @@
 # PERSPECTIVE\_STUDIO — Foundation Requirements
 
-> **Status:** v1.6 · Foundation document · Owner: sole developer/user **Audience:** Claude Code (primary), developer (secondary) **Location in repo:** `docs/REQUIREMENTS.md`
+> **Status:** v1.7 · Foundation document · Owner: sole developer/user **Audience:** Claude Code (primary), developer (secondary) **Location in repo:** `docs/REQUIREMENTS.md`
 
-**Revisions:** v1.6 (0.9.0, 2026-09-30) — M8 built; §16.3 as built; ADR-0005 accepted; PS-09 reference corrected (see §16.3); OD-3 anchor (600, 500); render roles `grid`, `cone`. · v1.5 (2026-09-30, requirements only) — scene & viewing revision from the developer's review: horizon = eye level (PS-08, ADR-0005), placement above the horizon, hanging, working plane, Shapes submenu, quick zoom, collapsible sketch palette, plan view, origin marker, floor grid; new milestone M8; conflicts reviewed in §16.2; open decisions OD-8…OD-14. · v1.4 (0.8.0, 2026-09-30) — M3–M6 built in one delivery at the developer's request; §16.1 records what was built and the choices made. · v1.3 (M2, 2026-09-30) — M0 closed (ADR-0002); OD-3 eye height tuned to 2.2 u; §10.3 / §10.5 details fixed in M2 (below); §16 M2 status. · v1.2 (M1, 2026-09-30) — §6.3 constraint constants fixed in `core/math/tolerance.ts`; §16 M1 status. · v1.1 (M0, 2026-09-30) — §13 TypeScript pinned to 6.0; §14 records the delivery actually used (CI on push to `main`, app id, versioning, signing key); §16 M0 status. · v1.0 — foundation document.
+**Revisions:** v1.7 (0.10.0, 2026-10-01) — M9 built in one release: the eye is the stored setting (ADR-0006, schema 2) with VPs at infinity (PS-12, PS-14); View turn / tilt sliders orbit the eye (PS-13); usability clean-up from the developer's review: VP capsules replaced by small hints (UI-10), no VP guide-line fans — rays only on object edges (UI-11), thin origin axes (UI-05 revised), sketch options wrap, four brush sizes (SK-07); decisions in OD-15, conflicts in §16.5. · v1.6 (0.9.0, 2026-09-30) — M8 built; §16.3 as built; ADR-0005 accepted; PS-09 reference corrected (see §16.3); OD-3 anchor (600, 500); render roles `grid`, `cone`. · v1.5 (2026-09-30, requirements only) — scene & viewing revision from the developer's review: horizon = eye level (PS-08, ADR-0005), placement above the horizon, hanging, working plane, Shapes submenu, quick zoom, collapsible sketch palette, plan view, origin marker, floor grid; new milestone M8; conflicts reviewed in §16.2; open decisions OD-8…OD-14. · v1.4 (0.8.0, 2026-09-30) — M3–M6 built in one delivery at the developer's request; §16.1 records what was built and the choices made. · v1.3 (M2, 2026-09-30) — M0 closed (ADR-0002); OD-3 eye height tuned to 2.2 u; §10.3 / §10.5 details fixed in M2 (below); §16 M2 status. · v1.2 (M1, 2026-09-30) — §6.3 constraint constants fixed in `core/math/tolerance.ts`; §16 M1 status. · v1.1 (M0, 2026-09-30) — §13 TypeScript pinned to 6.0; §14 records the delivery actually used (CI on push to `main`, app id, versioning, signing key); §16 M0 status. · v1.0 — foundation document.
 
 ---
 
@@ -56,7 +56,7 @@ Order of authority when documents conflict: **developer's latest instruction →
 
 ### 2.2 Non-goals (do not build, do not scaffold)
 
-- 3D engines (Three.js, Babylon, WebGL scene graphs), lighting, materials, textures, 3D camera orbit UI. (The plan view, CV-05, is a flat orthographic top view of the same world data — not an orbit camera.)  
+- 3D engines (Three.js, Babylon, WebGL scene graphs), lighting, materials, textures, free 3D camera orbit UI. (The plan view, CV-05, is a flat orthographic top view of the same world data. The View sliders, PS-13 — added v1.7 at the developer's request — are two one-dimensional controls, turn and tilt of the eye, that change the perspective like any VP drag; there is still no 3D engine and nothing but projected lines.)  
 - Backend, authentication, cloud sync, analytics, telemetry, ads.  
 - Multi-user, collaboration, social sharing features.  
 - Google Play Store distribution (V1 uses Obtainium).  
@@ -79,8 +79,11 @@ Order of authority when documents conflict: **developer's latest instruction →
 | **VP-L / VP-R** | Left / right horizontal vanishing points. Both lie on the horizon. |
 | **VP-V** | Vertical vanishing point. Finite in 3-point mode, at infinity in 2-point mode. |
 | **Family L / R / V** | The three edge directions. Family L edges converge to VP-L, R to VP-R, V to VP-V. Always named by their VP, never by axis letter in UI. |
-| **Perspective system (PS)** | The persisted parameters: horizon, VP-L, VP-R, VP-V, anchor, eye height, mode. |
-| **Camera** | Derived (never persisted) projection computed from the PS. |
+| **Eye** | *(v1.7, ADR-0006)* The persisted setting: the single eye of classical perspective — where it stands (station point, incl. eye height), where it looks (turn, tilt; the head is always level) and how far it is from the picture plane (viewing distance), plus the centre of vision on the paper. In code the derived projection is still called the camera; the UI says eye. |
+| **Turn / Tilt** | The eye's heading (0° = the face spanned by R square on, 45° = corner view, 90° = the face spanned by L square on) and its look-down angle (0° = level, 90° = straight down). |
+| **View** | The turn / tilt sliders that walk the eye around the selection (PS-13). |
+| **Perspective system (PS)** | The VP-handle form of the eye: horizon, VP-L, VP-R, VP-V, anchor, eye height, mode. Derived from the eye whenever every VP it stores is finite; edits made through it are stored back as the eye. *(Persisted until v1.6.)* |
+| **Camera** | Derived (never persisted) projection computed from the eye (= from the PS when it exists). |
 | **Anchor** | A picture-plane point where the world origin (0,0,0) on the floor is pinned. Keeps objects on screen when VPs move; together with the eye height it fixes where the eye stands. Not the camera. UI label "Ground point" (OD-9); drawn as a 3D axis marker (UI-05). |
 | **Eye level** | The horizontal plane `z = eyeHeight`; its image is the horizon. |
 | **Centre of vision** | The principal point `p` (§6.2): where the eye looks straight ahead. On the horizon in 2pt; at `x = verticalX` in both modes. |
@@ -162,6 +165,24 @@ interface PerspectiveSystem {
 
 Camera roll is fixed at 0 (horizon always horizontal). This is a deliberate constraint, not a TODO.
 
+**v1.7 (schema 2, ADR-0006): the eye is what is persisted.** The interface above is kept as the *VP-handle form* used by the Perspective tool, derived from the eye when every VP it stores is finite:
+
+interface Eye {
+
+  cv: Vec2;           // pp, centre of vision (principal point p)
+
+  distance: number;   // pp, viewing distance (focal length f), > 0
+
+  turn: number;       // degrees, 0…90: line-of-sight heading (0 → looking along +Y, 90 → along +X)
+
+  tilt: number;       // degrees, −85…90: 0 level, + looking down, 90 straight down
+
+  position: Vec3;     // u, station point; position.z is the eye height (> 0)
+
+}
+
+The rotation is `M = rows(r, d, fwd)` with `r = (cos φ, −sin φ, 0)`, `h = (sin φ, cos φ, 0)`, `fwd = cos τ·h − sin τ·ẑ`, `d = −sin τ·h − cos τ·ẑ` (φ = turn, τ = tilt). A 2-point system is exactly `tilt = 0`; `mode` is derived. Converting PS → eye → PS round-trips exactly (property-tested).
+
 ### 6.2 Deriving the camera (exact formulas — implement exactly)
 
 Let `h = horizonY`, `xL = vpLeftX`, `xR = vpRightX`, `xV = verticalX`.
@@ -240,6 +261,8 @@ These live in `core/perspective`. No other module may compute projections.
 
 Constants (in `core/math/tolerance.ts`): PV-1 margin \= 1% of `xR − xL`; PV-2 `ε` \= 0.05; PV-3 `minSpread` \= 50 pp; PV-4 margin \= 4 pp; PV-5 minimum \= 0.001 u. In 2pt, `vpVerticalY` must be `null`. The repair (`clampPerspective`) fixes, in order: spread (PV-3, around the midpoint), VP-V's x (PV-1), VP-V's distance from the horizon keeping its side (PV-2), anchor y (PV-4), eye height (PV-5); a valid system is returned unchanged.
 
+**Eye validity (v1.7):** finite values, `distance > 0`, `turn ∈ [0°, 90°]`, `tilt ∈ [−85°, 90°]`, eye height ≥ 0.001 u; `clampEye` repairs each in place. PV-1…PV-5 apply to the VP-handle form. An eye whose PS would need a VP at infinity (turn exactly 0° / 90°, tilt exactly 90°) or whose world origin is not in front of the eye below the horizon has no VP-handle form: it is valid, it draws, but the VP handles are hidden until the view is moved off that limit (PS-14).
+
 During a drag, the Perspective tool **clamps** proposed values to the nearest valid configuration and visually shades the invalid region (§10.5). Loading a file with an invalid PS repairs it deterministically and logs a warning.
 
 ### 6.4 Behaviour when perspective changes
@@ -248,13 +271,14 @@ During a drag, the Perspective tool **clamps** proposed values to the nearest va
 - The anchor keeps the world origin pinned in place, so the scene rotates "around" the anchor rather than flying off-screen.  
 - ~~Dragging the horizon moves VP-L, VP-R and preserves `verticalX`, `vpVerticalY` unless that violates PV-2, in which case VP-V is pushed.~~ *REMOVED v1.5 (2026-09-30): it made the horizon a camera-distance control — boxes ballooned or shrank to the anchor. Superseded by PS-08 / ADR-0005.*  
 - **Dragging the horizon changes the eye height (PS-08, ADR-0005):** VP-L, VP-R and (3pt) VP-V move with it by the same amount, so camera orientation and focal length are unchanged; the anchor stays pinned and the camera keeps its horizontal distance to the world origin; `eyeHeight` is re-derived. Raising the horizon raises the eye; lowering it toward the anchor lowers the eye toward the floor, clamped by PV-4 / PV-5.  
-- Switching `3pt → 2pt` sets `vpVerticalY = null`; `2pt → 3pt` sets it to a default valid distance below the horizon.
+- Switching `3pt → 2pt` sets `vpVerticalY = null`; `2pt → 3pt` sets it to a default valid distance below the horizon. *(v1.7: through the VP-handle form; without one, the 2-pt / 3-pt buttons orbit about the ground point to level / 20° down.)*  
+- **v1.7:** every VP-handle edit is stored as the eye it describes. The View orbit (PS-13) keeps the pivot's camera-space position — so its paper position and depth, hence the size — and the viewing distance; the eye height follows. It refuses to put the eye below the floor.
 
 ### 6.5 Clipping & degeneracy
 
 - Edges with one endpoint behind the camera are clipped at the near plane in camera space before projection.  
 - Entities entirely behind the camera render nothing and show an off-screen indicator when selected.  
-- Vanishing points are represented as homogeneous 2D points internally so VP-V at infinity (2pt) is handled by the same line math (snapping, rays).
+- Vanishing points are represented as homogeneous 2D points internally so VP-V at infinity (2pt) is handled by the same line math (snapping, rays). *(v1.7: so are VP-L / VP-R at infinity in face-on views and the horizon at infinity in a top view; the horizon is drawn only when finite.)*
 
 ### 6.6 Mandatory invariants (property-tested, §15)
 
@@ -303,7 +327,7 @@ interface SceneDocument {
 
   paper: { width: number; height: number };   // pp, origin at (0,0)
 
-  perspective: PerspectiveSystem;
+  eye: Eye;                     // schema 2 (v1.7); schema 1 stored `perspective: PerspectiveSystem`
 
   layers: Layer\[\];              // bottom → top draw order
 
@@ -418,7 +442,8 @@ On load, an entity whose `kind` is not registered is kept as `UnknownEntity { ki
 - `schemaVersion` bump on any persisted shape change.  
 - `core/document/migrations/NNN_description.ts`: pure function `(docN) → docN+1`. Chained on load.  
 - All loaded JSON is validated with a Zod schema **after** migration. Validation failure → file is not opened, error shown, original untouched.  
-- Every migration has a fixture test (`fixtures/vN.json` → expected `vN+1`).
+- Every migration has a fixture test (`fixtures/vN.json` → expected `vN+1`).  
+- **001 (v1.7):** schema 1 → 2: `perspective` → `eye` (the PS is repaired per §6.3 first, then converted; the picture is unchanged). Fixture `core/document/fixtures/v1.json`.
 
 ### 7.9 Persistence
 
@@ -657,7 +682,7 @@ Each tool is a small explicit state machine: `idle → pressing → dragging →
 ### 10.5 Perspective editing UX
 
 - VPs are **first-class canvas objects**: large touch targets (≥ 44 px), labelled, family-coloured.  
-- **Off-screen VPs** (the normal case) show as edge-of-viewport arrow chips with their label; tapping one pans to it; dragging the chip drags the VP.  
+- **Off-screen VPs** (the normal case) show as edge-of-viewport arrow chips with their label; tapping one pans to it; dragging the chip drags the VP. *(v1.7, UI-10: a small family-coloured arrow with a tiny label, no capsule, where the line from the ground point toward the VP leaves the screen.)*  
 - **Fit** (`F`, button): zooms to show paper \+ all VPs.  
 - **Invalid region:** while dragging VP-V (or horizon/VP-L/VP-R), the forbidden band around the horizon (PV-2) is shaded; the handle clamps to its edge with a haptic tick.  
 - 2-point / 3-point toggle in the Perspective tool's mini bar.  
@@ -687,7 +712,7 @@ A single "Display" popover with three presets and fine toggles:
 | :---- | :---- |
 | **Construction** | Horizon, VPs, rays (selected/all), hidden edges dashed, edges |
 | **Clean** | Edges (and fills if on) only |
-| **Guides** | Horizon, VPs, rays, no objects (backdrop for sketching) |
+| **Guides** | Horizon, VPs, floor grid, no objects (backdrop for sketching; v1.7: no fans of VP lines, UI-11) |
 
 Fine toggles: rays none/selected/all · hidden edges · face fills · grid on ground · paper frame · world-unit labels.
 
@@ -719,13 +744,16 @@ Status: all `ACTIVE` unless marked. Milestone in brackets.
 - **PS-02** \[M2\] Render horizon, VP-L, VP-R, VP-V (3pt), anchor, and paper.  
 - **PS-03** \[M2\] Drag each of: horizon, VP-L, VP-R, VP-V, anchor in the Perspective tool; all entities update live.  
 - **PS-04** \[M2\] 2-point / 3-point mode switch.  
-- **PS-05** \[M2\] Off-screen VP indicators and Fit.  
+- **PS-05** \[M2, revised v1.7\] Off-screen VP indicators (UI-10) and Fit.  
 - **PS-06** \[M2\] Perspective lock toggle.  
 - **PS-07** \[M3, revised v1.5\] Eye height adjustable (inspector with nothing selected → "Scene" panel). Editing it moves the horizon exactly as PS-08 does (one meaning: eye height ⇔ horizon).  
 - **PS-08** \[M8\] Horizon = eye level: dragging the horizon (or editing eye height) raises / lowers the eye, keeping the camera's horizontal distance to the origin, its orientation and focal length (ADR-0005). VP-V moves with the horizon in 3pt.  
 - **PS-09** \[M8\] Optional scale lock during VP-L / VP-R / VP-V drags: the eye height is re-derived so the unit cube at the anchor keeps its size on paper — the mean paper length of its three 1 u edges from the origin (OD-11, default off). *(v1.6: a vertical edge alone cannot be the reference — its paper length is fixed by the anchor, the horizon (eye height) and VP-V, so it never changes when VP-L / VP-R move.)*  
 - **PS-10** \[M8\] Optional "pin selection": during perspective drags the selected object's front-bottom corner stays fixed on paper instead of the world origin (OD-11, default off).  
-- **PS-11** \[M8\] Centre-of-vision handle in 2pt: `verticalX` draggable along the horizon between VP-L and VP-R (PV-1).
+- **PS-11** \[M8\] Centre-of-vision handle in 2pt: `verticalX` draggable along the horizon between VP-L and VP-R (PV-1).  
+- **PS-12** \[M9\] The eye is the stored setting (ADR-0006, §6.1): the horizon, centre of vision and every VP are derived from it; the PS is its VP-handle form; schema 2 with migration 001.  
+- **PS-13** \[M9\] View: a top-bar button opens two sliders — **Turn** (along the top: L face ↔ ¾ corner ↔ R face, 0°…90°) and **Tilt** (along the right edge, mirrored for left-handed: Level ↔ Top, 0°…90°). They walk the eye around the selected object's centre, or the ground point when nothing is selected, keeping viewing distance and size; ticks every 22.5° with gentle snapping, labels L · ¾ · R and Level · 45° · Top tap to jump. A preview until **Apply** (one undo step) or **Revert**. The knobs show the true angles, so VP drags move them too. While open: only pan / zoom reach the canvas; the tool bars, Scale and Pin are hidden; sketch strokes stay where they are on the paper, with a one-time note (SK-06). Readout: turn · tilt · eye height · pivot.  
+- **PS-14** \[M9\] Views with VPs at infinity are drawn exactly: face-on (one horizontal family parallel to the paper), level (2-point), top (horizon at infinity, VP-V at the centre of vision). Their infinite VPs have no handle; the Perspective mini bar says so.
 
 ### CV — Canvas & viewport
 
@@ -760,14 +788,16 @@ Status: all `ACTIVE` unless marked. Milestone in brackets.
 ### UI — Usability (from the v1.5 review)
 
 - **UI-01** \[M8\] Shapes submenu on the bottom toolbar (one button → Box, Rect planes, future shapes); adding a shape kind adds a menu entry via the entity registry (§8.4), no toolbar change.  
-- **UI-02** \[M8\] Contextual palettes never cover the canvas needlessly: the Sketch palette is a single collapsible row (tool · colour · width · snap), collapsed to a chip by default on phones, and hides while a stroke is being drawn; the same rule for other tool palettes.  
+- **UI-02** \[M8, revised v1.7\] Contextual palettes never cover the canvas needlessly: the Sketch palette is collapsible (tool · colour · size · snap), collapsed to a chip by default on phones, and hides while a stroke is being drawn; the same rule for other tool palettes. *(v1.7: palettes wrap onto extra rows instead of scrolling sideways, so every control is visible on a phone.)*  
 - **UI-03** \[M8\] Distinct lift handle: a vertical double-arrow glyph (family V colour), not a circle like the H resize handle.  
 - **UI-04** \[M8\] Multi-select on touch: long-press menu "Add to selection" and a Select-mode toggle "Multi"; marquee stays for mouse / pen.  
-- **UI-05** \[M8\] Origin marker: the anchor is drawn as a 3D axis marker — three 1 u family-coloured arrows along +X (→VP-R), +Y (→VP-L), +Z (up), exact by PS-T1; in Construction, optionally extended dashed to the VPs.  
+- **UI-05** \[M8, revised v1.7\] Origin marker: the anchor is drawn as a 3D axis marker — three thin 1 u family-coloured lines along +X (→VP-R), +Y (→VP-L), +Z (up), exact by PS-T1. *(v1.7: no arrowheads and no dashed extensions to the VPs — they were heavy.)*  
 - **UI-06** \[M8\] Floor grid: a 1 u grid on `z = 0` centred on the origin (display toggle, §10.7). Adjustable spacing and wall grids stay in B-04.  
 - **UI-07** \[M8\] Cone of vision: a 60° circle around the centre of vision (display toggle).  
 - **UI-08** \[M8\] Live readouts in the Perspective mini bar while dragging: eye height (u) and origin distance (u).  
-- **UI-09** \[M8\] The anchor's UI label is "Ground point" (OD-9) with a one-line tooltip; the glossary term stays "Anchor".
+- **UI-09** \[M8\] The anchor's UI label is "Ground point" (OD-9) with a one-line tooltip; the glossary term stays "Anchor".  
+- **UI-10** \[M9\] Off-screen VP hints replace the capsule chips: a small arrow and a tiny "VP-L / VP-R / VP-V" label in the family colour, at the screen edge where the line from the ground point toward the VP leaves it; tap pans to the VP, drag (Perspective tool) drags it; a 40 px touch target, no background.  
+- **UI-11** \[M9\] VP guide lines only as hints on object edges: construction rays (BX-05) extend each edge of the selected objects (or all, per Display) from its end toward its VP, one ray per edge; the fans of lines from every VP (the old Guides backdrop) are removed.
 
 ### LY — Layers
 
@@ -793,8 +823,9 @@ Status: all `ACTIVE` unless marked. Milestone in brackets.
 - **SK-02** \[M6\] Pressure from pen input; coalesced pointer events for smooth lines.  
 - **SK-03** \[M6\] Eraser (stroke-level).  
 - **SK-04** \[M6\] Perspective snap modes: **Off**, **Soft** (after stroke ends, if its best-fit line is within 6° of a family through its start point, it is straightened toward that VP), **Locked** (while drawing, the stroke is constrained to the line from start point to the chosen/nearest VP; VP-V at infinity → vertical).  
-- **SK-05** \[M6\] "Guides" display preset as the backdrop; sketch layer above objects.  
-- **SK-06** \[M6\] Warning when changing PS in a document containing strokes (strokes stay on the picture plane).
+- **SK-05** \[M6, revised v1.7\] "Guides" display preset as the backdrop (horizon, VPs, floor grid — no fans, UI-11); sketch layer above objects.  
+- **SK-06** \[M6\] Warning when changing PS in a document containing strokes (strokes stay on the picture plane).  
+- **SK-07** \[M9\] Brush size: four tappable sizes (1, 2, 4, 6 screen px) instead of a slider; defaults pencil 2, pen 2, marker 6.
 
 ### LX — Learning (placeholder; `PARKED` until M7 is scoped)
 
@@ -949,6 +980,12 @@ Each milestone is small, demoable, and closes with a tagged release.
 
 - **Status (0.9.0):** built; device checklist `docs/checklists/M8.md`.
 
+### M9 — The eye and the View (from the v1.7 review)
+
+- PS-12…14, PS-05 / UI-02 / UI-05 / SK-05 revised, UI-10, UI-11, SK-07; ADR-0006; schema 2. Delivered in one release (developer's decision 15, 2026-10-01).
+- ✅ Accept: an old scene opens unchanged (migration 001); View → Top shows the scene straight down with VP-V at the centre and no horizon; L / R show a face square on with that family parallel; the knobs follow VP drags; Revert restores the view, Apply is one undo step; no VP capsules or fans; the sketch options fit a phone; PS-T1…T6 still pass.
+- **Status (0.10.0):** built; device checklist `docs/checklists/M9.md`.
+
 ### 16.1 As built in 0.8.0 (M3–M6 in one delivery)
 
 Choices made where this document leaves room, and known deviations:
@@ -984,6 +1021,30 @@ Choices made where this document leaves room, and known deviations:
 - **Aids (UI-05…09).** Origin marker: three 1 u arrows (R orange, L blue, V purple), dashed to their VPs when rays are on; floor grid 1 u over ±10 u (on in Construction and Guides); cone of vision (Display toggle); live readout "Eye … u · … u away" in the Perspective mini bar; the anchor handle is labelled "Ground point".
 - **Plan view (CV-05, OD-10, OD-12, OD-13).** `core/derive/plan.ts`: eye at the bottom looking up; grid, origin axes, box and floor-rect footprints, walls as lines, view wedge through the paper edges. Read-only, tap selects; auto-fits eye + origin + objects (manual pan / zoom of the plan is not built). Phone: panel above the tool bars in the inspector's place; wide screens: floating card.
 - **Existing scenes** keep their stored perspective (e.g. eye height 2.2 u); only new scenes use OD-3 v1.5. Display prefs saved before 0.9.0 get the new toggles from the Construction preset.
+
+### 16.4 As built in 0.10.0 (M9)
+
+- **Eye (PS-12, ADR-0006).** `core/perspective/view.ts`: `Eye`, `rotationOf`, `cameraFromEye`, `eyeFromCamera`, `eyeFromPerspective`, `perspectiveOf` (null when a stored VP would be at infinity or the origin is not in front below the horizon), `horizonOf`, `orbit`, `setEyeMode`, `withEyeHeight`, `clampEye`. Angles at exactly 0° / 90° use exact sines so infinite VPs are exactly at infinity. All existing PS tools (handles, eye level, scale lock, pin) run on the VP-handle form and store the result as the eye. Property tests: PS → eye → camera equals §6.2's camera, PS round trip, proper rotations, orbit keeps the pivot (1,000 runs each).
+- **View (PS-13).** Top-bar button (rotate icon) → `ui/ViewPanel.tsx`: turn slider under the top bar, tilt slider on the right (left when the toolbar is set left), both 36 / 30 px in from the edges; knobs with an eye icon; snap within 2.5° of the 22.5° ticks; a document transaction (preview) committed by Apply, cancelled by Revert or Esc. The orbit pivot is fixed when the panel opens (the selected box / rect centre, else the origin).
+- **VPs at infinity (PS-14).** Derived guides draw only finite VPs and the horizon only when finite; Fit page + VPs includes the finite ones; stroke snapping uses the homogeneous VPs (parallel lines for an infinite family); the plan view takes the heading from the picture's right, so it works looking straight down.
+- **Clean-up (UI-05, UI-10, UI-11, SK-05, SK-07, UI-02).** `ui/VpHints.tsx` replaces `OffscreenChips`; the fans (`core/derive/fans.ts`, `vpFans` display toggle, fan styles) are deleted — saved display prefs drop the old toggle; construction rays: one per edge from the end nearer its VP; origin axes are thin lines (no arrowheads, no dashed extensions); sketch options in three wrapping rows (tool · colours · sizes + snap); all mini bars wrap; the top bar packs tighter below 420 px.
+- **Turn range.** 0°…90° (L face ↔ corner ↔ R face), not −90°…+90° — see §16.5.
+
+### 16.5 Conflict review (v1.7)
+
+| Conflict | Resolution |
+| :-- | :-- |
+| §2.2 non-goal "3D camera orbit UI" vs the View sliders | Amended: the non-goal is a *free* 3D orbit / 3D engine. The View is two 1-D perspective controls producing the same projected lines; no new dependency, no 3D renderer. |
+| §6.1 / §7.2 "the PS is persisted" vs decision 14A (the eye is stored) | ADR-0006: the eye is persisted (schema 2, migration 001); the PS stays as the VP-handle form, so §6.2's formulas, §6.3's PV rules and the PS-T tests still define the handles. |
+| ADR-0005 "horizon = eye level" vs orbit changing the eye height | No conflict: the horizon is always the eye level. A horizon drag moves the eye vertically (ADR-0005); the orbit swings the eye around the pivot, so its height follows from the tilt. Both readouts show it. |
+| Decision 3A "turn −90…+90 (front half)" vs VP-L / VP-R tied to world axes Y / X | Beyond the face-on views the X and Y families swap sides of the centre of vision, which the VP-handle form (VP-L left of VP-R) cannot hold. The turn covers the quarter between the two face-on views — L face · ¾ · R face — which shows every face pairing of an axis-aligned scene. Labels changed from "L · 45° · Front · 45° · R" accordingly. |
+| Decision 6A (mode from the view) vs the 2-pt / 3-pt buttons | Kept as shortcuts: they show the derived mode; 2-pt levels the eye, 3-pt tilts it (through the PS, or by orbiting about the ground point when there is no PS). |
+| PV-1…PV-5 vs face-on / top views | Those views have no VP-handle form; they are valid eyes (§6.3 eye validity) with the VP handles hidden (PS-14). |
+| SK-05 Guides backdrop (fans) vs "no bunch of random rays" | Fans removed (UI-11); Guides = horizon, VPs, floor grid. |
+| UI-05 arrows / dashed extensions vs "remove the heavy arrow" | Thin lines only. |
+| PS-05 capsule chips vs "remove the capsules" | Small hints (UI-10), same tap / drag behaviour. |
+| Decision 12A (hide Scale / Pin) vs PS-09 / PS-10 | Hidden only while the View is open; the orbit keeps size and pivot by construction. |
+| Decision 13A (strokes stay put) vs SK-06 | Same rule: strokes are paper marks; the SK-06 note is shown once when the View opens in a document with strokes. |
 
 ### 16.2 Conflict review (v1.5)
 
@@ -1106,6 +1167,7 @@ Read first: docs/REQUIREMENTS.md, docs/decisions/\*.
 | OD-12 | Plan view orientation | Eye at the bottom, looking up the screen (view direction up), so left/right match the picture. |
 | OD-13 | Plan view interaction in M8 | Read-only plus tap-to-select; moving objects in the plan view is later. **Confirmed.** |
 | OD-14 | Default ceiling height (RC-02) / working-plane height (PL-01) | 2.7 u / 2.4 u (above the default 1.6 u eye, so it catches taps above the horizon). |
+| OD-15 | M9 View decisions (developer, 2026-10-01: "all A") | 1 preview with Apply / Revert · 2 pivot = selected object, else ground point · 3 turn limited (built 0°…90°, §16.5) · 4 tilt Top…Level, eye never below the floor · 5 perspective (not flat) at the ends · 6 mode from the view · 7 distance and lens fixed, eye height follows · 8 turn at Top spins the page · 9 View button in the top bar, sliders inset, mirrored for left-handed · 10 snap ticks, tap labels · 11 knobs follow VP drags · 12 Scale / Pin hidden in View · 13 strokes stay on the paper, one-time note · 14 the eye is stored (ADR-0006) · 15 one release. |
 
 ---
 

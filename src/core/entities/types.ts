@@ -4,12 +4,14 @@ import type { RenderItem } from '../derive/renderModel';
 import type { DisplayOptions } from '../derive/display';
 import type { Entity, EntityBase, Id } from '../document/types';
 import type { Vec2 } from '../math/vec';
-import type { Camera, Family, PerspectiveSystem } from '../perspective/types';
+import type { Camera, Family } from '../perspective/types';
+import type { Eye } from '../perspective/view';
 import type { Rect } from '../viewport/viewport';
 
 export interface DeriveCtx {
   cam: Camera;
-  ps: PerspectiveSystem;
+  /** The stored eye the camera came from (memo key). */
+  eye: Eye;
   display: DisplayOptions;
   selected: boolean;
 }

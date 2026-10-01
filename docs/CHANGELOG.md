@@ -3,6 +3,24 @@
 User-visible changes per release. Versions: `package.json` semver; each
 milestone release bumps the minor version, and CI appends `-build.<run>`.
 
+## 0.10.0 — M9: the eye and the View
+
+- **View** (rotate icon in the top bar): two sliders walk your eye around the
+  selected object (or the ground point). **Turn** goes from the left face
+  square on, through the corner view, to the right face square on; **Tilt**
+  goes from level to straight down (Top). Tap L · ¾ · R or Level · 45° · Top
+  to jump. It is a preview: **Apply** keeps it (one undo step), **Revert**
+  goes back. Sketch strokes stay on the paper.
+- **Exact 1-point and top views:** a face-on or straight-down view draws its
+  parallel lines exactly (that vanishing point is at infinity, so it has no
+  handle there).
+- **Your scenes are converted** on first open; they look the same.
+- **Less clutter:** the VP capsules are now small arrows with a tiny label at
+  the screen edge; no more fans of VP lines — only the edges of the selected
+  object point to their VPs; the ground-point axes are thin lines.
+- **Sketch options fit the screen** (they wrap into rows), with four tappable
+  brush sizes.
+
 ## 0.9.0 — M8: scene & viewing revision
 
 - **The horizon is your eye level.** Dragging it raises or lowers the eye —

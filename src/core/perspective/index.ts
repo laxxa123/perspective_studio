@@ -5,3 +5,4 @@ export * from './edit';
 export * from './defaults';
 export * from './handles';
 export * from './eye';
+export * from './view';

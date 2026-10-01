@@ -15,6 +15,7 @@ import {
   PenLine,
   RectangleHorizontal,
   Redo2,
+  Rotate3d,
   SlidersHorizontal,
   SunMoon,
   Undo2,
@@ -24,14 +25,14 @@ import { allBounds, paperBounds } from '../core/derive/derive';
 import { DISPLAY_PRESETS, presetOf } from '../core/derive/display';
 import { kindOf } from '../core/entities/registry';
 import type { KnownEntity } from '../core/document/types';
-import { ANCHOR_MARGIN_PP } from '../core/math/tolerance';
 import { forbiddenBand, pointHandles, type PerspectiveHandleId } from '../core/perspective';
+import { ANCHOR_MARGIN_PP } from '../core/math/tolerance';
 import { fitRect, stageTransform, type Viewport } from '../core/viewport/viewport';
 import { exportJson, exportPng, exportSvg, fileSafe } from '../export/exporters';
 import { shareFile } from '../platform/files';
 import { onPause } from '../platform/lifecycle';
 import { SceneView, type Overlay } from '../render/konva/SceneView';
-import { cameraOf, renderModelOf } from '../state/derived';
+import { cameraOf, perspectiveFor, renderModelOf } from '../state/derived';
 import { useDocumentStore } from '../state/documentStore';
 import { useSettingsStore } from '../state/settingsStore';
 import { useUiStore, type ToolId } from '../state/uiStore';
@@ -44,11 +45,12 @@ import { ContextMenu } from './ContextMenu';
 import { DisplayPanel } from './DisplayPanel';
 import { Inspector } from './Inspector';
 import { LayersPanel } from './LayersPanel';
-import { OffscreenChips } from './OffscreenChips';
 import { closeDocument, saveNow, savePrefs, scheduleSave } from './session';
 import { PlanPanel } from './PlanPanel';
 import { ShapesMenu } from './ShapesMenu';
 import { ToolOptions } from './ToolOptions';
+import { ViewPanel } from './ViewPanel';
+import { VpHints } from './VpHints';
 import { shapeOptions } from '../core/entities/registry';
 import { useWindowSize } from './useWindowSize';
 
@@ -74,7 +76,7 @@ export function Editor({ theme }: { theme: Theme }) {
   const revision = useDocumentStore((s) => s.revision);
   const canUndo = useDocumentStore((s) => s.history.past.length > 0);
   const canRedo = useDocumentStore((s) => s.history.future.length > 0);
-  const { viewport, tool, perspectiveLocked, dragging, selection, display, panel, toast, live, marquee, workingPlane, planOpen, shape } = useUiStore();
+  const { viewport, tool, perspectiveLocked, dragging, selection, display, panel, toast, live, marquee, workingPlane, planOpen, shape, viewOpen } = useUiStore();
   const handedness = useSettingsStore((s) => s.handedness);
   const ui = useUiStore.getState;
   const [menuOpen, setMenuOpen] = useState(false);
@@ -105,7 +107,8 @@ export function Editor({ theme }: { theme: Theme }) {
       setViewport: (v: Viewport) => useUiStore.getState().setViewport(v),
       getTool: () => {
         const s = useUiStore.getState();
-        if (s.tool === 'perspective' && s.perspectiveLocked) return idleTool;
+        // While the View sliders are open only pan / zoom reach the canvas (PS-13).
+        if (s.viewOpen || (s.tool === 'perspective' && s.perspectiveLocked)) return idleTool;
         return toolFor(s.tool);
       },
       undo: () => useDocumentStore.getState().undo(),
@@ -115,7 +118,7 @@ export function Editor({ theme }: { theme: Theme }) {
   }, []);
 
   const fitPaper = () => ui().setViewport(fitRect(paperBounds(doc.paper), w, h, FIT_INSETS));
-  const fitAll = () => ui().setViewport(fitRect(allBounds(doc.perspective, doc.paper), w, h, FIT_INSETS));
+  const fitAll = () => ui().setViewport(fitRect(allBounds(cameraOf(doc.eye), doc.paper), w, h, FIT_INSETS));
 
   const deleteSelection = () => {
     if (!selection.length) return;
@@ -165,18 +168,19 @@ export function Editor({ theme }: { theme: Theme }) {
   const selSet = useMemo(() => new Set(selection), [selection]);
 
   // ----- overlay -----
-  const editingPerspective = tool === 'perspective' && !perspectiveLocked;
+  const editingPerspective = tool === 'perspective' && !perspectiveLocked && !viewOpen;
+  const ps = perspectiveFor(doc.eye);
   const drawing = live.length > 0;
   const overlay: Overlay = { handles: [], active: dragging, band: null, marquee, live };
-  if (editingPerspective) {
-    overlay.handles = pointHandles(doc.perspective).map((hd) => ({ id: hd.id, label: hd.label, family: hd.family, x: hd.point.x, y: hd.point.y, big: true }));
+  if (editingPerspective && ps) {
+    overlay.handles = pointHandles(ps).map((hd) => ({ id: hd.id, label: hd.label, family: hd.family, x: hd.point.x, y: hd.point.y, big: true }));
     overlay.band =
       dragging === 'anchor'
-        ? { top: -1e6, bottom: doc.perspective.horizonY + ANCHOR_MARGIN_PP }
+        ? { top: -1e6, bottom: ps.horizonY + ANCHOR_MARGIN_PP }
         : dragging && BAND_HANDLES.includes(dragging)
-          ? forbiddenBand(doc.perspective)
+          ? forbiddenBand(ps)
           : null;
-  } else if (tool === 'select') {
+  } else if (tool === 'select' && !viewOpen) {
     overlay.handles = selectionHandles(toolEnv).map(({ handle }) => ({
       id: handle.id,
       family: handle.family,
@@ -191,7 +195,8 @@ export function Editor({ theme }: { theme: Theme }) {
     (() => {
       const e = doc.entities[selection[0]] as KnownEntity | undefined;
       const def = e && !('unknown' in e) ? kindOf(e.kind) : undefined;
-      return !!def && !!e && def.depth(e, { cam: cameraOf(doc.perspective), ps: doc.perspective, display, selected: true }) !== null && def.bounds(e, { cam: cameraOf(doc.perspective), ps: doc.perspective, display, selected: true }) === null;
+      const ctx = { cam: cameraOf(doc.eye), eye: doc.eye, display, selected: true };
+      return !!def && !!e && def.depth(e, ctx) !== null && def.bounds(e, ctx) === null;
     })();
 
   const exportAs = async (fmt: 'png1' | 'png2' | 'png4' | 'svg' | 'json') => {
@@ -225,7 +230,7 @@ export function Editor({ theme }: { theme: Theme }) {
       </div>
 
       {viewport && (
-        <OffscreenChips perspective={doc.perspective} viewport={viewport} width={w} height={h} canDrag={editingPerspective} tool={perspectiveTool} theme={theme} />
+        <VpHints doc={doc} viewport={viewport} width={w} height={h} canDrag={editingPerspective} tool={perspectiveTool} theme={theme} />
       )}
 
       <header className={drawing ? 'topbar hidden' : 'topbar'}>
@@ -245,6 +250,10 @@ export function Editor({ theme }: { theme: Theme }) {
         </button>
         <button className="icon" aria-label="Fit page and all VPs" title="Fit page + all VPs (F)" onClick={fitAll}>
           <Maximize2 size={20} />
+        </button>
+        {/* PS-13: turn and tilt the eye around the selection (decision 9A). */}
+        <button className={viewOpen ? 'icon on' : 'icon'} aria-label="View" title="View: turn & tilt" disabled={viewOpen || perspectiveLocked} onClick={() => ui().set({ viewOpen: true, panel: 'none', contextMenu: null })}>
+          <Rotate3d size={20} />
         </button>
         <button className={planOpen ? 'icon on' : 'icon'} aria-label="Plan view" title="Plan view" onClick={() => ui().set({ planOpen: !planOpen })}>
           <MapIcon size={20} />
@@ -287,11 +296,12 @@ export function Editor({ theme }: { theme: Theme }) {
       {panel === 'layers' && <LayersPanel doc={doc} />}
       {panel === 'display' && <DisplayPanel onFitPaper={fitPaper} />}
       {panel === 'shapes' && <ShapesMenu />}
-      <div className={`bottom-stack ${handedness}${drawing ? ' drawing' : ''}`}>
+      {viewOpen && <ViewPanel doc={doc} side={handedness === 'left' ? 'left' : 'right'} />}
+      <div className={`bottom-stack ${handedness}${drawing ? ' drawing' : ''}${viewOpen ? ' viewing' : ''}`}>
         {/* Stacked above the tool bars so nothing overlaps; on phones the plan view takes the inspector's slot (OD-10, §10.1). */}
         {planOpen && !drawing && <PlanPanel doc={doc} theme={theme} width={Math.min(w - 40, 420)} height={Math.round(Math.min(h * 0.4, 360))} />}
-        {panel !== 'layers' && panel !== 'display' && (!planOpen || w >= 820) && !drawing && <Inspector doc={doc} theme={theme} />}
-        <ToolOptions doc={doc} theme={theme} />
+        {panel !== 'layers' && panel !== 'display' && (!planOpen || w >= 820) && !drawing && !viewOpen && <Inspector doc={doc} theme={theme} />}
+        {!viewOpen && <ToolOptions doc={doc} theme={theme} />}
         <nav className="toolbar">
           {TOOLS.map((t) => (
             <button

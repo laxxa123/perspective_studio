@@ -5,7 +5,6 @@ import { useUiStore } from '../state/uiStore';
 
 const TOGGLES: [keyof DisplayOptions, string][] = [
   ['guides', 'Horizon & VPs'],
-  ['vpFans', 'VP guide lines'],
   ['objects', 'Objects'],
   ['hiddenEdges', 'Hidden edges'],
   ['faceFills', 'Face fills'],

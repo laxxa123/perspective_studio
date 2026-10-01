@@ -1,6 +1,7 @@
 // The persisted document (§7.2–§7.7).
 import type { Vec2, Vec3 } from '../math/vec';
-import type { Family, PerspectiveSystem } from '../perspective/types';
+import type { Family } from '../perspective/types';
+import type { Eye } from '../perspective/view';
 
 export type Id = string;
 
@@ -78,7 +79,8 @@ export interface Paper {
   height: number;
 }
 
-export const SCHEMA_VERSION = 1;
+/** 2: the eye replaced the perspective system as the stored setting (ADR-0006). */
+export const SCHEMA_VERSION = 2;
 
 export interface SceneDocument {
   schemaVersion: number;
@@ -88,7 +90,8 @@ export interface SceneDocument {
   createdAt: string;
   updatedAt: string;
   paper: Paper;
-  perspective: PerspectiveSystem;
+  /** The eye (ADR-0006); the horizon and VPs are derived from it. */
+  eye: Eye;
   /** Bottom → top draw order. */
   layers: Layer[];
   entities: Record<Id, Entity>;

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { newDocument } from '../document/factory';
 import { loadDocument, serializeDocument } from '../document/schema';
 import type { BoxEntity } from '../document/types';
-import { setMode } from '../perspective';
+import { cameraFromEye, setEyeMode } from '../perspective';
 import { validPerspective } from '../perspective/arbitraries.test-util';
 import { allBounds, deriveDocument, newDeriveCache } from './derive';
 import { DISPLAY_PRESETS } from './display';
@@ -26,8 +26,13 @@ describe('deriveDocument (§8.3)', () => {
     expect(deriveDocument(doc, DISPLAY_PRESETS.clean).items.some((i) => i.role === 'vp')).toBe(false);
     const g = deriveDocument(doc, DISPLAY_PRESETS.guides).items;
     expect(g.some((i) => i.role === 'edge')).toBe(false);
-    expect(g.some((i) => i.key.startsWith('fan:'))).toBe(true);
-    expect(deriveDocument({ ...doc, perspective: setMode(doc.perspective, '2pt') }, construction).items.filter((i) => i.role === 'vp')).toHaveLength(2);
+    // UI-11 (v1.7): no fans of VP guide lines.
+    expect(g.some((i) => i.role === 'ray')).toBe(false);
+    expect(deriveDocument({ ...doc, eye: setEyeMode(doc.eye, '2pt') }, construction).items.filter((i) => i.role === 'vp')).toHaveLength(2);
+    // PS-14: a top view has VP-V only, and no horizon.
+    const top = deriveDocument({ ...doc, eye: { ...doc.eye, tilt: 90 } }, construction).items;
+    expect(top.filter((i) => i.role === 'vp').map((i) => i.family)).toEqual(['V']);
+    expect(top.some((i) => i.role === 'horizon')).toBe(false);
   });
 
   it('hides invisible layers and entities', () => {
@@ -64,8 +69,8 @@ describe('deriveDocument (§8.3)', () => {
   });
 
   it('bounds paper and all VPs for Fit all', () => {
-    const r = allBounds(doc.perspective, doc.paper);
-    expect(r.x).toBe(-700);
-    expect(r.y + r.height).toBe(3200);
+    const r = allBounds(cameraFromEye(doc.eye), doc.paper);
+    expect(r.x).toBeCloseTo(-700, 6);
+    expect(r.y + r.height).toBeCloseTo(3200, 6);
   });
 });

@@ -1,22 +1,18 @@
 // Validation of loaded / imported documents (§7.8, DOC-04).
 import { z } from 'zod';
 import { kindOf } from '../entities/registry';
-import { clampPerspective, violations } from '../perspective/validity';
-import type { PerspectiveSystem } from '../perspective/types';
+import { clampEye, eyeViolations, type Eye } from '../perspective/view';
 import { migrate } from './migrations';
 import { SCHEMA_VERSION, type Entity, type SceneDocument } from './types';
 
 const vec2 = z.object({ x: z.number(), y: z.number() });
 
-const perspectiveSchema = z.object({
-  mode: z.enum(['3pt', '2pt']),
-  horizonY: z.number(),
-  vpLeftX: z.number(),
-  vpRightX: z.number(),
-  verticalX: z.number(),
-  vpVerticalY: z.number().nullable(),
-  anchor: vec2,
-  eyeHeight: z.number(),
+const eyeSchema = z.object({
+  cv: vec2,
+  distance: z.number(),
+  turn: z.number(),
+  tilt: z.number(),
+  position: z.object({ x: z.number(), y: z.number(), z: z.number() }),
 });
 
 const layerSchema = z.object({
@@ -38,7 +34,7 @@ const documentSchema = z.object({
   createdAt: z.string(),
   updatedAt: z.string(),
   paper: z.object({ width: z.number().positive(), height: z.number().positive() }),
-  perspective: perspectiveSchema,
+  eye: eyeSchema,
   layers: z.array(layerSchema).min(1),
   entities: z.record(z.string(), entityBase),
 });
@@ -50,7 +46,7 @@ export interface LoadResult {
 
 /**
  * Parses stored / imported JSON: migrate, validate, repair an invalid
- * perspective system deterministically (§6.3), keep unknown entity kinds
+ * eye deterministically (ADR-0006), keep unknown entity kinds
  * (§7.7). Throws with a readable message when the file cannot be opened.
  */
 export function loadDocument(raw: unknown): LoadResult {
@@ -61,12 +57,12 @@ export function loadDocument(raw: unknown): LoadResult {
   const d = parsed.data;
   const warnings: string[] = [];
 
-  let perspective = d.perspective as PerspectiveSystem;
-  const bad = violations(perspective);
-  if (bad.includes('NaN')) throw new Error('Invalid document: perspective has non-finite values.');
+  let eye: Eye = d.eye;
+  const bad = eyeViolations(eye);
+  if (bad.includes('NaN')) throw new Error('Invalid document: the eye has non-finite values.');
   if (bad.length) {
-    perspective = clampPerspective(perspective);
-    warnings.push(`Perspective repaired (${bad.join(', ')}).`);
+    eye = clampEye(eye);
+    warnings.push(`Eye repaired (${bad.join(', ')}).`);
   }
 
   const layerIds = new Set(d.layers.map((l) => l.id));
@@ -90,7 +86,7 @@ export function loadDocument(raw: unknown): LoadResult {
     return { ...l, order };
   });
 
-  return { doc: { ...d, perspective, layers, entities }, warnings };
+  return { doc: { ...d, eye, layers, entities }, warnings };
 }
 
 /** The JSON form of a document: unknown entities are written back unchanged (§7.7). */

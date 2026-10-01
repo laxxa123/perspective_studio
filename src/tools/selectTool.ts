@@ -22,7 +22,7 @@ export function selectionHandles(env: ToolEnv): { entity: KnownEntity; handle: H
   if (!e || 'unknown' in e || !isEditable(doc, e.id)) return [];
   const def = kindOf(e.kind);
   if (!def) return [];
-  const ctx: DeriveCtx = { cam: env.cam(), ps: doc.perspective, display: env.display(), selected: true };
+  const ctx: DeriveCtx = { cam: env.cam(), eye: doc.eye, display: env.display(), selected: true };
   return def.handles(e, ctx).map((handle) => ({ entity: e, handle }));
 }
 
@@ -40,7 +40,7 @@ export function createSelectTool(env: ToolEnv): Tool {
   const applyDrag = (i: ToolInput) => {
     if (!press || press.kind === 'empty') return;
     const doc = env.doc();
-    const ctx: DeriveCtx = { cam: env.cam(), ps: doc.perspective, display: env.display(), selected: true };
+    const ctx: DeriveCtx = { cam: env.cam(), eye: doc.eye, display: env.display(), selected: true };
     const others = Object.values(doc.entities) as Entity[];
     const snapStep = env.snapStep();
     if (press.kind === 'handle') {

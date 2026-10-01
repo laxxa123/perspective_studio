@@ -7,6 +7,7 @@ import { scaled, TOL_VP_INCIDENCE } from '../math/tolerance';
 import { deriveCamera, project, vanishingPoint } from '../perspective/camera';
 import { DEFAULT_PERSPECTIVE as ps } from '../perspective/defaults';
 import { validPerspective } from '../perspective/arbitraries.test-util';
+import { eyeFromPerspective } from '../perspective/view';
 import { boxCorners, boxKind, visibleFaces } from './box/box';
 import { rectKind } from './rect/rect';
 import { strokeKind, strokeOutline } from './stroke/stroke';
@@ -14,7 +15,8 @@ import { kindOf, registeredKinds } from './registry';
 import { MOVE_HANDLE, type DeriveCtx } from './types';
 
 const cam = deriveCamera(ps);
-const ctx = (selected = false, display = DISPLAY_PRESETS.construction): DeriveCtx => ({ cam, ps, display, selected });
+const eye = eyeFromPerspective(ps);
+const ctx = (selected = false, display = DISPLAY_PRESETS.construction): DeriveCtx => ({ cam, eye, display, selected });
 const box: BoxEntity = { id: 'b', kind: 'box', layerId: 'l', visible: true, locked: false, position: { x: -0.5, y: -0.5, z: 0 }, size: { x: 1, y: 1, z: 1 }, uniform: false };
 
 describe('registry (§8.4)', () => {
@@ -29,7 +31,7 @@ describe('box (BX-01, BX-05)', () => {
     fc.assert(
       fc.property(validPerspective, (p) => {
         const c = deriveCamera(p);
-        for (const it of boxKind.derive(box, { cam: c, ps: p, display: DISPLAY_PRESETS.construction, selected: false })) {
+        for (const it of boxKind.derive(box, { cam: c, eye, display: DISPLAY_PRESETS.construction, selected: false })) {
           if ((it.role !== 'edge' && it.role !== 'hiddenEdge') || !it.family) continue;
           const [x0, y0, x1, y1] = it.points;
           const len = Math.hypot(x1 - x0, y1 - y0);

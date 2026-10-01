@@ -27,9 +27,9 @@ export function createSketchTool(env: ToolEnv): Tool {
   const constrained = (): { x: number; y: number; p: number }[] => {
     const s = env.sketch();
     if (s.snap !== 'locked' || !family || raw.length < 2) return raw;
-    const ps = env.doc().perspective;
+    const cam = env.cam();
     const start = raw[0];
-    return raw.map((q) => ({ ...onGuide(ps, family!, start, q), p: q.p }));
+    return raw.map((q) => ({ ...onGuide(cam, family!, start, q), p: q.p }));
   };
 
   /** The width setting is in screen px; strokes store pp (§7.6), fixed when the stroke starts. */
@@ -93,7 +93,7 @@ export function createSketchTool(env: ToolEnv): Tool {
       const s = env.sketch();
       if (s.snap === 'locked' && !family && startScreen && dist2(startScreen, i.screen) > LOCK_AFTER_PX) {
         const start = raw[0];
-        family = nearestFamily(env.doc().perspective, start, { x: i.pp.x - start.x, y: i.pp.y - start.y });
+        family = nearestFamily(env.cam(), start, { x: i.pp.x - start.x, y: i.pp.y - start.y });
       }
       showLive();
     },
@@ -112,7 +112,7 @@ export function createSketchTool(env: ToolEnv): Tool {
       if (s.snap === 'locked' && family) {
         constraint = { family, mode: 'locked' };
       } else if (s.snap === 'soft' && pts.length > 2) {
-        const snapped = softSnap(env.doc().perspective, pts);
+        const snapped = softSnap(env.cam(), pts);
         if (snapped) {
           pts = snapped.points.map((q, k) => ({ ...q, p: pts[k].p }));
           constraint = { family: snapped.family, mode: 'soft' };

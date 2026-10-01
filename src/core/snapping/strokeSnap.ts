@@ -1,26 +1,23 @@
 // Perspective snapping for strokes (SK-04).
-import { finite, type HPoint } from '../math/homogeneous';
+import type { HPoint } from '../math/homogeneous';
 import type { Vec2 } from '../math/vec';
-import type { Family, PerspectiveSystem } from '../perspective/types';
+import { vanishingPoint } from '../perspective/camera';
+import type { Camera, Family } from '../perspective/types';
 
 /** Soft-snap threshold (OD-7). */
 export const SOFT_SNAP_DEGREES = 6;
 /** Screen distance before a locked stroke picks its family, px. */
 export const LOCK_AFTER_PX = 12;
 
-/** The stored VPs as homogeneous points (VP-V at infinity in 2pt → vertical). */
-export function familyVp(ps: PerspectiveSystem, f: Family): HPoint {
-  if (f === 'L') return finite({ x: ps.vpLeftX, y: ps.horizonY });
-  if (f === 'R') return finite({ x: ps.vpRightX, y: ps.horizonY });
-  return ps.mode === '3pt' && ps.vpVerticalY !== null ? finite({ x: ps.verticalX, y: ps.vpVerticalY }) : { x: 0, y: 1, w: 0 };
-}
+/** The family's VP as a homogeneous point (at infinity: a direction, e.g. vertical in 2pt). */
+export const familyVp = (cam: Camera, f: Family): HPoint => vanishingPoint(cam, f);
 
-/** All three families snap; in 2pt family V is vertical. */
-export const families = (_ps: PerspectiveSystem): Family[] => ['L', 'R', 'V'];
+/** All three families snap; a family whose VP is at infinity snaps to parallels. */
+const FAMILIES: Family[] = ['L', 'R', 'V'];
 
 /** Unit direction of the guide line from `start` toward the family's VP. */
-export function guideDirection(ps: PerspectiveSystem, f: Family, start: Vec2): Vec2 | null {
-  const vp = familyVp(ps, f);
+export function guideDirection(cam: Camera, f: Family, start: Vec2): Vec2 | null {
+  const vp = familyVp(cam, f);
   const dx = vp.w ? vp.x / vp.w - start.x : vp.x;
   const dy = vp.w ? vp.y / vp.w - start.y : vp.y;
   const l = Math.hypot(dx, dy);
@@ -28,8 +25,8 @@ export function guideDirection(ps: PerspectiveSystem, f: Family, start: Vec2): V
 }
 
 /** Angle in degrees between the line through start–p and the family's guide line (0–90). */
-export function angleToGuide(ps: PerspectiveSystem, f: Family, start: Vec2, dir: Vec2): number {
-  const g = guideDirection(ps, f, start);
+export function angleToGuide(cam: Camera, f: Family, start: Vec2, dir: Vec2): number {
+  const g = guideDirection(cam, f, start);
   const l = Math.hypot(dir.x, dir.y);
   if (!g || l < 1e-9) return 90;
   const c = Math.abs((g.x * dir.x + g.y * dir.y) / l);
@@ -37,11 +34,11 @@ export function angleToGuide(ps: PerspectiveSystem, f: Family, start: Vec2, dir:
 }
 
 /** The family whose guide through `start` best matches direction `dir`. */
-export function nearestFamily(ps: PerspectiveSystem, start: Vec2, dir: Vec2): Family {
+export function nearestFamily(cam: Camera, start: Vec2, dir: Vec2): Family {
   let best: Family = 'L';
   let bestA = Infinity;
-  for (const f of families(ps)) {
-    const a = angleToGuide(ps, f, start, dir);
+  for (const f of FAMILIES) {
+    const a = angleToGuide(cam, f, start, dir);
     if (a < bestA) {
       bestA = a;
       best = f;
@@ -51,8 +48,8 @@ export function nearestFamily(ps: PerspectiveSystem, start: Vec2, dir: Vec2): Fa
 }
 
 /** Projection of p onto the guide line from `start` of family f. */
-export function onGuide(ps: PerspectiveSystem, f: Family, start: Vec2, p: Vec2): Vec2 {
-  const g = guideDirection(ps, f, start);
+export function onGuide(cam: Camera, f: Family, start: Vec2, p: Vec2): Vec2 {
+  const g = guideDirection(cam, f, start);
   if (!g) return p;
   const t = (p.x - start.x) * g.x + (p.y - start.y) * g.y;
   return { x: start.x + g.x * t, y: start.y + g.y * t };
@@ -80,11 +77,11 @@ export function bestFitDirection(pts: Vec2[]): Vec2 | null {
  * Soft snap (SK-04): if the stroke's best-fit line is within 6° of a family's
  * guide through its start point, every point is projected onto that guide.
  */
-export function softSnap(ps: PerspectiveSystem, pts: Vec2[]): { family: Family; points: Vec2[] } | null {
+export function softSnap(cam: Camera, pts: Vec2[]): { family: Family; points: Vec2[] } | null {
   const dir = bestFitDirection(pts);
   if (!dir) return null;
   const start = pts[0];
-  const f = nearestFamily(ps, start, dir);
-  if (angleToGuide(ps, f, start, dir) > SOFT_SNAP_DEGREES) return null;
-  return { family: f, points: pts.map((p) => onGuide(ps, f, start, p)) };
+  const f = nearestFamily(cam, start, dir);
+  if (angleToGuide(cam, f, start, dir) > SOFT_SNAP_DEGREES) return null;
+  return { family: f, points: pts.map((p) => onGuide(cam, f, start, p)) };
 }

@@ -68,20 +68,20 @@ describe('stroke snapping (SK-04)', () => {
   const start = { x: 600, y: 600 };
   it('picks the family whose guide matches the direction', () => {
     const towardR = { x: ps.vpRightX - start.x, y: ps.horizonY - start.y };
-    expect(nearestFamily(ps, start, towardR)).toBe('R');
-    expect(nearestFamily(ps, start, { x: 0, y: 1 })).toBe('V');
+    expect(nearestFamily(cam, start, towardR)).toBe('R');
+    expect(nearestFamily(cam, start, { x: 0, y: 1 })).toBe('V');
   });
   it('locks points onto a guide (vertical in 2pt)', () => {
-    const p = onGuide(setMode(ps, '2pt'), 'V', start, { x: 650, y: 900 });
+    const p = onGuide(deriveCamera(setMode(ps, '2pt')), 'V', start, { x: 650, y: 900 });
     expect(p.x).toBeCloseTo(600);
   });
   it('soft-snaps a nearly straight stroke within 6°, not a wobbly one', () => {
     const toVp = (t: number) => ({ x: start.x + (ps.vpRightX - start.x) * t, y: start.y + (ps.horizonY - start.y) * t });
     const almost = [0, 0.05, 0.1, 0.15].map((t, i) => ({ x: toVp(t).x, y: toVp(t).y + (i % 2 ? 2 : -2) }));
-    const snapped = softSnap(ps, almost)!;
+    const snapped = softSnap(cam, almost)!;
     expect(snapped.family).toBe('R');
     const far = [start, { x: 700, y: 650 }, { x: 800, y: 700 }];
-    expect(softSnap(ps, far)).toBeNull();
+    expect(softSnap(cam, far)).toBeNull();
     expect(bestFitDirection([start])).toBeNull();
   });
 });

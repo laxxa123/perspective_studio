@@ -5,11 +5,9 @@ export type RaysMode = 'none' | 'selected' | 'all';
 export interface DisplayOptions {
   /** Horizon, VPs, anchor. */
   guides: boolean;
-  /** Fans of guide lines from each VP (the sketching backdrop). */
-  vpFans: boolean;
   /** Boxes and rects. */
   objects: boolean;
-  /** Construction rays from object edges to their VPs. */
+  /** Construction rays from object edges to their VPs (the only VP guide lines, UI-11). */
   rays: RaysMode;
   hiddenEdges: boolean;
   faceFills: boolean;
@@ -23,9 +21,9 @@ export interface DisplayOptions {
 export type DisplayPreset = 'construction' | 'clean' | 'guides';
 
 export const DISPLAY_PRESETS: Record<DisplayPreset, DisplayOptions> = {
-  construction: { guides: true, vpFans: false, objects: true, rays: 'selected', hiddenEdges: true, faceFills: false, paperFrame: true, floorGrid: true, coneOfVision: false },
-  clean: { guides: false, vpFans: false, objects: true, rays: 'none', hiddenEdges: false, faceFills: true, paperFrame: true, floorGrid: false, coneOfVision: false },
-  guides: { guides: true, vpFans: true, objects: false, rays: 'none', hiddenEdges: false, faceFills: false, paperFrame: true, floorGrid: true, coneOfVision: false },
+  construction: { guides: true, objects: true, rays: 'selected', hiddenEdges: true, faceFills: false, paperFrame: true, floorGrid: true, coneOfVision: false },
+  clean: { guides: false, objects: true, rays: 'none', hiddenEdges: false, faceFills: true, paperFrame: true, floorGrid: false, coneOfVision: false },
+  guides: { guides: true, objects: false, rays: 'none', hiddenEdges: false, faceFills: false, paperFrame: true, floorGrid: true, coneOfVision: false },
 };
 
 export const DEFAULT_DISPLAY: DisplayOptions = DISPLAY_PRESETS.construction;
@@ -38,5 +36,13 @@ export function presetOf(d: DisplayOptions): DisplayPreset | null {
   return null;
 }
 
-/** Display options saved before v1.5 lack the new toggles: fill them from the construction preset. */
-export const withDisplayDefaults = (d: Partial<DisplayOptions>): DisplayOptions => ({ ...DISPLAY_PRESETS.construction, ...d });
+/**
+ * Saved display options: missing toggles (saved before v1.5) come from the
+ * construction preset; toggles that no longer exist (vpFans, v1.7) are dropped.
+ */
+export function withDisplayDefaults(d: Partial<DisplayOptions>): DisplayOptions {
+  const base = DISPLAY_PRESETS.construction;
+  const out = { ...base };
+  for (const k of Object.keys(base) as (keyof DisplayOptions)[]) if (d[k] !== undefined) (out as Record<string, unknown>)[k] = d[k];
+  return out;
+}

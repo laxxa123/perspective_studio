@@ -8,12 +8,12 @@ import {
   moveToLayer,
   renameDocument,
   reorderEntity,
-  setPerspective,
+  setEye,
   updateEntity,
 } from '../core/commands/commands';
 import { MIN_BOX_SIZE } from '../core/entities/box/box';
 import type { BoxEntity, KnownEntity, RectEntity, SceneDocument, StrokeEntity } from '../core/document/types';
-import { setEyeHeight, setMode } from '../core/perspective';
+import { modeOf, setEyeMode, withEyeHeight } from '../core/perspective';
 import { useDocumentStore } from '../state/documentStore';
 import { useUiStore } from '../state/uiStore';
 import type { Theme } from '../theme/theme';
@@ -94,7 +94,7 @@ function StrokeFields({ s }: { s: StrokeEntity }) {
 }
 
 function ScenePanel({ doc }: { doc: SceneDocument }) {
-  const ps = doc.perspective;
+  const eye = doc.eye;
   const locked = useUiStore((s) => s.perspectiveLocked);
   return (
     <>
@@ -104,7 +104,7 @@ function ScenePanel({ doc }: { doc: SceneDocument }) {
       </label>
       <div className="seg-group">
         {(['2pt', '3pt'] as const).map((m) => (
-          <button key={m} className={ps.mode === m ? 'seg active' : 'seg'} disabled={locked} onClick={() => run(setPerspective(setMode(ps, m)))}>
+          <button key={m} className={modeOf(eye) === m ? 'seg active' : 'seg'} disabled={locked} onClick={() => run(setEye(setEyeMode(eye, m)))}>
             {m === '2pt' ? '2-point' : '3-point'}
           </button>
         ))}
@@ -112,10 +112,10 @@ function ScenePanel({ doc }: { doc: SceneDocument }) {
       {/* PS-07 (revised): eye height and horizon are the same thing (ADR-0005). */}
       <NumberField
         label="Eye height (u)"
-        value={ps.eyeHeight}
+        value={eye.position.z}
         step={0.1}
         min={0.1}
-        onChange={(v) => !locked && run(setPerspective(setEyeHeight(ps, v)))}
+        onChange={(v) => !locked && run(setEye(withEyeHeight(eye, v)))}
       />
       <p className="muted">Changing the eye height moves the horizon; the ground point sets the distance.</p>
       <p className="muted">Paper {doc.paper.width} × {doc.paper.height} pp</p>

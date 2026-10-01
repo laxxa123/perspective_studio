@@ -16,7 +16,6 @@ export interface Theme {
   /** Face tint alpha when fills are on. */
   faceAlpha: number;
   rayAlpha: number;
-  fanAlpha: number;
   selection: string;
   forbidden: string;
   marquee: string;
@@ -38,7 +37,6 @@ export const LIGHT: Theme = {
   family: FAMILY,
   faceAlpha: 0.14,
   rayAlpha: 0.45,
-  fanAlpha: 0.22,
   selection: '#1c7ed6',
   forbidden: 'rgba(112, 72, 232, 0.10)',
   marquee: 'rgba(28, 126, 214, 0.12)',
@@ -58,7 +56,6 @@ export const DARK: Theme = {
   family: { L: '#4dabf7', R: '#ff922b', V: '#9775fa' },
   faceAlpha: 0.18,
   rayAlpha: 0.5,
-  fanAlpha: 0.25,
   selection: '#4dabf7',
   forbidden: 'rgba(151, 117, 250, 0.14)',
   marquee: 'rgba(77, 171, 247, 0.15)',
@@ -70,7 +67,7 @@ export const WEIGHTS = {
   edge: 1.6,
   hiddenEdge: 1,
   ray: 0.8,
-  fan: 0.6,
+  originAxis: 1.4,
   selectedEdge: 2.6,
   vpRadius: 7,
   handleRadius: 13,

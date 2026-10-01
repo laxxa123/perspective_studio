@@ -4,16 +4,20 @@ import { kindOf } from '../entities/registry';
 import { newId } from '../document/ids';
 import type { Entity, Id, KnownEntity, Layer, SceneDocument } from '../document/types';
 import type { PerspectiveSystem } from '../perspective/types';
+import { eyeFromPerspective, type Eye } from '../perspective/view';
 import type { Command } from './history';
 
 const layerOf = (d: Draft<SceneDocument>, id: Id) => d.layers.find((l) => l.id === id);
 
-export const setPerspective = (ps: PerspectiveSystem): Command => ({
-  label: 'Change perspective',
+export const setEye = (eye: Eye, label = 'Change perspective'): Command => ({
+  label,
   recipe: (d) => {
-    d.perspective = ps;
+    d.eye = eye;
   },
 });
+
+/** A VP-handle edit, stored as the eye it describes. */
+export const setPerspective = (ps: PerspectiveSystem): Command => setEye(eyeFromPerspective(ps));
 
 export const addEntity = (e: Entity): Command => ({
   label: `Add ${e.kind}`,

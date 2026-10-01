@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "fixture-v1",
+  "name": "Saved by 0.9.0",
+  "createdAt": "2026-09-30T12:00:00.000Z",
+  "updatedAt": "2026-09-30T12:00:00.000Z",
+  "paper": { "width": 1200, "height": 800 },
+  "perspective": {
+    "mode": "3pt",
+    "horizonY": 280,
+    "vpLeftX": -700,
+    "vpRightX": 1900,
+    "verticalX": 600,
+    "vpVerticalY": 3200,
+    "anchor": { "x": 600, "y": 700 },
+    "eyeHeight": 2.2
+  },
+  "layers": [
+    { "id": "objects", "name": "Objects", "role": "objects", "visible": true, "locked": false, "opacity": 1, "order": ["cube"] },
+    { "id": "sketch", "name": "Sketch", "role": "sketch", "visible": true, "locked": false, "opacity": 1, "order": [] }
+  ],
+  "entities": {
+    "cube": {
+      "id": "cube", "kind": "box", "layerId": "objects", "visible": true, "locked": false,
+      "position": { "x": -0.5, "y": -0.5, "z": 0 }, "size": { "x": 1, "y": 1, "z": 1 }, "uniform": true
+    }
+  }
+}

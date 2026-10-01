@@ -42,6 +42,8 @@ interface UiState {
   multi: boolean;
   /** Tool palette expanded (UI-02); collapsed to a chip on phones by default. */
   paletteOpen: boolean;
+  /** The View sliders are open (PS-13): an orbit preview until Apply / Revert. */
+  viewOpen: boolean;
   /** Perspective drag options (PS-09, PS-10). */
   scaleLock: boolean;
   pinSelection: boolean;
@@ -65,7 +67,7 @@ interface UiState {
 export const DEFAULT_SKETCH: SketchSettings = {
   tool: 'pen',
   color: '#212529',
-  width: 3,
+  width: 2,
   opacity: 1,
   snap: 'off',
   family: 'auto',
@@ -86,6 +88,7 @@ export const useUiStore = create<UiState>((set) => ({
   shape: { kind: 'box', option: 'box' },
   workingPlane: null,
   planOpen: false,
+  viewOpen: false,
   multi: false,
   paletteOpen: typeof window !== 'undefined' ? window.innerWidth >= 820 : true,
   scaleLock: false,

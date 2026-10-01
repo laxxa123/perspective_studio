@@ -111,7 +111,6 @@ button.tool { border-color: transparent; background: transparent; flex-direction
 button.tool.active { background: var(--accent); color: #fff; }
 .minibar { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; padding: 4px; background: var(--bar); border-radius: 12px; box-shadow: var(--shadow); max-width: 100%; }
 .minibar.hint-bar { padding: 8px 12px; font-size: 12px; color: var(--muted); }
-.sketchbar { flex-direction: column; align-items: center; }
 .seg-group { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
 button.seg { border-color: transparent; background: transparent; min-height: 34px; padding: 0 10px; text-transform: capitalize; }
 button.seg.active { background: var(--ink); color: var(--canvas); }
@@ -119,22 +118,6 @@ button.seg.active { background: var(--ink); color: var(--canvas); }
 button.swatch { width: 28px; min-width: 28px; min-height: 28px; padding: 0; border-radius: 50%; border: 3px solid var(--surface); box-shadow: 0 0 0 1px var(--line); }
 button.swatch.active { box-shadow: 0 0 0 2px var(--accent); }
 
-.vp-chip {
-  position: fixed;
-  transform: translate(-50%, -50%);
-  min-height: 34px;
-  padding: 0 10px;
-  font-size: 12px;
-  font-weight: 700;
-  background: var(--bar);
-  border: 2px solid;
-  border-radius: 18px;
-  box-shadow: var(--shadow);
-  touch-action: none;
-  white-space: nowrap;
-  z-index: 4;
-}
-.vp-chip .arrow { display: inline-block; font-size: 14px; }
 
 /* Inspector: bottom sheet on phones, floating card on wide screens (§10.2). */
 .inspector {
@@ -223,10 +206,7 @@ button.step { min-height: 32px; padding: 0; }
 }
 .readout { font-size: 12px; color: var(--muted); padding: 0 6px; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .minibar.live .readout { color: var(--accent); font-weight: 600; }
-.minibar { flex-wrap: nowrap; overflow-x: auto; max-width: calc(100vw - 16px); touch-action: pan-x; scrollbar-width: none; }
-.minibar::-webkit-scrollbar { display: none; }
-.sketchbar { flex-direction: row; align-items: center; }
-.sketchbar input[type='range'] { width: 90px; min-height: 0; }
+.minibar { flex-wrap: wrap; max-width: calc(100vw - 16px); box-sizing: border-box; }
 .chip { min-height: 36px; border-radius: 18px; background: var(--bar); box-shadow: var(--shadow); border-color: transparent; text-transform: capitalize; font-size: 12px; }
 .chip .dot { width: 12px; height: 12px; border-radius: 50%; border: 1px solid var(--line); }
 .menu.shapes { position: fixed; bottom: calc(max(12px, env(safe-area-inset-bottom)) + 70px); left: 50%; transform: translateX(-50%); min-width: 210px; }
@@ -246,3 +226,76 @@ button.step { min-height: 32px; padding: 0; }
   .bottom-stack > .inspector { position: fixed; left: auto; right: 12px; top: 70px; bottom: auto; width: 300px; }
   .bottom-stack > .panel.plan { position: fixed; left: 12px; bottom: 90px; width: auto; }
 }
+
+/* ----- v1.7 (M9) ----- */
+/* SK-07: the sketch options wrap into rows, so every control is on screen. */
+.sketchbar { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px 6px; background: var(--bar); border-radius: 12px; box-shadow: var(--shadow); max-width: calc(100vw - 16px); box-sizing: border-box; }
+.sketch-row { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 4px; }
+.sketch-row .divider { width: 1px; height: 22px; background: var(--line); margin: 0 2px; }
+button.size { width: 32px; min-width: 32px; min-height: 32px; padding: 0; border-color: transparent; background: transparent; border-radius: 50%; }
+button.size span { display: block; border-radius: 50%; }
+button.size.active { box-shadow: 0 0 0 2px var(--accent); }
+
+/* UI-10: off-screen VP hints — a small arrow and a tiny label, no capsule. */
+.vp-hint {
+  position: fixed;
+  transform: translate(-50%, -50%);
+  z-index: 4;
+  min-width: 40px;
+  min-height: 40px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  opacity: 0.8;
+  touch-action: none;
+}
+.vp-hint span { font-size: 9px; font-weight: 700; line-height: 1; letter-spacing: 0.02em; }
+
+/* PS-13: View sliders, inset from the screen edges (clear of the Android back swipe). */
+.view-slider { position: fixed; z-index: 8; touch-action: none; }
+.view-slider .track { position: relative; background: var(--bar); box-shadow: var(--shadow); border-radius: 16px; }
+.view-slider .tick { position: absolute; background: var(--line); }
+.view-slider .knob {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translate(-50%, -50%);
+  box-shadow: var(--shadow);
+  pointer-events: none;
+}
+.view-slider .labels { position: absolute; }
+.view-slider .labels button { position: absolute; min-height: 26px; min-width: 26px; padding: 0 6px; font-size: 11px; font-weight: 600; border: 0; background: var(--bar); box-shadow: var(--shadow); border-radius: 13px; transform: translate(-50%, -50%); }
+.view-slider.turn { top: calc(max(10px, env(safe-area-inset-top)) + 66px); left: 36px; right: 36px; }
+.view-slider.turn .track { height: 32px; }
+.view-slider.turn .tick { top: 10px; bottom: 10px; width: 2px; margin-left: -1px; }
+.view-slider.turn .knob { top: 50%; }
+.view-slider.turn .labels { left: 0; right: 0; top: 50px; height: 0; }
+.view-slider.tilt { top: calc(max(10px, env(safe-area-inset-top)) + 150px); bottom: 150px; width: 32px; }
+.view-slider.tilt.right { right: 30px; }
+.view-slider.tilt.left { left: 30px; }
+.view-slider.tilt .track { width: 32px; height: 100%; }
+.view-slider.tilt .tick { left: 10px; right: 10px; height: 2px; margin-top: -1px; }
+.view-slider.tilt .knob { left: 50%; }
+.view-slider.tilt .labels { top: 0; bottom: 0; height: 100%; width: 0; }
+.view-slider.tilt.right .labels { left: -26px; }
+.view-slider.tilt.left .labels { left: 58px; }
+.minibar.view-bar { position: fixed; z-index: 8; left: 50%; transform: translateX(-50%); bottom: calc(max(12px, env(safe-area-inset-bottom)) + 8px); flex-wrap: wrap; overflow: visible; }
+.view-bar .muted-note { color: var(--muted); font-weight: 400; }
+.bottom-stack.viewing .toolbar { display: none; }
+@media (max-width: 420px) {
+  .topbar { left: 8px; right: 8px; gap: 4px; }
+  .topbar button.icon { width: 36px; min-width: 36px; }
+}
+button.size { width: 30px; min-width: 30px; min-height: 30px; }

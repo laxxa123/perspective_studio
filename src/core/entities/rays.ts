@@ -1,4 +1,5 @@
-// Construction rays (BX-05, §9): from edge endpoints toward the edge's VP.
+// Construction rays (BX-05, §9, UI-11): each edge extended past its end
+// toward the edge's VP — one ray per edge, the only VP guide lines drawn.
 import type { Vec3 } from '../math/vec';
 import { project, vanishingPoint } from '../perspective/camera';
 import type { Camera, Family } from '../perspective/types';
@@ -15,25 +16,28 @@ export function raysFrom(
   const seen = new Set<string>();
   const out: RenderItem[] = [];
   for (const { a, b, family } of edges) {
+    const qa = project(cam, a);
+    const qb = project(cam, b);
+    if (!qa || !qb) continue;
     const vp = vanishingPoint(cam, family);
-    for (const P of [a, b]) {
-      const q = project(cam, P);
-      if (!q) continue;
-      const key = `${entityId}:ray:${family}:${q.x.toFixed(3)},${q.y.toFixed(3)}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      let end;
-      if (vp.w !== 0) {
-        end = { x: vp.x / vp.w, y: vp.y / vp.w };
-      } else {
-        const d = Math.hypot(vp.x, vp.y) || 1;
-        // Toward the direction the edge runs away from this endpoint.
-        const other = project(cam, P === a ? b : a);
-        const sign = other && (other.x - q.x) * vp.x + (other.y - q.y) * vp.y < 0 ? 1 : -1;
-        end = { x: q.x + (sign * vp.x * INFINITE_RAY) / d, y: q.y + (sign * vp.y * INFINITE_RAY) / d };
-      }
-      out.push({ key, entityId, role: 'ray', family, points: [q.x, q.y, end.x, end.y] });
+    let start;
+    let end;
+    if (vp.w !== 0) {
+      end = { x: vp.x / vp.w, y: vp.y / vp.w };
+      // From the end nearer the VP: the extension, not the edge again.
+      start = Math.hypot(qa.x - end.x, qa.y - end.y) <= Math.hypot(qb.x - end.x, qb.y - end.y) ? qa : qb;
+    } else {
+      // Parallel family: extend beyond the end that leads in the VP's direction.
+      const d = Math.hypot(vp.x, vp.y) || 1;
+      const ux = vp.x / d;
+      const uy = vp.y / d;
+      start = (qb.x - qa.x) * ux + (qb.y - qa.y) * uy >= 0 ? qb : qa;
+      end = { x: start.x + ux * INFINITE_RAY, y: start.y + uy * INFINITE_RAY };
     }
+    const key = `${entityId}:ray:${family}:${start.x.toFixed(3)},${start.y.toFixed(3)}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ key, entityId, role: 'ray', family, points: [start.x, start.y, end.x, end.y] });
   }
   return out;
 }

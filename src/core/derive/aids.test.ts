@@ -11,7 +11,7 @@ const cam = deriveCamera(ps);
 
 describe('origin marker (UI-05)', () => {
   it('draws three axes, each on the line to its VP', () => {
-    const items = originMarker(cam, false).filter((i) => i.role === 'anchor');
+    const items = originMarker(cam).filter((i) => i.role === 'anchor');
     expect(items.map((i) => i.family).sort()).toEqual(['L', 'R', 'V']);
     for (const it of items) {
       const [x0, y0, x1, y1] = it.points;
@@ -19,7 +19,7 @@ describe('origin marker (UI-05)', () => {
       const d = incidence(lineThrough(finite({ x: x0, y: y0 }), finite({ x: x1, y: y1 })), vp);
       expect(d).toBeLessThan(1e-6 * Math.max(1, Math.abs(vp.x / vp.w), Math.abs(vp.y / vp.w)) * 100);
     }
-    expect(originMarker(cam, true).some((i) => i.role === 'ray')).toBe(true);
+    expect(originMarker(cam).some((i) => i.role === 'ray')).toBe(false);
   });
 });
 

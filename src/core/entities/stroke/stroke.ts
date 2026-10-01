@@ -9,9 +9,12 @@ import { MOVE_HANDLE, type EntityKindDef } from '../types';
 
 export const STROKE_TOOLS = {
   pencil: { thinning: 0.6, smoothing: 0.5, streamline: 0.4, defaultWidth: 2, defaultOpacity: 0.9 },
-  pen: { thinning: 0.45, smoothing: 0.6, streamline: 0.5, defaultWidth: 3, defaultOpacity: 1 },
-  marker: { thinning: 0, smoothing: 0.7, streamline: 0.6, defaultWidth: 12, defaultOpacity: 0.45 },
+  pen: { thinning: 0.45, smoothing: 0.6, streamline: 0.5, defaultWidth: 2, defaultOpacity: 1 },
+  marker: { thinning: 0, smoothing: 0.7, streamline: 0.6, defaultWidth: 6, defaultOpacity: 0.45 },
 } as const;
+
+/** SK-07: the four brush sizes, screen px (a lower range than before v1.7). */
+export const BRUSH_SIZES = [1, 2, 4, 6] as const;
 
 export const strokeSchema = z.object({
   id: z.string(),

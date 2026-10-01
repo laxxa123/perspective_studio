@@ -27,12 +27,12 @@ export interface PlanModel {
 
 /** World → plan frame: eye at (0, 0), view direction up the screen. */
 export function planFrame(cam: Camera) {
-  const fwd0 = { x: cam.M.c0.z, y: cam.M.c1.z };
+  // The picture's right is always horizontal (the head is level); the heading
+  // is perpendicular to it, so this also holds looking straight down.
   const right0 = { x: cam.M.c0.x, y: cam.M.c1.x };
-  const fl = Math.hypot(fwd0.x, fwd0.y) || 1;
   const rl = Math.hypot(right0.x, right0.y) || 1;
-  const fwd = { x: fwd0.x / fl, y: fwd0.y / fl };
   const right = { x: right0.x / rl, y: right0.y / rl };
+  const fwd = { x: -right.y, y: right.x };
   const E = { x: cam.C.x, y: cam.C.y };
   return {
     toPlan(P: { x: number; y: number }): Vec2 {
@@ -103,7 +103,7 @@ export function derivePlan(doc: SceneDocument, cam: Camera): PlanModel {
   // The eye, its view direction and the field of view through the paper's edges.
   const reach = Math.max(4, ...content.map((p) => Math.hypot(p.x, p.y))) * 1.15;
   const edgeDir = (x: number) => {
-    const d = pictureRay(cam, { x, y: doc.perspective.horizonY }).dir;
+    const d = pictureRay(cam, { x, y: cam.p.y }).dir;
     const w = toPlan({ x: cam.C.x + d.x, y: cam.C.y + d.y });
     const l = Math.hypot(w.x, w.y) || 1;
     return { x: (w.x / l) * reach, y: (w.y / l) * reach };

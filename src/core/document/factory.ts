@@ -1,8 +1,9 @@
-// New documents (§10.8): a valid perspective system and one cube.
+// New documents (§10.8): a valid eye and one cube.
 import { DEFAULT_PAPER } from './paper';
 import { DEFAULT_PERSPECTIVE } from '../perspective/defaults';
 import { setMode } from '../perspective/edit';
 import type { PerspectiveMode } from '../perspective/types';
+import { eyeFromPerspective } from '../perspective/view';
 import { newId } from './ids';
 import { SCHEMA_VERSION, type BoxEntity, type Layer, type SceneDocument } from './types';
 
@@ -33,7 +34,7 @@ export function newDocument(opts: { name: string; mode?: PerspectiveMode; now?: 
     createdAt: now,
     updatedAt: now,
     paper: { ...DEFAULT_PAPER },
-    perspective: setMode(DEFAULT_PERSPECTIVE, opts.mode ?? '3pt'),
+    eye: eyeFromPerspective(setMode(DEFAULT_PERSPECTIVE, opts.mode ?? '3pt')),
     layers: [objects, sketch],
     entities: { [cube.id]: cube },
   };

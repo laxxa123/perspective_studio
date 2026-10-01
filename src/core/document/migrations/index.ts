@@ -8,8 +8,9 @@ export interface Migration {
   migrate(doc: Record<string, unknown>): Record<string, unknown>;
 }
 
-/** None yet: schemaVersion 1 is the first persisted shape. */
-export const MIGRATIONS: Migration[] = [];
+import { eyeMigration } from './001_eye';
+
+export const MIGRATIONS: Migration[] = [eyeMigration];
 
 export function migrate(
   raw: Record<string, unknown>,
