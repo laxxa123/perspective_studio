@@ -8,7 +8,8 @@ import type { Family } from '../core/perspective/types';
 import type { Viewport } from '../core/viewport/viewport';
 
 export type ToolId = 'select' | 'shape' | 'sketch' | 'perspective';
-export type Screen = 'gallery' | 'editor' | 'settings';
+/** home = the suite (SUITE.md §2); gallery / editor = the Perspective module. */
+export type Screen = 'home' | 'gallery' | 'editor' | 'settings';
 export type SnapMode = 'off' | 'soft' | 'locked';
 
 export interface SketchSettings {
@@ -24,6 +25,8 @@ export interface SketchSettings {
 
 interface UiState {
   screen: Screen;
+  /** Where Settings returns to. */
+  back: Screen;
   viewport: Viewport | null;
   display: DisplayOptions;
   tool: ToolId;
@@ -77,7 +80,8 @@ export const DEFAULT_SKETCH: SketchSettings = {
 let toastTimer: ReturnType<typeof setTimeout> | undefined;
 
 export const useUiStore = create<UiState>((set) => ({
-  screen: 'gallery',
+  screen: 'home',
+  back: 'home',
   viewport: null,
   display: DEFAULT_DISPLAY,
   tool: 'select',

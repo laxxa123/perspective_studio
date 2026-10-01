@@ -1,6 +1,6 @@
 # CLAUDE.md — PERSPECTIVE_STUDIO
 
-Read first: docs/REQUIREMENTS.md, docs/decisions/*.
+Read first: docs/SUITE.md (the app: suite home, module plugins, per-module version history), docs/REQUIREMENTS.md (the Perspective Studio module), docs/decisions/*.
 
 ## Rules
 
@@ -14,7 +14,8 @@ Read first: docs/REQUIREMENTS.md, docs/decisions/*.
 - Schema change = schemaVersion bump + migration + fixture test.
 - No new dependency without an ADR.
 - Geometry changes require passing property tests (§6.6). Never loosen a tolerance to make a test pass without an ADR.
-- Update docs/REQUIREMENTS.md in the same change when behaviour changes.
+- Update docs/REQUIREMENTS.md (Perspective) or docs/SUITE.md (suite, other modules) in the same change when behaviour changes; add each release to SUITE.md §5.
+- New modules are plugins: `src/modules/<id>/` + one entry in `src/suite/modules.ts` + `docs/modules/<id>/REQUIREMENTS.md`. Modules never import each other.
 - Prefer small, surgical diffs. Don't reformat or refactor unrelated code.
 - Use glossary terms exactly (VP-L, VP-R, VP-V, family L/R/V, picture plane, world, anchor).
 

@@ -20,7 +20,7 @@ export function SettingsScreen() {
   return (
     <div className="settings">
       <header className="gallery-head">
-        <button className="icon" aria-label="Back" onClick={() => useUiStore.getState().set({ screen: 'gallery' })}>
+        <button className="icon" aria-label="Back" onClick={() => useUiStore.getState().set({ screen: useUiStore.getState().back })}>
           <ArrowLeft size={20} />
         </button>
         <h1>Settings</h1>

@@ -3,6 +3,7 @@ import { useDocumentStore } from './state/documentStore';
 import { useUiStore } from './state/uiStore';
 import { Editor } from './ui/Editor';
 import { Gallery } from './ui/Gallery';
+import { SuiteHome } from './suite/SuiteHome';
 import { SettingsScreen } from './ui/SettingsScreen';
 import { onBackButton } from './platform/lifecycle';
 import { closeDocument } from './ui/session';
@@ -17,7 +18,7 @@ export function App() {
   const hasDoc = useDocumentStore((s) => s.doc !== null);
   const toast = useUiStore((s) => s.toast);
 
-  // Android back button: panels → editor → gallery (saving on the way).
+  // Android back button: panels → editor → gallery → suite home (saving on the way).
   useEffect(
     () =>
       onBackButton(() => {
@@ -31,7 +32,11 @@ export function App() {
           return true;
         }
         if (ui.screen === 'settings') {
-          ui.set({ screen: 'gallery' });
+          ui.set({ screen: ui.back });
+          return true;
+        }
+        if (ui.screen === 'gallery') {
+          ui.set({ screen: 'home' });
           return true;
         }
         return false;
@@ -42,7 +47,7 @@ export function App() {
   if (screen === 'editor' && hasDoc) return <Editor theme={theme} />;
   return (
     <>
-      {screen === 'settings' ? <SettingsScreen /> : <Gallery />}
+      {screen === 'settings' ? <SettingsScreen /> : screen === 'home' ? <SuiteHome /> : <Gallery />}
       {toast && <div className="toast">{toast}</div>}
     </>
   );

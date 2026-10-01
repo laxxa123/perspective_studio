@@ -41,6 +41,7 @@ export default tseslint.config(
         { type: 'ui', pattern: 'src/ui/**' },
         { type: 'platform', pattern: 'src/platform/**' },
         { type: 'theme', pattern: 'src/theme/**' },
+        { type: 'suite', pattern: 'src/suite/**' },
         { type: 'app', pattern: 'src/*.{ts,tsx}', partialMatch: false },
       ],
     },
@@ -69,7 +70,9 @@ export default tseslint.config(
             { from: { element: { type: 'theme' } }, allow: { to: { element: { types: { anyOf: ['theme', 'core'] } } } } },
             { from: { element: { type: 'export' } }, allow: { to: { element: { types: { anyOf: ['export', 'core', 'theme'] } } } } },
             { from: { element: { type: 'platform' } }, allow: { to: { element: { type: 'platform' } } } },
-            { from: { element: { type: 'app' } }, allow: { to: { element: { types: { anyOf: ['app', 'ui', 'state', 'core', 'platform'] } } } } },
+            { from: { element: { type: 'app' } }, allow: { to: { element: { types: { anyOf: ['app', 'ui', 'state', 'core', 'platform', 'suite'] } } } } },
+            // The suite shell (SUITE.md): its own files, UI state to open a module.
+            { from: { element: { type: 'suite' } }, allow: { to: { element: { types: { anyOf: ['suite', 'state', 'platform', 'theme'] } } } } },
             // External packages: allowed everywhere except the core list above.
             { allow: { to: { module: { origin: 'external' } } } },
             {

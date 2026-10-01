@@ -1,7 +1,7 @@
-// Gallery (§10.8, DOC-02): scene thumbnails, new scene (2pt / 3pt), import,
+// Gallery (§10.8, DOC-02): the Perspective module's first screen (back → suite home); scene thumbnails, new scene (2pt / 3pt), import,
 // backup all; per scene: rename, duplicate, export, delete.
 import { useCallback, useEffect, useState } from 'react';
-import { Download, FileUp, MoreVertical, Plus, Settings as SettingsIcon, Archive } from 'lucide-react';
+import { ArrowLeft, Download, FileUp, MoreVertical, Plus, Settings as SettingsIcon, Archive } from 'lucide-react';
 import { newId } from '../core/document/ids';
 import { loadDocument } from '../core/document/schema';
 import { DEFAULT_DISPLAY } from '../core/derive/display';
@@ -108,6 +108,9 @@ export function Gallery() {
   return (
     <div className="gallery" onClick={() => setMenu(null)}>
       <header className="gallery-head">
+        <button className="icon" aria-label="Back to home" onClick={() => ui().set({ screen: 'home' })}>
+          <ArrowLeft size={20} />
+        </button>
         <h1>Perspective Studio</h1>
         <button className="icon" title="Import JSON" aria-label="Import" onClick={importFile}>
           <FileUp size={20} />
@@ -115,7 +118,7 @@ export function Gallery() {
         <button className="icon" title="Backup all" aria-label="Backup all" onClick={backupAll}>
           <Archive size={20} />
         </button>
-        <button className="icon" title="Settings" aria-label="Settings" onClick={() => ui().set({ screen: 'settings' })}>
+        <button className="icon" title="Settings" aria-label="Settings" onClick={() => ui().set({ screen: 'settings', back: 'gallery' })}>
           <SettingsIcon size={20} />
         </button>
       </header>

@@ -3,6 +3,17 @@
 User-visible changes per release. Versions: `package.json` semver; each
 milestone release bumps the minor version, and CI appends `-build.<run>`.
 
+## 0.11.0 — Creative Suite home
+
+- The app now opens on the **Creative Suite** home screen — "Ideas to
+  creation" — with tiles for Studio, Cube, Perspective, Publish, Sketch,
+  Sequence, Sensitivity, Toolbox and More.
+- **Perspective** opens Perspective Studio (your scenes, as before); the
+  other tiles say "coming soon" until they are built.
+- Bottom bar: Home · Library (coming soon) · Settings.
+- The scene gallery has a back arrow to Home; Android back goes editor →
+  gallery → home.
+
 ## 0.10.0 — M9: the eye and the View
 
 - **View** (rotate icon in the top bar): two sliders walk your eye around the
