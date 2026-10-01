@@ -48,6 +48,18 @@ export async function saveToDocuments(name: string, text: string): Promise<strin
   return `Documents/PerspectiveStudio/${name}`;
 }
 
+/** Saves an image (e.g. a PNG export) to Documents/CREATIVE (or downloads it). Returns where it went. */
+export async function saveImageToDevice(name: string, blob: Blob): Promise<string> {
+  if (!native()) {
+    download(name, blob);
+    return 'Downloads';
+  }
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[-:T]/g, '');
+  const file = name.replace(/(\.\w+)$/, `_${stamp}$1`);
+  await Filesystem.writeFile({ path: `CREATIVE/${file}`, data: await blobToBase64(blob), directory: Directory.Documents, recursive: true });
+  return `Documents/CREATIVE/${file}`;
+}
+
 /** Lets the user pick a file; resolves with its text, or null when cancelled. */
 export function pickTextFile(accept: string): Promise<string | null> {
   return new Promise((resolve) => {

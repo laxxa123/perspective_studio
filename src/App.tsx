@@ -10,8 +10,10 @@ import { closeDocument } from './ui/session';
 import { restoreSettings } from './ui/settingsPersistence';
 import { useTheme } from './ui/useTheme';
 import { loadCubeModule } from './modules/cube';
+import { loadSketchModule, sketchBack } from './modules/sketch';
 
 const CubeModule = lazy(loadCubeModule);
+const SketchModule = lazy(loadSketchModule);
 
 restoreSettings();
 
@@ -42,6 +44,10 @@ export function App() {
           ui.set({ screen: 'home' });
           return true;
         }
+        if (ui.screen === 'sketch') {
+          if (!sketchBack.current?.()) ui.set({ screen: 'home' });
+          return true;
+        }
         if (ui.screen === 'gallery') {
           ui.set({ screen: 'home' });
           return true;
@@ -56,6 +62,13 @@ export function App() {
     return (
       <Suspense fallback={<p className="muted" style={{ padding: 20 }}>Opening CUBE…</p>}>
         <CubeModule onExit={() => useUiStore.getState().set({ screen: 'home' })} />
+      </Suspense>
+    );
+  }
+  if (screen === 'sketch') {
+    return (
+      <Suspense fallback={<p className="muted" style={{ padding: 20 }}>Opening SKETCH…</p>}>
+        <SketchModule onExit={() => useUiStore.getState().set({ screen: 'home' })} />
       </Suspense>
     );
   }

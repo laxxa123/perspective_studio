@@ -1,0 +1,9 @@
+import { Blend, Brush, Eraser, Highlighter, Paintbrush, Pencil, PenTool, SprayCan } from 'lucide-react';
+
+const ICONS = { pencil: Pencil, pen: PenTool, marker: Highlighter, brush: Brush, soft: Paintbrush, airbrush: SprayCan, blender: Blend, eraser: Eraser } as const;
+
+/** The icon for a brush preset (presets keep their ids when edited). */
+export function PresetIcon({ id, size = 20 }: { id: string; size?: number }) {
+  const Icon = ICONS[id as keyof typeof ICONS] ?? Brush;
+  return <Icon size={size} />;
+}

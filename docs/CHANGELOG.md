@@ -3,6 +3,27 @@
 User-visible changes per release. Versions: `package.json` semver; each
 milestone release bumps the minor version, and CI appends `-build.<run>`.
 
+## 0.14.0 — SKETCH (Phase 1)
+
+- **SKETCH is open**: tap Sketch on the home screen and draw at once on a 9:16
+  page (the last sketch reopens; the arrow leads to the gallery).
+- **Eight brushes**: Pencil, Pen, Marker, Brush, Soft Brush, Airbrush, Blender
+  (smudge) and Eraser, with stylus pressure and tilt, smoothing and textures.
+  Five quick sizes and opacities; colour swatches, a picker and recent colours.
+  Every brush can be fine-tuned in Settings.
+- **Gestures**: two fingers pan and zoom, two-finger tap undoes, three-finger
+  tap redoes; the controls fade while you draw.
+- **Layers** (up to 12): opacity, visibility, lock, drag to reorder, rename,
+  duplicate, clear, delete; Normal, Multiply, Screen, Overlay and Erase.
+- **Grids**: 3 × 3 and 1-, 2-, 3-point perspective with draggable vanishing
+  points; **reference images** under the drawing.
+- **Selection**: rectangle or lasso; paint inside it, move, scale, rotate,
+  duplicate or delete what is selected.
+- **Undo / redo** for strokes, layer changes, transforms and selections.
+- Sketches **save themselves**; the gallery lists them newest first with
+  rename, duplicate, Share PNG and delete. **Save / share a PNG** at full
+  1080 × 1920 (optionally transparent).
+
 ## 0.13.0 — CUBE (Phase 1)
 
 - **CUBE is open**: tap Cube on the home screen.

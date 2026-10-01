@@ -1,8 +1,8 @@
-# CLAUDE.md — CREATIVE (app) · PERSPECTIVE (first module)
+# CLAUDE.md — CREATIVE (app) · PERSPECTIVE · CUBE · SKETCH (modules)
 
-Read first: docs/CREATIVE.md (the app CREATIVE: home screen, module plugins, per-module version history, open decisions), docs/modules/<id>/REQUIREMENTS.md (the module you work on: PERSPECTIVE or CUBE), docs/decisions/*.
+Read first: docs/CREATIVE.md (the app CREATIVE: home screen, module plugins, per-module version history, open decisions), docs/modules/<id>/REQUIREMENTS.md (the module you work on: PERSPECTIVE, CUBE or SKETCH), docs/decisions/*.
 
-Names: the app is **CREATIVE**; modules are **PERSPECTIVE**, **CUBE**, …. Never rename the app id `com.perspectivestudio.app`, the repository or the signing key.
+Names: the app is **CREATIVE**; modules are **PERSPECTIVE**, **CUBE**, **SKETCH**, …. Never rename the app id `com.perspectivestudio.app`, the repository or the signing key.
 
 ## Rules
 
@@ -18,6 +18,7 @@ Names: the app is **CREATIVE**; modules are **PERSPECTIVE**, **CUBE**, …. Neve
 - Geometry changes require passing property tests (§6.6). Never loosen a tolerance to make a test pass without an ADR.
 - Update docs/modules/perspective/REQUIREMENTS.md (Perspective) or docs/CREATIVE.md (suite, other modules) in the same change when behaviour changes; add each release to CREATIVE.md §5.
 - CUBE (`src/modules/cube/`, docs/modules/cube/REQUIREMENTS.md): the CubeModel is the only truth; `model/ geometry/ question/ render/` stay pure (lint); React components never run SQL — go through `services/` and the repositories; question JSON changes need a new `schema` version.
+- SKETCH (`src/modules/sketch/`, docs/modules/sketch/REQUIREMENTS.md): the WebGL2 engine owns the artwork; never route pointer moves through React state; no Konva or Canvas 2D for painting; `core/` stays pure and `engine/` + `input/` never import React (lint); pixel changes go through the engine's undo (tile snapshots); document JSON changes need a new `schema` version.
 - New modules are plugins: `src/modules/<id>/` + one entry in `src/suite/modules.ts` + `docs/modules/<id>/REQUIREMENTS.md`. Modules never import each other.
 - Prefer small, surgical diffs. Don't reformat or refactor unrelated code.
 - Use glossary terms exactly (VP-L, VP-R, VP-V, family L/R/V, picture plane, world, anchor).

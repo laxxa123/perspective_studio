@@ -1,0 +1,124 @@
+/* SKETCH (SKETCH §5, §23): a sheet of paper with a few floating controls.
+   Reuses CREATIVE's tokens (--canvas, --surface, --accent …). */
+.sk-root { position: fixed; inset: 0; background: var(--canvas); overflow: hidden; --sk-page: #e4e2dc; }
+:root[data-theme='dark'] .sk-root { --sk-page: #1d1f22; }
+.sk-root button { min-height: 0; }
+.sk-screen { position: absolute; inset: 0; background: var(--sk-page); }
+.sk-canvas { position: absolute; inset: 0; touch-action: none; }
+.sk-canvas canvas { display: block; width: 100%; height: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.sk-center { position: absolute; inset: 0; display: flex; flex-direction: column; gap: 12px; align-items: center; justify-content: center; pointer-events: none; color: var(--muted); }
+.sk-center.sk-card { pointer-events: auto; margin: auto; inset: auto 24px; top: 35%; padding: 18px; background: var(--surface); border-radius: 16px; box-shadow: var(--shadow); color: var(--ink); text-align: center; }
+.spin { animation: sk-spin 1s linear infinite; }
+@keyframes sk-spin { to { transform: rotate(360deg); } }
+
+/* Floating controls fade while a stroke is drawn (SKETCH §5). */
+.sk-fade { transition: opacity 0.25s ease, transform 0.25s ease; }
+.sk-screen.drawing .sk-fade { opacity: 0; pointer-events: none; transition-duration: 0.12s; }
+.sk-screen.drawing .sk-bar { transform: translateY(12px); }
+
+.sk-top { position: absolute; top: max(10px, env(safe-area-inset-top)); left: 10px; right: 10px; display: flex; align-items: flex-start; gap: 8px; pointer-events: none; }
+.sk-top > * { pointer-events: auto; }
+.sk-top .sk-fab:last-child { margin-left: auto; }
+.sk-fab { width: 42px; height: 42px; padding: 0; border-radius: 50%; border: 0; background: var(--bar); box-shadow: var(--shadow); }
+.sk-fab.on { color: var(--accent); }
+.sk-chip { margin: 0 auto; display: flex; align-items: center; gap: 8px; padding: 4px 4px 4px 12px; border-radius: 21px; background: var(--bar); box-shadow: var(--shadow); font-size: 12px; max-width: calc(100% - 110px); }
+.sk-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sk-chip button { border-radius: 16px; height: 32px; padding: 0 12px; background: var(--accent); color: #fff; border: 0; }
+
+.sk-bar { position: absolute; left: 0; right: 0; margin: 0 auto; width: fit-content; bottom: max(12px, env(safe-area-inset-bottom)); display: flex; gap: 2px; padding: 5px; border-radius: 26px; background: var(--bar); box-shadow: var(--shadow); }
+.sk-tool { width: 46px; height: 42px; padding: 0; border: 0; border-radius: 21px; background: transparent; }
+.sk-tool.on { background: var(--accent-soft); color: var(--accent); }
+.sk-tool.lit { color: var(--accent); }
+.sk-swatch { width: 26px; height: 26px; border-radius: 50%; box-shadow: 0 0 0 2px var(--surface), 0 0 0 3px var(--line); }
+
+.sk-scrim { position: absolute; inset: 0; }
+.sk-sheet { position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(max(12px, env(safe-area-inset-bottom)) + 62px); width: min(420px, calc(100% - 20px)); display: flex; justify-content: center; pointer-events: none; }
+.sk-sheet.right { left: auto; right: 10px; transform: none; bottom: auto; top: calc(max(10px, env(safe-area-inset-top)) + 50px); width: auto; }
+.sk-panel { pointer-events: auto; width: 100%; max-height: min(62vh, 560px); overflow: auto; padding: 12px; border-radius: 18px; background: var(--surface); box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 10px; }
+.sk-panel-head { display: flex; align-items: center; justify-content: space-between; }
+.sk-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); min-width: 58px; }
+.sk-row { display: flex; align-items: center; gap: 10px; }
+.sk-row input[type='range'] { flex: 1; min-width: 0; }
+.sk-actions { flex-wrap: wrap; gap: 6px; }
+.sk-hint { margin: 0; font-size: 12px; color: var(--muted); }
+.sk-hint.center { text-align: center; margin-top: 24px; }
+
+.sk-presets { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.sk-preset { flex-direction: column; gap: 3px; height: 58px; padding: 4px; border-radius: 12px; font-size: 11px; background: var(--canvas); border: 1px solid transparent; }
+.sk-preset.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.sk-levels { display: flex; gap: 6px; flex: 1; justify-content: space-between; }
+.sk-level { width: 40px; height: 40px; padding: 0; border-radius: 50%; background: var(--canvas); border: 2px solid transparent; }
+.sk-level span { display: block; border-radius: 50%; }
+.sk-level.on { border-color: var(--accent); }
+.sk-chipbtn { height: 36px; padding: 0 12px; border-radius: 18px; background: var(--canvas); border: 1px solid transparent; }
+.sk-chipbtn.on { border-color: var(--accent); color: var(--accent); }
+.sk-mini { height: 32px; padding: 0 10px; border-radius: 16px; font-size: 12px; background: var(--canvas); border: 1px solid transparent; }
+.sk-mini.on { background: var(--accent); color: #fff; }
+.sk-blends { display: flex; flex-wrap: wrap; gap: 6px; }
+.sk-icon { width: 36px; height: 36px; padding: 0; border: 0; background: transparent; border-radius: 50%; flex: 0 0 auto; }
+
+.sk-swatches { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; justify-items: center; }
+.sk-swatches.small { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; flex: 1; }
+.sk-dot { width: 34px; height: 34px; padding: 0; border-radius: 50%; border: 3px solid var(--surface); box-shadow: 0 0 0 1px var(--line); }
+.sk-swatches.small .sk-dot { width: 26px; height: 26px; border-width: 2px; }
+.sk-dot.on { box-shadow: 0 0 0 2px var(--accent); }
+.sk-hex { margin-left: auto; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.sk-sv { position: relative; height: 150px; border-radius: 12px; touch-action: none; overflow: hidden; }
+.sk-sv-w, .sk-sv-b { position: absolute; inset: 0; pointer-events: none; }
+.sk-sv-w { background: linear-gradient(to right, #fff, rgba(255, 255, 255, 0)); }
+.sk-sv-b { background: linear-gradient(to top, #000, rgba(0, 0, 0, 0)); }
+.sk-hue { position: relative; height: 26px; border-radius: 13px; touch-action: none; background: linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00); }
+.sk-knob { position: absolute; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35); pointer-events: none; }
+.sk-hue .sk-knob { margin-top: -11px; }
+
+.sk-layers { max-height: min(66vh, 600px); }
+.sk-layer-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.sk-layer { border-radius: 12px; background: var(--canvas); }
+.sk-layer.on { box-shadow: inset 0 0 0 2px var(--accent); }
+.sk-layer.dragging { position: relative; z-index: 2; box-shadow: var(--shadow); opacity: 0.95; }
+.sk-layer-row { display: flex; align-items: center; gap: 4px; height: 48px; padding: 0 4px; user-select: none; -webkit-user-select: none; }
+.sk-layer-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+.sk-layer.on .sk-layer-name { color: var(--accent); font-weight: 600; }
+.sk-tag { font-size: 10px; padding: 2px 6px; border-radius: 8px; background: var(--surface); color: var(--muted); }
+.sk-grip { width: 36px; height: 44px; display: flex; align-items: center; justify-content: center; touch-action: none; color: var(--muted); cursor: grab; }
+.sk-layer-props, .sk-layer-menu { display: flex; flex-direction: column; gap: 8px; padding: 2px 10px 10px; }
+.sk-layer-props input[type='range'] { width: 100%; box-sizing: border-box; margin: 0; padding: 0; }
+.sk-panel input[type='range'] { box-sizing: border-box; }
+.sk-input { width: 100%; box-sizing: border-box; min-height: 36px; font-size: 14px; }
+
+.sk-menu { padding: 6px; gap: 2px; min-width: 200px; }
+.sk-menu button { justify-content: flex-start; gap: 10px; height: 44px; padding: 0 12px; border: 0; background: transparent; border-radius: 10px; font-size: 14px; }
+.sk-ref { display: flex; flex-direction: column; gap: 6px; padding-top: 6px; border-top: 1px solid var(--line); }
+
+.sk-selbar { position: absolute; left: 0; right: 0; margin: 0 auto; width: fit-content; top: calc(max(10px, env(safe-area-inset-top)) + 52px); display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px; padding: 6px; border-radius: 22px; background: var(--bar); box-shadow: var(--shadow); max-width: calc(100% - 20px); }
+.sk-selbar .sk-hint { padding: 0 6px; }
+
+.sk-toast { position: absolute; left: 50%; transform: translateX(-50%); top: calc(max(10px, env(safe-area-inset-top)) + 4px); padding: 8px 14px; border-radius: 18px; background: var(--ink); color: var(--canvas); font-size: 13px; pointer-events: none; z-index: 40; max-width: calc(100% - 40px); }
+
+/* Gallery (SKETCH §21) and settings (§22). */
+.sk-gallery, .sk-settings { position: absolute; inset: 0; overflow: auto; background: var(--canvas); }
+.sk-overlay { position: absolute; inset: 0; z-index: 50; }
+.sk-gal-head { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 8px; padding: max(10px, env(safe-area-inset-top)) 10px 10px; background: var(--canvas); }
+.sk-gal-head h1 { font-size: 17px; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 600; }
+.sk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; padding: 4px 14px max(20px, env(safe-area-inset-bottom)); }
+.sk-card { position: relative; display: flex; flex-direction: column; gap: 4px; }
+.sk-new { flex-direction: column; aspect-ratio: 9 / 16; border-radius: 14px; border: 2px dashed var(--line); background: transparent; color: var(--accent); font-size: 14px; }
+.sk-open { padding: 0; border: 0; background: transparent; border-radius: 14px; }
+.sk-thumb { width: 100%; aspect-ratio: 9 / 16; border-radius: 14px; overflow: hidden; background: var(--surface); box-shadow: var(--shadow); }
+.sk-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.sk-card-foot { display: flex; align-items: center; gap: 2px; }
+.sk-name { flex: 1; min-width: 0; justify-content: flex-start; padding: 0 4px; height: 32px; border: 0; background: transparent; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sk-card-menu { position: absolute; right: 0; bottom: 38px; z-index: 5; display: flex; flex-direction: column; padding: 6px; gap: 2px; border-radius: 12px; background: var(--surface); box-shadow: var(--shadow); min-width: 170px; }
+.sk-card-menu button { justify-content: flex-start; height: 40px; border: 0; background: transparent; gap: 8px; }
+
+.sk-set-body { padding: 0 16px max(24px, env(safe-area-inset-bottom)); max-width: 640px; margin: 0 auto; }
+.sk-set-group { padding: 4px 0 8px; border-bottom: 1px solid var(--line); }
+.sk-set-group h2 { margin: 16px 0 6px; }
+.sk-set-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 44px; flex-wrap: wrap; font-size: 14px; }
+.sk-set-row.slider { display: grid; grid-template-columns: 130px 1fr 48px; }
+.sk-set-row.slider input { width: 100%; min-width: 0; }
+.sk-set-row output { font-size: 12px; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+.sk-set-row input[type='checkbox'] { width: 22px; height: 22px; min-height: 0; }
+.sk-settings .sk-presets { margin: 4px 0 8px; }
+.sk-selbar { gap: 4px; padding: 5px; }
+.sk-selbar .sk-mini { padding: 0 8px; gap: 4px; }

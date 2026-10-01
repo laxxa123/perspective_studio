@@ -19,7 +19,7 @@ export interface SuiteModule {
   /** The module's own version (CREATIVE.md §5); null until it ships. */
   version: string | null;
   /** The screen the module opens on; null = not built yet ("Coming soon"). */
-  entry: 'perspective' | 'cube' | null;
+  entry: 'perspective' | 'cube' | 'sketch' | null;
 }
 
 export const MODULES: SuiteModule[] = [
@@ -27,7 +27,7 @@ export const MODULES: SuiteModule[] = [
   { id: 'cube', title: 'Cube', art: cube, version: '0.13.0', entry: 'cube' },
   { id: 'perspective', title: 'Perspective', art: perspective, version: '0.12.0', entry: 'perspective' },
   { id: 'publish', title: 'Publish', art: publish, version: null, entry: null },
-  { id: 'sketch', title: 'Sketch', art: sketch, version: null, entry: null },
+  { id: 'sketch', title: 'Sketch', art: sketch, version: '0.14.0', entry: 'sketch' },
   { id: 'sequence', title: 'Sequence', art: sequence, version: null, entry: null },
   { id: 'sensitivity', title: 'Sensitivity', art: sensitivity, version: null, entry: null },
   { id: 'toolbox', title: 'Toolbox', art: toolbox, version: null, entry: null },

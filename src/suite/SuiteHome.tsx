@@ -14,6 +14,7 @@ export function SuiteHome() {
   const open = (m: SuiteModule) => {
     if (m.entry === 'perspective') ui().set({ screen: 'gallery' });
     else if (m.entry === 'cube') ui().set({ screen: 'cube' });
+    else if (m.entry === 'sketch') ui().set({ screen: 'sketch' });
     else soon(m.title);
   };
 
