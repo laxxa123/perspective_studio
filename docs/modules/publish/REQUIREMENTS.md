@@ -1,6 +1,7 @@
-> **Document:** PUBLISH requirements · **Version:** v1.0 (0.16.0, 2026-10-01) · **Location:** `docs/modules/publish/REQUIREMENTS.md` · **Part of:** CREATIVE (`docs/CREATIVE.md`)
+> **Document:** PUBLISH requirements · **Version:** v1.1 (0.17.0, 2026-10-02) · **Location:** `docs/modules/publish/REQUIREMENTS.md` · **Part of:** CREATIVE (`docs/CREATIVE.md`)
 >
-> **Revisions:** v1.0 (0.16.0, 2026-10-01) — PUBLISH set up as a new CREATIVE module (the successor of the separate WP Studio app); Phase 1 (TILES) built; PUBLISH, WP and SETTINGS tabs in place as "coming next".
+> **Revisions:** v1.1 (0.17.0, 2026-10-02) — Publishing to WordPress: Drafts in TILES; the PUBLISH tab (name, categories, row layout by drag, Publish); POSTS (latest 25, edit / republish, old posts as marked tiles, pictures on WordPress); SETTINGS (site, user, encrypted Application Password); permanent picture ids inside the files; names fixed at first publish; featured picture per tile; post meta `_creative_post` (§5, §7–§13; ADR-0011; theme: wp_studio requirements 2.10 §22).
+> v1.0 (0.16.0, 2026-10-01) — PUBLISH set up as a new CREATIVE module (the successor of the separate WP Studio app); Phase 1 (TILES) built; PUBLISH, WP and SETTINGS tabs in place as "coming next".
 
 # PUBLISH — tiles to WordPress
 
@@ -28,6 +29,21 @@ migrated.
 - **Start with TILES only**; the other tabs are placeholders. Usability
   brutally simple and modern, matching best-in-class app conventions.
 
+**2026-10-02 (v1.1):** the PUBLISH tab shows the tiles from TILES, a
+category option and the post name; Publish pushes the post to WordPress,
+keeps its new pictures in the local Media, clears TILES and the PUBLISH tab
+and puts the post at the top of the POSTS list (first in, first out). Edit
+on a post brings it back (tiles into TILES, the post into PUBLISH), all
+editable, then Publish again. Picture names stay canonical and are made
+from the post / tile when first published; pictures are cleaned of GPS,
+phone and personal data and carry a permanent id inside the file so the
+same file is never stored twice. Nothing is flattened: drawings and spirals
+are standalone pictures with their own ids, a spiral is rebuilt from its
+data. A tile can choose its featured picture. Work-in-progress tiles can be
+moved aside to Drafts. Tiles are arranged by dragging: to a side → half
+width, to the middle → full width. Old posts come in as marked tiles for
+manual re-arranging. Best-in-class, simple usability throughout.
+
 ## 2. Principles (carried over from WP Studio, kept)
 
 - The data model outranks the UI. Coordinates are normalised (0..1 of the
@@ -49,8 +65,11 @@ src/modules/publish/
 │              drawing ⇄ brush-engine tiles
 ├── render/    the one Canvas 2D renderer; picture cache; photo cleaning
 ├── storage/   PublishStore (IndexedDB `creative-publish`)
-├── state/     zustand: tab, open tile with undo / redo, selection, sheets
-└── ui/        Tiles tab, tile editor (Konva), sheets, writer, trim, drawing
+├── state/     zustand: tab, open tile with undo / redo, selection, sheets, busy
+├── wp/        WordPress REST client; publish / pull pipeline (pure of the DOM:
+│              rendering, storage and the client are passed in)
+└── ui/        tabs (Tiles, Publish, Posts, Settings), tile editor (Konva),
+               sheets, writer, trim, drawing, hold-and-drag
 ```
 
 PUBLISH uses SKETCH's UI-free brush engine (`sketch/core`, `sketch/engine`,
@@ -97,16 +116,19 @@ carries this is defined with the PUBLISH tab; §9.)
 ### 5.1 Import and names
 
 - "From phone" picks one or more photos. Each is **cleaned**: decoded with
-  its orientation applied and re-encoded, which drops EXIF / GPS / camera
-  data; at most 2560 px on the long side; PNG stays PNG, everything else
-  becomes JPEG (quality 0.92). The original on the phone is never changed.
-- **Canonical name:** `<slug>-<yyyymmdd>-<hash6>.<ext>` (e.g.
-  `harbour-sunset-20261001-3fa2c1.jpg`) — readable, stable, unique per
-  content. The readable part can be renamed; the date and hash stay. It will
-  be the file name on WordPress.
-- **One copy per content:** a SHA-256 of the stored bytes; importing the
-  same picture again reuses the existing entry ("Already in Media —
-  reused").
+  its orientation applied and re-encoded, which drops EXIF / GPS / camera /
+  phone data and any personal details; at most 2560 px on the long side;
+  PNG stays PNG, everything else becomes JPEG (quality 0.92). The original
+  on the phone is never changed, and its file name is never used.
+- **Name before publishing:** `photo-<yyyymmdd>-<id6>.<ext>`. The readable
+  part can be renamed by hand (Media → info).
+- **Name at first publish (fixed for good):** `<post>-<tile nn>-<id6>.<ext>`
+  (e.g. `harbour-walk-03-3fa2c1.jpg`), unless it was renamed by hand; that
+  is the file name on WordPress and on the phone from then on. A picture
+  already on WordPress keeps its name wherever it is reused; renaming is
+  then off.
+- Drawings and spirals are pictures too: `<post>-<tile nn>-drawing-<id6>.png`,
+  `<post>-<tile nn>-spiral-<id6>.png`.
 - A picture used by a tile cannot be deleted (the sheet says where it is
   used).
 
@@ -119,6 +141,17 @@ carries this is defined with the PUBLISH tab; §9.)
   height follows the crop, so a picture is **never distorted**.
 - **Resize** on the tile with the corner handles (aspect kept), and turn
   with the rotation handle (snaps every 45°).
+
+### 5.3 Permanent picture id
+
+Every picture carries a **permanent id** (32 hex characters: the start of
+the SHA-256 of the cleaned picture) written **inside the file** — JPEG: a
+minimal EXIF segment holding only `ImageUniqueID` (tag 0xA420), replacing
+any other EXIF; PNG: a `tEXt` chunk `ImageUniqueID`. On WordPress the
+attachment's description also reads `creative_uid:<id>`. The id survives
+renaming, uploading and pulling back, so one picture is stored once: on the
+phone (import, pull) and on WordPress (publishing finds it by id before
+uploading).
 
 ## 6. The tile editor
 
@@ -188,33 +221,158 @@ picture's aspect while an edge snaps. Rotation snaps every 45°.
 
 ## 7. Storage
 
-IndexedDB `creative-publish`: `tiles` (TileDocument JSON, validated with
-zod on load), `thumbs` (270 × 480 JPEG per tile), `media` (MediaAsset:
-canonical name, hash, size, source, WordPress id later; unique index by
-hash), `blobs` (picture bytes and private drawing PNGs). Drawing versions
-replaced while a tile is open are kept for undo and deleted when it closes.
+IndexedDB `creative-publish` (version 2): `tiles` (TileDocument JSON,
+validated with zod on load), `thumbs` (270 × 480 JPEG per tile), `media`
+(MediaAsset: name, hash, permanent id, size, source, WordPress id and URL;
+indexes by hash and by id), `blobs` (picture bytes and private drawing
+PNGs), `kv` (the workspace — tiles of the next post in order, and Drafts —
+the post being composed, the posts list, the site and user, cached
+categories). Version 1 libraries are upgraded in place (each picture gets
+its id from its hash). The Application Password is not here (§12). Drawing
+versions replaced while a tile is open are kept for undo and deleted when it
+closes.
+
+**Media kept on the phone:** pictures that are on WordPress beyond the
+newest 25 are removed from the phone after publishing unless a tile uses
+them (they can be pulled back any time); pictures only on the phone always
+stay.
 
 ## 8. TILES tab
 
-Tiles newest first as 9:16 thumbnails with their names; `+` makes a new
-9:16 tile and opens it; ⋯ renames, duplicates (drawings copied) or deletes
-(a second tap confirms — no dialogs).
+Two sections: **the next post** (its tiles in post order; `+` adds a new
+9:16 tile at the end and opens it) and, below a line, **Drafts** — tiles
+kept aside, never published, kept after publishing. **Hold a tile and
+drag** to reorder it or move it between the post and Drafts (the page
+scrolls near the edges; a bar shows where it lands). ⋯ renames, duplicates
+(drawings copied; the copy sits next to it), moves to Drafts / to the post,
+or deletes (a second tap confirms — no dialogs). A **red dot** marks a tile
+made from an old post (§11.3). The section heading shows the post's name
+and tile count, and "Editing" while a published post is being changed.
 
-## 9. Next phases (placeholders now)
+The editor's Style sheet has **Featured picture** for a photo, drawing or
+spiral (a star in Layers): the post's cover is the first tile's chosen one,
+else the top photo of the first tile with a photo.
 
-- **PUBLISH:** select tiles, arrange them into a post, publish. Defines the
-  post-meta format: each tile's JSON (live elements by data, flattened
-  elements as positioned pictures) plus the post's tile meta, stored as
-  post meta; media uploaded under their canonical names, reused by hash.
-- **WP:** the last 25 posts and 25 media kept in sync (first in, first
-  out); search WordPress; pull back, edit, republish; reuse published media.
-- **SETTINGS:** WordPress site, user and Application Password (encrypted
-  storage — needs a native plugin and its own ADR).
-- The WordPress theme (`studioview`, in the `wp_studio` repository) is
-  extended for the new tile format then; it keeps rendering WP Studio's
-  manifest v3 posts.
+## 9. PUBLISH tab
 
-## 10. Conflict review (v1.0)
+### 9.1 The post
+
+- **Post name** (the title; it can change on every publish — the slug
+  WordPress made at first publish never changes).
+- **Categories:** chips of the site's categories (tap to pick one or more)
+  and `+ Category` to type a new one (created when publishing).
+- **Publish** (or **Update post**) — goes live at once. While it works a
+  card shows each step; nothing on the phone changes until WordPress has
+  confirmed the post.
+- After publishing: the post's tiles are cleared from TILES, the PUBLISH
+  tab is empty again, the post is at the top of POSTS; pictures stay in
+  Media; Drafts stay.
+- While a published post is edited: a band says so, links to the post on
+  the site, and offers **Drop changes** (a second tap confirms; the tiles
+  go, the post on WordPress is unchanged).
+
+### 9.2 Layout
+
+Rows: a tile fills a row (**full**) or half of one (**left** / **right**;
+the other half may be empty). New tiles join as full rows at the end, in
+TILES order. The layout is shown small (each tile a thumbnail; tap one to
+edit it).
+
+### 9.3 Hold and drag
+
+Hold a tile (about a third of a second), then drag; a highlight shows the
+drop:
+- onto a row's **left or right third** → the tile takes that half; a full
+  row becomes two halves; a tile already in that half moves to a new full
+  row just below;
+- onto a row's **middle** → the tile takes the whole row; the tiles that
+  were there move out as full rows, the left one above and the right one
+  below;
+- onto a row's **top or bottom edge**, or above / below all rows → a new
+  full row there.
+A quick swipe still scrolls; near the edges the list scrolls by itself.
+
+## 10. Publishing to WordPress
+
+### 10.1 Transport
+
+WordPress REST API with an Application Password (Basic auth), plain
+`fetch` (ADR-0011). Errors say what to do: wrong password, site not
+reachable, theme too old, timeout (90 s).
+
+### 10.2 Steps
+
+1. Sign in; check the theme answers `creative/v1/info` (else stop: "update
+   the studioview theme").
+2. When updating: the post's `modified` time must equal the one seen when
+   it was opened; otherwise "Someone changed this post on WordPress after
+   you opened it" with **Publish anyway** / Cancel.
+3. Create new categories.
+4. Every picture: a photo already on WordPress is reused as it is;
+   otherwise it is looked up by its permanent id (`creative_uid:`), and
+   uploaded under its name (§5.1) only when not found. Drawings and spirals
+   (a spiral drawn into a transparent PNG of its own box) the same way.
+   A photo used several times is uploaded once.
+5. The post: title, categories, `featured_media`, a plain `content`
+   fallback (pictures and paragraphs, for feeds and other themes) and the
+   post meta (§10.3). The saved post must come back with the meta, else
+   "update the studioview theme".
+6. Tidy up (not fatal if it fails): an old WP Studio post loses its
+   `_wpstudio_manifest`; drawings and spirals the post used before and no
+   longer uses are deleted from WordPress.
+7. Then the phone: the post goes to the top of POSTS, the post's tiles and
+   the draft are cleared, Media is trimmed (§7).
+
+### 10.3 Post meta
+
+`_creative_post`, schema `creative.publish.post` version 1 — the layout
+(`{full}` / `{left, right}` rows), the featured picture and every tile
+whole: each element keeps all its editable data; pictures (photo, drawing,
+spiral) add `media {wpMediaId, url, uid, name, width, height}` and refer to
+the picture by its permanent id; text adds `lines` (the app's own wrapping)
+and `cssFontFamily`. Nothing is flattened into the tile. The theme's side:
+wp_studio requirements (2.10) §22.
+
+## 11. POSTS tab
+
+### 11.1 Posts
+
+The latest 25 posts, newest first (published or opened here; older ones
+drop off the phone only). Each shows its cover, name and date; the one
+being edited is highlighted and shows its new name live. Refresh updates
+them from WordPress (an empty list starts from the site's newest 25).
+**Search** finds any post on WordPress. Open on the site (↗).
+
+### 11.2 Edit
+
+Edit brings a post back: its tiles into TILES (pictures found on the phone
+by their id or downloaded; drawings as drawings; spirals rebuilt from their
+data), its name, categories and layout into PUBLISH. If TILES already holds
+tiles for another post, Edit first offers to move them to Drafts (one tap).
+Publishing replaces the post (§10.2).
+
+### 11.3 Old posts
+
+A post not made by PUBLISH (WP Studio manifest posts, ordinary posts) opens
+as tiles for reference: all its pictures in grid tiles (12 per tile) with
+their captions as editable text under each, then the title and body text
+set for reading over as many text tiles as needed. Such posts and tiles
+carry a red dot. Once republished they are ordinary PUBLISH posts.
+
+### 11.4 Media
+
+**On this phone** (the library; a globe marks pictures on WordPress) and
+**On WordPress** (the newest 25, or a search). Tap a WordPress picture to
+download it into Media, under its WordPress name, to use in any tile.
+
+## 12. SETTINGS tab
+
+Site address, user name, Application Password (shown on demand), **Save
+and test** (signs in, checks the theme), **Remove password from this
+phone**. The password is stored encrypted by the Android Keystore
+(ADR-0011); site and user in `kv`.
+
+## 13. Conflict review (v1.0, v1.1)
 
 | Topic | Resolution |
 | :-- | :-- |
@@ -223,3 +381,8 @@ Tiles newest first as 9:16 thumbnails with their names; `+` makes a new
 | Rectangles and labels (WP Studio) | Not carried over; not asked for. |
 | "Paint tool same as SKETCH" vs modules never importing each other | PUBLISH uses SKETCH's UI-free engine as a shared library (ADR-0010); UI and storage stay separate. |
 | Canvas 2D in PUBLISH | Allowed here: it renders tiles and decodes photos; SKETCH's no-Canvas-2D rule covers its painting, which PUBLISH does through SKETCH's engine. |
+| Spec "clear the tiles" after publishing vs keeping work | The post's tiles are deleted (they live on WordPress and come back with Edit); Drafts are never touched. |
+| Spec "do not flatten anything" vs spirals and drawings on WordPress | Each is its own picture with its own id (never merged into the tile); its data stays in the meta, so it is rebuilt for editing. |
+| Edit while TILES has tiles | Offer to move them to Drafts (non-destructive) rather than clear them. |
+| WP Studio's `wpstudio_hash:` description tag | New tag `creative_uid:` with the permanent id inside the file; old tags are not read. |
+

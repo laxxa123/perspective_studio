@@ -3,7 +3,7 @@
 import { create } from 'zustand';
 import type { TileDocument } from '../core/types';
 
-export type Tab = 'tiles' | 'publish' | 'wp' | 'settings';
+export type Tab = 'tiles' | 'publish' | 'posts' | 'settings';
 export type Sheet = 'none' | 'media' | 'style' | 'layers' | 'background' | 'more';
 /** Full-screen tools over the editor. */
 export type Overlay = 'none' | 'text' | 'trim' | 'paint' | 'spiral';
@@ -25,6 +25,8 @@ interface PublishState {
   guides: { x: number | null; y: number | null };
   toast: string | null;
   saving: boolean;
+  /** A WordPress job in progress (its current step), shown over everything. */
+  busy: string | null;
   /** An element just added (Cancel in its first edit removes it). */
   fresh: string | null;
   set: (p: Partial<Omit<PublishState, 'set'>>) => void;
@@ -54,6 +56,7 @@ export const usePublishStore = create<PublishState>((set, get) => ({
   guides: { x: null, y: null },
   toast: null,
   saving: false,
+  busy: null,
   fresh: null,
   set: (p) => set(p),
   open: (t) => set({ tile: t, past: [], future: [], pending: null, selected: null, sheet: 'none', overlay: 'none' }),

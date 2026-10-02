@@ -89,17 +89,27 @@ export interface TileDocument {
   canvas: { width: number; height: number; background: string };
   /** Bottom → top. */
   elements: TileElement[];
-  /** Tile-level meta that travels with the tile into the post meta (caption, alt …). */
-  meta: { caption?: string };
+  /** Tile-level meta that travels with the tile into the post meta. */
+  meta: {
+    caption?: string;
+    /** The element chosen as the featured picture (an image, drawing or spiral). */
+    featured?: string;
+    /** Made from an old post (not by PUBLISH): shown with a red dot until republished. */
+    legacy?: boolean;
+  };
 }
 
 /** A picture in the media library: one file, one canonical name, reused by any number of tiles. */
 export interface MediaAsset {
   id: string;
-  /** e.g. `harbour-sunset-20261001-3fa2c1.jpg` — stable, used as the WordPress file name. */
+  /** e.g. `harbour-walk-03-3fa2c1.jpg` — the WordPress file name; fixed once published. */
   name: string;
-  /** SHA-256 of the stored bytes (dedup on import, reuse on publish). */
+  /** SHA-256 of the cleaned picture before its id was written (dedup on import). */
   hash: string;
+  /** Permanent picture id, written inside the file (EXIF ImageUniqueID / PNG text). */
+  uid: string;
+  /** The name was chosen by hand (publishing keeps it). */
+  named?: boolean;
   mime: string;
   width: number;
   height: number;
@@ -108,4 +118,5 @@ export interface MediaAsset {
   source: 'device' | 'wordpress';
   /** The WordPress attachment, once published or pulled. */
   wpMediaId?: number;
+  wpUrl?: string;
 }

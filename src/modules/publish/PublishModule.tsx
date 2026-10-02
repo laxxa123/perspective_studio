@@ -1,12 +1,15 @@
-// The PUBLISH module (CREATIVE.md §3, PUBLISH §3): TILES · PUBLISH · WP ·
-// SETTINGS. Phase 1 builds TILES; the other tabs say what is coming.
+// The PUBLISH module (CREATIVE.md §3, PUBLISH §3): TILES · PUBLISH · POSTS ·
+// SETTINGS.
 import { useEffect } from 'react';
-import { ArrowLeft, Globe, LayoutGrid, Send, Settings } from 'lucide-react';
+import { ArrowLeft, LayoutGrid, LoaderCircle, Newspaper, Send, Settings } from 'lucide-react';
 import '@fontsource-variable/roboto/wght.css';
 import '@fontsource/ms-madi/400.css';
 import { usePublishStore, type Tab } from './state/usePublishStore';
 import { onPause } from '../../platform/lifecycle';
 import { TilesTab } from './ui/TilesTab';
+import { PublishTab } from './ui/PublishTab';
+import { PostsTab } from './ui/PostsTab';
+import { SettingsTab } from './ui/SettingsTab';
 import { TileEditor } from './ui/TileEditor';
 import { closeTile, saveNow } from './ui/session';
 import { publishBack } from './index';
@@ -14,27 +17,23 @@ import './publish.css';
 
 const st = usePublishStore.getState;
 
-const TABS: [Tab, string, typeof Globe][] = [
+const TABS: [Tab, string, typeof Send][] = [
   ['tiles', 'Tiles', LayoutGrid],
   ['publish', 'Publish', Send],
-  ['wp', 'WP', Globe],
+  ['posts', 'Posts', Newspaper],
   ['settings', 'Settings', Settings],
 ];
-
-const SOON: Record<Exclude<Tab, 'tiles'>, { title: string; text: string }> = {
-  publish: { title: 'Publish', text: 'Pick tiles, arrange them into a post and publish it to WordPress.' },
-  wp: { title: 'WP', text: 'Your latest 25 posts and 25 pictures from WordPress — search, pull back, edit, republish and reuse.' },
-  settings: { title: 'Settings', text: 'Your WordPress site and login.' },
-};
 
 export default function PublishModule({ onExit }: { onExit: () => void }) {
   const tab = usePublishStore((s) => s.tab);
   const editing = usePublishStore((s) => s.tile !== null);
   const toast = usePublishStore((s) => s.toast);
+  const busy = usePublishStore((s) => s.busy);
 
   useEffect(() => {
     publishBack.current = () => {
       const s = st();
+      if (s.busy) return true;
       if (s.tile) {
         if (s.overlay !== 'none') s.set({ overlay: 'none', fresh: null });
         else if (s.sheet !== 'none') s.set({ sheet: 'none' });
@@ -65,15 +64,10 @@ export default function PublishModule({ onExit }: { onExit: () => void }) {
             <h1>Publish</h1>
           </header>
           <main className="pb-main">
-            {tab === 'tiles' ? (
-              <TilesTab />
-            ) : (
-              <div className="pb-empty">
-                <p className="pb-soon">Coming next</p>
-                <h2>{SOON[tab].title}</h2>
-                <p className="pb-hint">{SOON[tab].text}</p>
-              </div>
-            )}
+            {tab === 'tiles' && <TilesTab />}
+            {tab === 'publish' && <PublishTab />}
+            {tab === 'posts' && <PostsTab />}
+            {tab === 'settings' && <SettingsTab />}
           </main>
           <nav className="pb-tabs" aria-label="Publish sections">
             {TABS.map(([t, label, Icon]) => (
@@ -84,6 +78,14 @@ export default function PublishModule({ onExit }: { onExit: () => void }) {
             ))}
           </nav>
         </>
+      )}
+      {busy && (
+        <div className="pb-busy" role="status" aria-live="polite">
+          <div>
+            <LoaderCircle size={28} className="spin" />
+            <p>{busy}</p>
+          </div>
+        </div>
       )}
       {toast && <div className="pb-toast">{toast}</div>}
     </div>

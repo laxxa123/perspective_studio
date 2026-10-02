@@ -49,12 +49,14 @@ export function markSaved(t: TileDocument) {
 const sessionAssets = new Set<string>();
 export const trackAsset = (id: string) => void sessionAssets.add(id);
 
-/** A new blank 9:16 tile, saved and opened. */
+/** A new blank 9:16 tile at the end of the post, saved and opened. */
 export async function newTile(): Promise<void> {
   const store = await publishStore();
   const n = (await store.listTiles()).length + 1;
   const t = createTile(`Tile ${n}`);
   await store.saveTile(t, await thumbnail(t));
+  const ws = await store.syncedWorkspace();
+  await store.setWorkspace({ ...ws, live: [...ws.live.filter((id) => id !== t.id), t.id] });
   markSaved(t);
   st().open(t);
 }
@@ -93,7 +95,7 @@ export async function importPhotos(): Promise<MediaAsset[]> {
   for (const f of files) {
     try {
       const clean = await cleanPhoto(f);
-      const r = await store.addMedia(clean.blob, { fileName: f.name || 'photo', width: clean.width, height: clean.height });
+      const r = await store.addMedia(clean.blob, { width: clean.width, height: clean.height });
       if (r.existed) dup++;
       out.push(r.media);
     } catch {

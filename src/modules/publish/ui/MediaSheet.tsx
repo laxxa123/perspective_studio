@@ -13,7 +13,7 @@ import { importPhotos } from './session';
 const st = usePublishStore.getState;
 const urls = new Map<string, string>();
 
-function Thumb({ m }: { m: MediaAsset }) {
+export function MediaThumb({ m }: { m: MediaAsset }) {
   const [url, setUrl] = useState(() => urls.get(m.id) ?? null);
   useEffect(() => {
     if (url) return;
@@ -66,11 +66,15 @@ export function MediaSheet() {
       {items && !items.length && <p className="pb-hint">Your pictures live here and can be reused in any tile. Add some from your phone.</p>}
       {info ? (
         <div className="pb-media-info">
-          <Thumb m={info} />
-          <label className="pb-field">
-            <span>Name</span>
-            <input value={name} onChange={(e) => setName(e.target.value)} />
-          </label>
+          <MediaThumb m={info} />
+          {info.wpMediaId ? (
+            <p className="pb-hint">On WordPress: its name stays fixed so every post keeps using the same file.</p>
+          ) : (
+            <label className="pb-field">
+              <span>Name</span>
+              <input value={name} onChange={(e) => setName(e.target.value)} />
+            </label>
+          )}
           <p className="pb-hint">
             {info.name} · {info.width} × {info.height} · {Math.round(info.bytes / 1024)} KB
           </p>
@@ -94,6 +98,7 @@ export function MediaSheet() {
             </button>
             <button
               className="pb-pill primary"
+              disabled={!!info.wpMediaId}
               onClick={async () => {
                 await (await publishStore()).renameMedia(info.id, name);
                 setInfo(null);
@@ -109,13 +114,13 @@ export function MediaSheet() {
           {items?.map((m) => (
             <div key={m.id} className="pb-media">
               <button className="pb-media-pick" onClick={() => void place(m)} aria-label={`Place ${m.name}`}>
-                <Thumb m={m} />
+                <MediaThumb m={m} />
               </button>
               <button
                 className="pb-media-name"
                 onClick={() => {
                   setInfo(m);
-                  setName(m.name.replace(/-\d{8}-[0-9a-f]{6}\.[a-z0-9]+$/, '').replace(/-/g, ' '));
+                  setName(m.name.replace(/-(?:\d{8}|\d{2}(?:-drawing|-spiral)?)-[0-9a-f]{6}\.[a-z0-9]+$/, '').replace(/-/g, ' '));
                 }}
               >
                 <Info size={12} /> {m.name}

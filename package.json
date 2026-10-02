@@ -1,6 +1,6 @@
 {
   "name": "perspective_studio",
-  "version": "0.16.0",
+  "version": "0.17.0",
   "description": "2D perspective drawing skill app",
   "scripts": {
     "dev": "vite",
@@ -14,6 +14,7 @@
   },
   "author": "laxxa123",
   "dependencies": {
+    "@aparajita/capacitor-secure-storage": "^8.0.1",
     "@capacitor-community/sqlite": "^8.1.1",
     "@capacitor/android": "^8.5.2",
     "@capacitor/app": "^8.1.1",

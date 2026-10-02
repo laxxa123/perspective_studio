@@ -3,6 +3,28 @@
 User-visible changes per release. Versions: `package.json` semver; each
 milestone release bumps the minor version, and CI appends `-build.<run>`.
 
+## 0.17.0 — PUBLISH to WordPress
+
+- **Publish tab:** name the post, pick or add categories, and arrange the
+  tiles: hold a tile and drag it — to a side for half width, to the middle
+  for full width, between rows for a new row. Publish sends it to WordPress
+  and clears the tiles for the next post.
+- **Posts tab:** your latest 25 posts. Edit brings one back into Tiles and
+  Publish to change and republish (with a warning if it was changed on the
+  site meanwhile). Old WP Studio and ordinary posts open as tiles marked
+  with a red dot, ready to rearrange. Search WordPress for any post or
+  picture; download pictures into Media.
+- **Drafts:** hold a tile and drag it below the line to keep it aside; drafts
+  are never published.
+- **Featured picture:** pick a tile's cover in Style; otherwise the first
+  photo is used.
+- **Pictures keep one identity:** a permanent id inside the file means a
+  picture is stored and uploaded once; its name is set from the post when
+  first published and never changes after. Phone file names are never used.
+- **Settings:** your site, user name and Application Password (stored
+  encrypted on the phone); Save and test.
+- Needs the studioview theme 0.9.0 on the site (it updates itself).
+
 ## 0.16.0 — PUBLISH (Phase 1: Tiles)
 
 - **PUBLISH is open** on the home screen — the WP Studio app, rebuilt inside

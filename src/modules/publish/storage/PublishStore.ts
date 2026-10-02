@@ -3,10 +3,13 @@
 // - thumbs: tile id → PNG thumbnail
 // - media:  MediaAsset metadata (keyPath id, unique index by content hash)
 // - blobs:  media id / asset id → file bytes (media pictures and private paint layers)
+// - kv:     the tiles workspace (live / draft order), the post being composed, the posts list (v2)
 import { openDB, type IDBPDatabase } from 'idb';
 import { canonicalName, renameCanonical } from '../core/layout';
+import { readId, stampId, uidFromHash } from '../core/imageId';
 import { duplicateTile, mediaOf, newId, parseTile, assetsOf } from '../core/tile';
 import type { MediaAsset, TileDocument } from '../core/types';
+import type { Layout } from '../core/postLayout';
 
 const DB = 'creative-publish';
 
@@ -14,7 +17,47 @@ export interface TileSummary {
   id: string;
   name: string;
   updatedAt: string;
+  legacy?: boolean;
 }
+
+/** Tiles on the workbench: those going into the post (in order) and drafts kept aside. */
+export interface Workspace {
+  live: string[];
+  drafts: string[];
+}
+
+/** The post being composed (PUBLISH tab). */
+export interface PostDraft {
+  /** The WordPress post being edited; null for a new post. */
+  wpId: number | null;
+  title: string;
+  categories: number[];
+  layout: Layout;
+  /** WordPress `modified_gmt` when the post was pulled (conflict check on republish). */
+  modified: string | null;
+  link?: string;
+  legacy?: boolean;
+  /** Picture media this post used when pulled (old drawings / spirals are removed after republishing). */
+  pulledMedia?: number[];
+  /** Categories to create on WordPress when publishing. */
+  newCategories?: string[];
+}
+
+/** A published post in the POSTS list. */
+export interface PostSummary {
+  wpId: number;
+  title: string;
+  link: string;
+  date: string;
+  modified: string;
+  thumb?: string;
+  /** Not made by PUBLISH (opens as imported tiles). */
+  legacy?: boolean;
+}
+
+/** How many posts the POSTS list keeps (newest first; older ones drop off the phone only). */
+export const POSTS_KEPT = 25;
+export const emptyDraft = (): PostDraft => ({ wpId: null, title: '', categories: [], layout: [], modified: null });
 
 /** SHA-256 of a blob, lower-case hex. */
 export async function sha256(blob: Blob): Promise<string> {
@@ -28,12 +71,26 @@ export class PublishStore {
 
   async open(): Promise<this> {
     if (this.db) return this;
-    this.db = await openDB(this.name, 1, {
-      upgrade(db) {
-        db.createObjectStore('tiles', { keyPath: 'id' });
-        db.createObjectStore('thumbs');
-        db.createObjectStore('media', { keyPath: 'id' }).createIndex('byHash', 'hash', { unique: true });
-        db.createObjectStore('blobs');
+    this.db = await openDB(this.name, 2, {
+      upgrade(db, old, _new, tx) {
+        if (old < 1) {
+          db.createObjectStore('tiles', { keyPath: 'id' });
+          db.createObjectStore('thumbs');
+          db.createObjectStore('media', { keyPath: 'id' }).createIndex('byHash', 'hash', { unique: true });
+          db.createObjectStore('blobs');
+        }
+        if (old < 2) {
+          db.createObjectStore('kv');
+          const media = tx.objectStore('media');
+          media.createIndex('byUid', 'uid', { unique: false });
+          // 0.16 pictures get their permanent id from their hash.
+          void media.openCursor().then(async function step(c): Promise<void> {
+            if (!c) return;
+            const m = c.value as MediaAsset;
+            if (!m.uid) await c.update({ ...m, uid: uidFromHash(m.hash) });
+            return step(await c.continue());
+          });
+        }
       },
     });
     return this;
@@ -49,7 +106,7 @@ export class PublishStore {
   /** Most recently edited first. */
   async listTiles(): Promise<TileSummary[]> {
     const all = (await this.d.getAll('tiles')) as TileDocument[];
-    return all.map(({ id, name, updatedAt }) => ({ id, name, updatedAt })).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+    return all.map(({ id, name, updatedAt, meta }) => ({ id, name, updatedAt, ...(meta?.legacy ? { legacy: true } : {}) })).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   }
 
   async getTile(id: string): Promise<TileDocument | null> {
@@ -115,37 +172,58 @@ export class PublishStore {
   }
 
   /**
-   * Adds a picture (already cleaned and encoded). The same bytes are stored
-   * once: a second import returns the existing entry.
+   * Adds a picture (already cleaned and encoded). Its permanent id is the
+   * file's own (a picture pulled from WordPress) or comes from its hash, and
+   * is written into the stored file. The same picture is stored once: a
+   * second import returns the existing entry. The name never uses the
+   * phone's file name (privacy): `photo-<date>-<id6>` until published.
    */
-  async addMedia(blob: Blob, info: { fileName: string; width: number; height: number; source?: MediaAsset['source']; wpMediaId?: number }, now = new Date()): Promise<{ media: MediaAsset; existed: boolean }> {
+  async addMedia(blob: Blob, info: { label?: string; width: number; height: number; source?: MediaAsset['source']; wpMediaId?: number; wpUrl?: string; name?: string }, now = new Date()): Promise<{ media: MediaAsset; existed: boolean }> {
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+    const own = readId(bytes);
     const hash = await sha256(blob);
-    const found = (await this.d.getFromIndex('media', 'byHash', hash)) as MediaAsset | undefined;
-    if (found) return { media: found, existed: true };
+    const uid = own ?? uidFromHash(hash);
+    const found = ((await this.d.getFromIndex('media', 'byUid', uid)) ?? (await this.d.getFromIndex('media', 'byHash', hash))) as MediaAsset | undefined;
+    if (found) {
+      if (info.wpMediaId && !found.wpMediaId) await this.d.put('media', { ...found, wpMediaId: info.wpMediaId, wpUrl: info.wpUrl });
+      return { media: { ...found, ...(info.wpMediaId && !found.wpMediaId ? { wpMediaId: info.wpMediaId, wpUrl: info.wpUrl } : {}) }, existed: true };
+    }
+    const mime = blob.type || 'image/jpeg';
+    const stamped = own ? blob : new Blob([stampId(bytes, uid) as BlobPart], { type: mime });
     const media: MediaAsset = {
       id: newId('media'),
-      name: canonicalName(info.fileName, hash, blob.type, now),
+      name: info.name ?? canonicalName(info.label ?? 'photo', uid, mime, now),
       hash,
-      mime: blob.type || 'image/jpeg',
+      uid,
+      mime,
       width: info.width,
       height: info.height,
-      bytes: blob.size,
+      bytes: stamped.size,
       createdAt: now.toISOString(),
       source: info.source ?? 'device',
-      ...(info.wpMediaId ? { wpMediaId: info.wpMediaId } : {}),
+      ...(info.wpMediaId ? { wpMediaId: info.wpMediaId, wpUrl: info.wpUrl } : {}),
+      ...(info.name ? { named: true } : {}),
     };
     const tx = this.d.transaction(['media', 'blobs'], 'readwrite');
     await tx.objectStore('media').put(media);
-    await tx.objectStore('blobs').put(blob, media.id);
+    await tx.objectStore('blobs').put(stamped, media.id);
     await tx.done;
     return { media, existed: false };
+  }
+
+  async mediaByUid(uid: string): Promise<MediaAsset | null> {
+    return ((await this.d.getFromIndex('media', 'byUid', uid)) as MediaAsset | undefined) ?? null;
+  }
+
+  async putMedia(m: MediaAsset): Promise<void> {
+    await this.d.put('media', m);
   }
 
   /** Changes the readable part of a media name (date and hash stay). */
   async renameMedia(id: string, label: string): Promise<MediaAsset | null> {
     const m = await this.media(id);
     if (!m) return null;
-    const next = { ...m, name: renameCanonical(m.name, label) };
+    const next = { ...m, name: renameCanonical(m.name, label), named: true };
     await this.d.put('media', next);
     return next;
   }
@@ -167,6 +245,24 @@ export class PublishStore {
     return [];
   }
 
+  /**
+   * Keeps the library small: pictures that are on WordPress (they can be
+   * pulled back) beyond the newest `keep` are removed from the phone, unless
+   * a tile uses them. Pictures only on the phone always stay.
+   */
+  async pruneMedia(keep = POSTS_KEPT): Promise<number> {
+    const tiles = (await this.d.getAll('tiles')) as TileDocument[];
+    const used = new Set(tiles.flatMap(mediaOf));
+    const onWp = (await this.listMedia()).filter((m) => m.wpMediaId);
+    let n = 0;
+    for (const m of onWp.slice(keep)) {
+      if (used.has(m.id)) continue;
+      await this.deleteMedia(m.id);
+      n++;
+    }
+    return n;
+  }
+
   // ----- bytes (media and private assets) -----
 
   async blob(id: string): Promise<Blob | null> {
@@ -181,6 +277,61 @@ export class PublishStore {
 
   async deleteAsset(id: string): Promise<void> {
     await this.d.delete('blobs', id);
+  }
+
+  // ----- workspace, post draft, posts list -----
+
+  private async kv<T>(key: string, fallback: T): Promise<T> {
+    return ((await this.d.get('kv', key)) as T | undefined) ?? fallback;
+  }
+
+  /** A small saved value (site settings, cached categories). */
+  setting<T>(key: string, fallback: T): Promise<T> {
+    return this.kv<T>(`setting:${key}`, fallback);
+  }
+  async setSetting(key: string, value: unknown): Promise<void> {
+    await this.d.put('kv', value, `setting:${key}`);
+  }
+
+  workspace(): Promise<Workspace> {
+    return this.kv<Workspace>('workspace', { live: [], drafts: [] });
+  }
+
+  /** The workspace matched to the tiles there are: gone ones dropped, unplaced ones (oldest first) added to the post. */
+  async syncedWorkspace(): Promise<Workspace> {
+    const w = await this.workspace();
+    const all = (await this.d.getAll('tiles')) as TileDocument[];
+    const have = new Set(all.map((t) => t.id));
+    const live = w.live.filter((id) => have.has(id));
+    const drafts = w.drafts.filter((id) => have.has(id) && !live.includes(id));
+    const placed = new Set([...live, ...drafts]);
+    const extra = all.filter((t) => !placed.has(t.id)).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    const next = { live: [...live, ...extra.map((t) => t.id)], drafts };
+    if (next.live.length !== w.live.length || next.drafts.length !== w.drafts.length || extra.length) await this.setWorkspace(next);
+    return next;
+  }
+  async setWorkspace(w: Workspace): Promise<void> {
+    await this.d.put('kv', w, 'workspace');
+  }
+
+  draft(): Promise<PostDraft> {
+    return this.kv<PostDraft>('post', emptyDraft());
+  }
+  async setDraft(d: PostDraft): Promise<void> {
+    await this.d.put('kv', d, 'post');
+  }
+
+  posts(): Promise<PostSummary[]> {
+    return this.kv<PostSummary[]>('posts', []);
+  }
+  /** Puts a post at the top of the list (replacing an older entry for it); keeps the newest 25. */
+  async rememberPost(p: PostSummary): Promise<PostSummary[]> {
+    const list = [p, ...(await this.posts()).filter((x) => x.wpId !== p.wpId)].slice(0, POSTS_KEPT);
+    await this.d.put('kv', list, 'posts');
+    return list;
+  }
+  async setPosts(list: PostSummary[]): Promise<void> {
+    await this.d.put('kv', list.slice(0, POSTS_KEPT), 'posts');
   }
 
   close() {

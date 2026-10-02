@@ -1,7 +1,7 @@
 // Bottom sheets of the tile editor (PUBLISH §6): Style (per element type, with
 // alignment to the tile), Layers (stacking, lock) and Background.
 import type { ReactNode } from 'react';
-import { AlignCenter, AlignCenterHorizontal, AlignCenterVertical, AlignEndHorizontal, AlignEndVertical, AlignLeft, AlignRight, AlignStartHorizontal, AlignStartVertical, ArrowDown, ArrowDownToLine, ArrowUp, ArrowUpToLine, Brush, Image, Lock, LockOpen, Shell, Type } from 'lucide-react';
+import { AlignCenter, AlignCenterHorizontal, AlignCenterVertical, AlignEndHorizontal, AlignEndVertical, AlignLeft, AlignRight, AlignStartHorizontal, AlignStartVertical, ArrowDown, ArrowDownToLine, ArrowUp, ArrowUpToLine, Brush, Image, Lock, LockOpen, Shell, Star, Type } from 'lucide-react';
 import { bounds } from '../core/layout';
 import { restack, updateElement } from '../core/tile';
 import type { FontFamily, SpiralElement, TextElement, TileElement } from '../core/types';
@@ -121,6 +121,15 @@ export function StyleSheet({ el }: { el: TileElement }) {
           <Slider label="Spacing" value={el.letterSpacing} min={-4} max={20} step={1} onChange={(v) => live<SpiralElement>({ letterSpacing: v })} />
         </>
       )}
+      {el.kind !== 'text' && (
+        <button className={`pb-feature${tile.meta.featured === el.id ? ' on' : ''}`} aria-pressed={tile.meta.featured === el.id} onClick={() => st().apply({ ...tile, meta: { ...tile.meta, featured: tile.meta.featured === el.id ? undefined : el.id } })}>
+          <Star size={18} fill={tile.meta.featured === el.id ? 'currentColor' : 'none'} />
+          <span>
+            Featured picture
+            <small>{tile.meta.featured === el.id ? 'The post’s cover when this is its first tile with one' : 'Use as the post’s cover'}</small>
+          </span>
+        </button>
+      )}
       <Slider label="Opacity" value={el.opacity} min={0.05} max={1} step={0.05} show={pct} onChange={(v) => live({ opacity: v })} />
       {el.kind !== 'paint' && (
         <div className="pb-row">
@@ -192,6 +201,7 @@ export function LayersSheet() {
                 <span className="pb-num">{top.length - i}</span>
                 <Icon size={18} />
                 <span className="pb-layer-name">{label(e)}</span>
+                {tile.meta.featured === e.id && <Star size={14} fill="currentColor" aria-label="Featured picture" />}
                 {e.locked && <Lock size={14} />}
               </button>
               <button className="pb-icon sm" aria-label="Forward" disabled={i === 0} onClick={() => st().apply(restack(tile, e.id, 1))}>

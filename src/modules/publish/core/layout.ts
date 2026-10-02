@@ -256,9 +256,14 @@ export function canonicalName(fileName: string, hash: string, mime: string, date
   return `${slug(base) || 'image'}-${date.toISOString().slice(0, 10).replace(/-/g, '')}-${hash.slice(0, 6)}.${extFor(mime)}`;
 }
 
+/** The file name a picture gets when it is first published: `<post>-<tile nn>[-<role>]-<id6>.<ext>`. */
+export function publishName(postTitle: string, tileNumber: number, uid: string, mime: string, role?: 'drawing' | 'spiral'): string {
+  return `${slug(postTitle) || 'post'}-${String(tileNumber).padStart(2, '0')}${role ? `-${role}` : ''}-${uid.slice(0, 6)}.${extFor(mime)}`;
+}
+
 /** Renames the readable part only; the date and hash stay (the name stays unique and stable). */
 export function renameCanonical(name: string, label: string): string {
-  const m = name.match(/-(\d{8}-[0-9a-f]{6}\.[a-z0-9]+)$/);
+  const m = name.match(/-((?:\d{8}|\d{2}(?:-drawing|-spiral)?)-[0-9a-f]{6}\.[a-z0-9]+)$/);
   return m ? `${slug(label) || 'image'}-${m[1]}` : name;
 }
 
