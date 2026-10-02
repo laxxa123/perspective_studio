@@ -1,6 +1,7 @@
-> **Document:** PUBLISH requirements · **Version:** v1.3 (0.19.0, 2026-10-02) · **Location:** `docs/modules/publish/REQUIREMENTS.md` · **Part of:** CREATIVE (`docs/CREATIVE.md`)
+> **Document:** PUBLISH requirements · **Version:** v1.4 (0.20.0, 2026-10-02) · **Location:** `docs/modules/publish/REQUIREMENTS.md` · **Part of:** CREATIVE (`docs/CREATIVE.md`)
 >
-> **Revisions:** v1.3 (0.19.0, 2026-10-02) — Draw rebuilt on SKETCH's layout (one floating bar, brush sheet with names, opacity strip, five recent colours, palette with eyedropper, one-tap eraser, grid, show tile); controls no longer hide while drawing; Done returns at once (§6.5).
+> **Revisions:** v1.4 (0.20.0, 2026-10-02) — Style is a compact bar (chips + one control) that keeps the tile in view; the developer's value set (2 fonts, 3 weights, 5 text sizes, spiral size 25–100, coils 1–5 …); two-finger pinch / twist and the spiral's centre knob; half-height action bar (§6.1).
+> v1.3 (0.19.0, 2026-10-02) — Draw rebuilt on SKETCH's layout (one floating bar, brush sheet with names, opacity strip, five recent colours, palette with eyedropper, one-tap eraser, grid, show tile); controls no longer hide while drawing; Done returns at once (§6.5).
 > v1.2 (0.18.0, 2026-10-02) — Old posts converted on Edit (WP Studio posts faithfully, ordinary posts as a story; red / yellow dots); compact chrome (tiny title bar; Publish tab with the name and Publish on top, categories and help at the bottom); search and scroll through all posts and pictures; delete / discard / move with Undo; denser Tiles; editor edge to edge, FP star, colour picker, notepad (§6, §8, §9, §11, §14).
 > v1.1 (0.17.0, 2026-10-02) — Publishing to WordPress: Drafts in TILES; the PUBLISH tab (name, categories, row layout by drag, Publish); POSTS (latest 25, edit / republish, old posts as marked tiles, pictures on WordPress); SETTINGS (site, user, encrypted Application Password); permanent picture ids inside the files; names fixed at first publish; featured picture per tile; post meta `_creative_post` (§5, §7–§13; ADR-0011; theme: wp_studio requirements 2.10 §22).
 > v1.0 (0.16.0, 2026-10-01) — PUBLISH set up as a new CREATIVE module (the successor of the separate WP Studio app); Phase 1 (TILES) built; PUBLISH, WP and SETTINGS tabs in place as "coming next".
@@ -171,10 +172,35 @@ uploading).
 - Tap an element to select it, drag it to move it (no prior selection
   needed); tap the empty tile to deselect; double-tap to edit (text, spiral)
   or trim (picture). Handles are thumb-sized (22 px).
-- **Style** sheet: type controls for text / spiral, opacity, **Align** to the
-  tile (left / centre / right margin, top / middle / bottom margin), **Order**
-  (front, forward, backward, back), **Lock** and, for a picture, drawing or
-  spiral, the **FP** star (featured picture).
+- **Style bar** (v1.4): a compact bar over the bottom of the tile, never a
+  tall sheet. One row of chips shows only what applies to the selected
+  element, and above it the single control of the chip in use (the last chip
+  used opens again). While a control is touched the rest of the bar fades so
+  the change is seen in full; with the bar open, the tile lifts so the
+  selected element stays above it. Values (the developer's set):
+
+  | Chip | Text | Spiral | Control |
+  | :-- | :-- | :-- | :-- |
+  | Font | ✓ | ✓ | **R** (Roboto) / **M** (Ms Madi) |
+  | Weight (Roboto only) | ✓ | ✓ | 100 · 500 · 900 |
+  | Size | 50 · 100 · 150 · 200 · 300 | 25–100, soft snaps every 5 | buttons / slider |
+  | Colour | ✓ | ✓ | five recent colours + (picker, rare) |
+  | Coils | | 1–5 | buttons |
+  | Centre | | 50–100 % | slider, soft snaps every 5 |
+  | Turn | | 0–360° | slider, soft snaps every 45° |
+  | Spacing | ✓ | ✓ | −5 to 20, soft snaps every 5 |
+  | Opacity | ✓ (and pictures, drawings) | ✓ | 5–100 %, soft snaps every 5 |
+  | Align | text alignment + align to the tile | to the tile | icons, label on the left |
+  | Order | ✓ | ✓ | front · forward · backward · back · lock · **FP** (not text) |
+
+  Line height is no longer offered (existing values are kept). New text
+  starts at 100 / weight 500; a new spiral at 25 / weight 500.
+- **Gestures on a selected text or spiral:** two fingers **pinch** for size
+  (text settles on the nearest offered size; spiral soft-snaps to 5) and
+  **twist** to turn (text: the box, soft-snapping to 90°; spiral: the coil,
+  soft-snapping to 45°). A spiral's **centre knob** drags left / right for
+  the centre size. Each gesture is one undo step.
+- The action bar is half height, icon and label side by side.
 - **Layers** sheet: every element top to bottom with its number, type and
   name; tap to select; move up / down.
 - Undo / redo (100 steps) for every change; a slider drag is one step.
@@ -471,7 +497,14 @@ eyedropper; undo / redo within thumb reach; nothing lost by a stray tap.
 The developer observed that hiding the bars during each stroke made them
 flicker, so they stay put.
 
-## 14. Conflict review (v1.0–v1.3)
+### 13.2 Style bar (v1.4)
+
+The Style sheet covered most of the tile. Best-in-class editors (Canva,
+Instagram text tools) show one property at a time over the content; fixed
+choices are buttons, ranges soft-snapping sliders (the developer chose
+sliders over a ruler dial); direct pinch / twist on the element.
+
+## 14. Conflict review (v1.0–v1.4)
 
 | Topic | Resolution |
 | :-- | :-- |
@@ -489,4 +522,5 @@ flicker, so they stay put.
 | Confirm before delete (v1.0) vs Undo | Undo replaces tap-twice everywhere (tiles, Discard, layout moves). |
 | Controls fade while drawing (v1.0, from SKETCH §4) vs the developer's observation that they flicker with every stroke | They stay put (PUBLISH and SKETCH). |
 | Draw's Cancel / Done | ‹ is done; discarding is in ⋯ with Undo. |
+| Line height, free weights 100–900 and text sizes 16–240 (v1.0) vs the developer's value set | The set wins; old values stay on existing elements and snap to the nearest offered value when changed. |
 

@@ -9,7 +9,8 @@ import { fittedTextHeight } from '../render/draw';
 import { usePublishStore } from '../state/usePublishStore';
 import { closeTile, scheduleSave } from './session';
 import { TileCanvas } from './TileCanvas';
-import { BackgroundSheet, LayersSheet, StyleSheet } from './Sheets';
+import { BackgroundSheet, LayersSheet } from './Sheets';
+import { StyleBar } from './StyleBar';
 import { MediaSheet } from './MediaSheet';
 import { TextOverlay } from './TextOverlay';
 import { TrimScreen } from './TrimScreen';
@@ -83,9 +84,9 @@ export function TileEditor() {
         />
       )}
 
-      {sheet !== 'none' && <div className="pb-scrim" onPointerDown={() => st().set({ sheet: 'none' })} />}
+      {sheet !== 'none' && sheet !== 'style' && <div className="pb-scrim" onPointerDown={() => st().set({ sheet: 'none' })} />}
       {sheet === 'media' && <MediaSheet />}
-      {sheet === 'style' && sel && <StyleSheet el={sel} />}
+      {sheet === 'style' && sel && <StyleBar key={sel.id} el={sel} />}
       {sheet === 'layers' && <LayersSheet />}
       {sheet === 'background' && <BackgroundSheet />}
 
@@ -139,7 +140,7 @@ export function TileEditor() {
 function Tool({ icon: Icon, label, onClick, on, danger }: { icon: typeof Type; label: string; onClick: () => void; on?: boolean; danger?: boolean }) {
   return (
     <button className={`pb-tool${on ? ' on' : ''}${danger ? ' danger' : ''}`} onClick={onClick}>
-      <Icon size={22} />
+      <Icon size={16} />
       <span>{label}</span>
     </button>
   );

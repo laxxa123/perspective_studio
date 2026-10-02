@@ -28,6 +28,8 @@ interface PublishState {
   saving: boolean;
   /** A WordPress job in progress (its current step), shown over everything. */
   busy: string | null;
+  /** The Style bar's last chip (opens again next time). */
+  styleChip: string | null;
   /** An element just added (Cancel in its first edit removes it). */
   fresh: string | null;
   set: (p: Partial<Omit<PublishState, 'set'>>) => void;
@@ -66,6 +68,7 @@ export const usePublishStore = create<PublishState>((set, get) => ({
   snack: null,
   saving: false,
   busy: null,
+  styleChip: null,
   fresh: null,
   set: (p) => set(p),
   open: (t) => set({ tile: t, past: [], future: [], pending: null, selected: null, sheet: 'none', overlay: 'none' }),

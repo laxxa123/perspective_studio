@@ -39,7 +39,7 @@ export function imageFor(media: Pick<MediaAsset, 'id' | 'width' | 'height'>): Im
 
 export function textFor(text = 'Your text'): TextElement {
   const w = 1 - 2 * mx;
-  return { id: newId('txt'), kind: 'text', text, font: 'Roboto', weight: 500, size: 72, color: '#111111', align: 'center', lineHeight: 1.2, letterSpacing: 0, x: mx, y: 0.42, w, h: 0.06, rotation: 0, opacity: 1 };
+  return { id: newId('txt'), kind: 'text', text, font: 'Roboto', weight: 500, size: 100, color: '#111111', align: 'center', lineHeight: 1.2, letterSpacing: 0, x: mx, y: 0.42, w, h: 0.06, rotation: 0, opacity: 1 };
 }
 
 const SPIRAL_TEXT = 'Words turning inward, one after another, follow the line of the coil until the whole thought settles at its centre.';
@@ -48,7 +48,7 @@ const SPIRAL_TEXT = 'Words turning inward, one after another, follow the line of
 export function spiralFor(text = SPIRAL_TEXT): SpiralElement {
   const w = 0.4;
   const h = (w * TILE_W) / TILE_H;
-  return { id: newId('spr'), kind: 'spiral', text, font: 'Roboto', weight: 400, size: 22, color: '#111111', letterSpacing: 0, turns: 3, innerScale: 1, rotationOffset: 0, x: (1 - w) / 2, y: (1 - h) / 2, w, h, rotation: 0, opacity: 1 };
+  return { id: newId('spr'), kind: 'spiral', text, font: 'Roboto', weight: 500, size: 25, color: '#111111', letterSpacing: 0, turns: 3, innerScale: 1, rotationOffset: 0, x: (1 - w) / 2, y: (1 - h) / 2, w, h, rotation: 0, opacity: 1 };
 }
 
 export function paintFor(assetId: string): PaintElement {

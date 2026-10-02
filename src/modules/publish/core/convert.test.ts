@@ -3,6 +3,7 @@ import { baseName, htmlBlocks, plain, storyTiles } from './legacy';
 import { objectPosition, overlayBox, placePicture, readStudio, splitRows, studioMedia, studioTiles } from './wpStudio';
 import { parseTile } from './tile';
 import { hexToHsv, hsvToHex, normHex, pushRecent, withAlpha } from './colour';
+import { clamp, nearest, softSnap, span, spiralGesture, TEXT_SIZES, textGesture, turnBetween, WEIGHTS, wrap360 } from './styleScale';
 import { chooseBrush, chooseColour, defaultPrefs, erasing, readPrefs, toggleEraser } from './drawPrefs';
 import type { ImageElement, PaintElement, TextElement } from './types';
 
@@ -253,5 +254,28 @@ describe('drawing settings', () => {
     expect(p.recent).toEqual(['#1c7ed6', '#111111', '#c92a2a', '#2b8a3e', '#5f3dc4']);
     expect(chooseColour(p, 'nope').color).toBe('#1c7ed6');
     expect(withAlpha('#ff0000', 0.4)).toBe('rgba(255, 0, 0, 0.4)');
+  });
+});
+
+describe('style controls', () => {
+  it('snaps softly, finds the nearest level and measures two touches', () => {
+    expect(softSnap(41, 5)).toBe(40);
+    expect(softSnap(42.5, 5)).toBe(42.5);
+    expect(softSnap(-4.2, 5)).toBe(-5);
+    expect(nearest(130, TEXT_SIZES)).toBe(150);
+    expect(nearest(60, WEIGHTS)).toBe(100);
+    expect(span({ x: 0, y: 0 }, { x: 0, y: 10 })).toEqual({ d: 10, a: 90 });
+    expect(turnBetween(170, -170)).toBe(20);
+    expect(turnBetween(-170, 170)).toBe(-20);
+    expect(wrap360(-30)).toBe(330);
+    expect(clamp(7, 0, 5)).toBe(5);
+  });
+  it('turns a pinch / twist into spiral and text changes', () => {
+    expect(spiralGesture({ size: 40, rotationOffset: 0 }, 1.24, 44)).toEqual({ size: 50, rotationOffset: 45 });
+    expect(spiralGesture({ size: 90, rotationOffset: 350 }, 2, 20)).toEqual({ size: 100, rotationOffset: 10 });
+    expect(spiralGesture({ size: 30, rotationOffset: 0 }, 0.1, 0).size).toBe(25);
+    expect(textGesture({ size: 100, rotation: 0 }, 1.3, 3, false)).toEqual({ size: 130, rotation: 0 });
+    expect(textGesture({ size: 100, rotation: 0 }, 1.3, 30, true)).toEqual({ size: 150, rotation: 30 });
+    expect(textGesture({ size: 100, rotation: 170 }, 10, 20, true)).toEqual({ size: 300, rotation: -170 });
   });
 });

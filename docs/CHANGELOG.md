@@ -3,6 +3,22 @@
 User-visible changes per release. Versions: `package.json` semver; each
 milestone release bumps the minor version, and CI appends `-build.<run>`.
 
+## 0.20.0 — PUBLISH: a compact Style bar and gestures
+
+- **Style no longer covers the tile:** one row of small chips (Font, Weight,
+  Size, Colour, Coils, Centre, Turn, Spacing, Opacity, Align, Order — only
+  those that apply) and one control above it. While you adjust, the bar
+  fades so you see the result; the tile moves up so the element stays in
+  view.
+- **Simple values:** Roboto or Ms Madi; weights 100 / 500 / 900; text sizes
+  50–300 in five steps; spiral size 25–100 snapping to 5; coils 1–5; centre
+  50–100 %; turn 0–360°; spacing −5 to 20; opacity 5–100 %; five recent
+  colours plus a picker.
+- **Gestures:** pinch a selected text or spiral to resize, twist to turn;
+  drag a spiral's centre knob to change its centre size.
+- **Slimmer action bar** (Edit · Style · Duplicate · Delete), icon and label
+  side by side.
+
 ## 0.19.0 — Drawing: faster, calmer, clearer
 
 - **Done is instant** when you finish drawing on a tile (it used to take

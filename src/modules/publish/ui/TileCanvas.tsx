@@ -1,12 +1,16 @@
 // The tile canvas (PUBLISH §6): every element is drawn by the shared renderer
 // inside a Konva shape; drag anywhere to move (with soft snapping and guide
 // lines), thumb-sized handles to resize and turn. Paint layers are not hit
-// targets (they cover the tile); they are picked from Layers.
+// targets (they cover the tile); they are picked from Layers. On a selected
+// text or spiral, two fingers pinch (size) and twist (text: turn the box;
+// spiral: turn the coil); a spiral's centre knob drags its centre size. With
+// the Style bar open, the tile lifts so the selected element stays in view.
 import { useEffect, useRef, useState } from 'react';
 import Konva from 'konva';
-import { Group, Layer, Line, Rect, Shape, Stage, Transformer } from 'react-konva';
+import { Circle, Group, Layer, Line, Rect, Shape, Stage, Transformer } from 'react-konva';
 import { bounds, snapEdges, snapMove, snapTargets } from '../core/layout';
 import { updateElement } from '../core/tile';
+import { CENTRE, clamp, softSnap, span, spiralGesture, textGesture, turnBetween } from '../core/styleScale';
 import type { TileDocument, TileElement } from '../core/types';
 import { MARGIN, TILE_H, TILE_W } from '../core/types';
 import { drawElement, fittedTextHeight } from '../render/draw';
@@ -16,6 +20,8 @@ import { usePublishStore } from '../state/usePublishStore';
 const ACCENT = '#1c7ed6';
 /** Snap distance in screen px (soft: drag a little further to break free). */
 const SNAP_PX = 8;
+/** Height of the Style bar over the canvas (px): the selected element is lifted above it. */
+const STYLE_BAR = 104;
 type Native = { _context: CanvasRenderingContext2D };
 
 export function TileCanvas({ tile }: { tile: TileDocument }) {
@@ -26,6 +32,9 @@ export function TileCanvas({ tile }: { tile: TileDocument }) {
   const [, redraw] = useState(0);
   const selected = usePublishStore((s) => s.selected);
   const guides = usePublishStore((s) => s.guides);
+  const sheet = usePublishStore((s) => s.sheet);
+  const touches = useRef(new Map<number, { x: number; y: number }>());
+  const gesture = useRef<null | { base: TileElement; d0: number; a0: number }>(null);
   const st = usePublishStore.getState;
 
   useEffect(() => {
@@ -44,8 +53,17 @@ export function TileCanvas({ tile }: { tile: TileDocument }) {
   // Edge to edge: the tile takes the full width (or the full height on a short screen).
   const s = Math.min(size.w / TILE_W, size.h / TILE_H);
   const ox = (size.w - TILE_W * s) / 2;
-  const oy = (size.h - TILE_H * s) / 2;
   const sel = tile.elements.find((e) => e.id === selected) ?? null;
+  // Keep the selected element above the Style bar.
+  let lift = 0;
+  const oy0 = (size.h - TILE_H * s) / 2;
+  if (sheet === 'style' && sel) {
+    const b = bounds(sel);
+    const room = size.h - STYLE_BAR - 8;
+    const bottom = oy0 + b.y1 * s;
+    if (bottom > room) lift = Math.max(0, Math.min(bottom - room, oy0 + b.y0 * s - 8));
+  }
+  const oy = oy0 - lift;
 
   // The transformer follows the selected element.
   useEffect(() => {
@@ -132,12 +150,46 @@ export function TileCanvas({ tile }: { tile: TileDocument }) {
 
   const keepRatio = sel?.kind === 'image' || sel?.kind === 'spiral';
 
+  // ----- two-finger pinch / twist on a selected text or spiral -----
+  const at = (ev: React.PointerEvent) => ({ x: ev.clientX, y: ev.clientY });
+  const pair = () => {
+    const [a, b] = [...touches.current.values()];
+    return span(a, b);
+  };
+  const down = (ev: React.PointerEvent) => {
+    touches.current.set(ev.pointerId, at(ev));
+    const cur = st().tile?.elements.find((e) => e.id === st().selected);
+    if (touches.current.size === 2 && cur && (cur.kind === 'text' || cur.kind === 'spiral') && !cur.locked) {
+      nodes.current.get(cur.id)?.stopDrag();
+      const p = pair();
+      gesture.current = { base: cur, d0: Math.max(1, p.d), a0: p.a };
+    }
+  };
+  const move = (ev: React.PointerEvent) => {
+    if (!touches.current.has(ev.pointerId)) return;
+    touches.current.set(ev.pointerId, at(ev));
+    const g = gesture.current;
+    if (!g || touches.current.size < 2) return;
+    const p = pair();
+    st().preview(updateElement(st().tile!, g.base.id, gestured(g.base, p.d / g.d0, turnBetween(g.a0, p.a), false) as never));
+  };
+  const up = (ev: React.PointerEvent) => {
+    const g = gesture.current;
+    if (g && touches.current.size === 2) {
+      const p = pair();
+      gesture.current = null;
+      st().apply(updateElement(st().tile!, g.base.id, gestured(g.base, p.d / g.d0, turnBetween(g.a0, p.a), true) as never));
+    }
+    touches.current.delete(ev.pointerId);
+  };
+
   return (
-    <div className="pb-canvas" ref={box}>
+    <div className="pb-canvas" ref={box} onPointerDownCapture={down} onPointerMoveCapture={move} onPointerUpCapture={up} onPointerCancelCapture={up}>
       <Stage
         width={size.w}
         height={size.h}
         onPointerDown={(ev) => {
+          if (gesture.current || touches.current.size > 1) return;
           if (ev.target === ev.target.getStage() || ev.target.name() === 'bg') st().set({ selected: null, sheet: 'none' });
         }}
       >
@@ -149,6 +201,7 @@ export function TileCanvas({ tile }: { tile: TileDocument }) {
             <Rect x={MARGIN} y={MARGIN} width={TILE_W - 2 * MARGIN} height={TILE_H - 2 * MARGIN} stroke="#00000022" strokeWidth={1} strokeScaleEnabled={false} dash={[6, 6]} listening={false} />
             {guides.x !== null && <Line points={[guides.x, 0, guides.x, TILE_H]} stroke={ACCENT} strokeWidth={1} strokeScaleEnabled={false} listening={false} />}
             {guides.y !== null && <Line points={[0, guides.y, TILE_W, guides.y]} stroke={ACCENT} strokeWidth={1} strokeScaleEnabled={false} listening={false} />}
+            {sel?.kind === 'spiral' && !sel.locked && <CentreKnob e={sel} s={s} />}
           </Group>
           <Transformer
             ref={tr}
@@ -194,3 +247,55 @@ export function TileCanvas({ tile }: { tile: TileDocument }) {
     </div>
   );
 }
+
+/** A pinch (scale) and twist (degrees) applied to a text or spiral. */
+function gestured(e: TileElement, scale: number, twist: number, final: boolean): Partial<TileElement> {
+  if (e.kind === 'spiral') return spiralGesture(e, scale, twist);
+  if (e.kind !== 'text') return {};
+  const g = textGesture(e, scale, twist, final);
+  const h = fittedTextHeight({ ...e, size: g.size });
+  return { ...g, h, y: e.y + e.h / 2 - h / 2 };
+}
+
+/** The spiral's centre knob: drag left / right to change the centre size (50–100 %). */
+function CentreKnob({ e, s }: { e: Extract<TileElement, { kind: 'spiral' }>; s: number }) {
+  const cx = (e.x + e.w / 2) * TILE_W;
+  const cy = (e.y + e.h / 2) * TILE_H;
+  const reach = (e.w * TILE_W) / 2;
+  const st = usePublishStore.getState;
+  // The centre size when the drag began (previews change `e` while dragging).
+  const base = useRef(e.innerScale);
+  const value = (dx: number) => clamp(Math.round(softSnap(base.current * 100 + (dx / reach) * 100, CENTRE.step, 2)), CENTRE.min, CENTRE.max) / 100;
+  return (
+    <Circle
+      x={cx}
+      y={cy}
+      radius={14 / s}
+      fill="#fff"
+      stroke={ACCENT}
+      strokeWidth={3 / s}
+      shadowColor="#000"
+      shadowOpacity={0.25}
+      shadowBlur={6 / s}
+      draggable
+      onPointerDown={(ev) => {
+        ev.cancelBubble = true;
+      }}
+      onDragStart={() => {
+        base.current = e.innerScale;
+      }}
+      onDragMove={(ev) => {
+        const n = ev.target;
+        n.y(cy);
+        st().preview(updateElement(st().tile!, e.id, { innerScale: value(n.x() - cx) } as never));
+      }}
+      onDragEnd={(ev) => {
+        const n = ev.target;
+        const v = value(n.x() - cx);
+        n.position({ x: cx, y: cy });
+        st().apply(updateElement(st().tile!, e.id, { innerScale: v } as never));
+      }}
+    />
+  );
+}
+
