@@ -1,6 +1,6 @@
 # CREATIVE — main app document
 
-> **App version:** 0.17.0 · **Document version:** 1.6 (2026-10-02) · Owner: sole developer/user · Location: `docs/CREATIVE.md`
+> **App version:** 0.18.0 · **Document version:** 1.7 (2026-10-02) · Owner: sole developer/user · Location: `docs/CREATIVE.md`
 
 CREATIVE is the app; its tools are **modules** (plugins). This document holds
 what belongs to the app as a whole: the home screen, how modules plug in, the
@@ -9,7 +9,7 @@ functions modules will share, and what every new module's requirements must
 settle up front. Each module has its own requirements in
 `docs/modules/<id>/REQUIREMENTS.md`.
 
-**Revisions:** 1.6 (0.17.0, 2026-10-02) — PUBLISH publishes to WordPress (PUBLISH requirements v1.1; ADR-0011: Application Password in the Android Keystore through `@aparajita/capacitor-secure-storage`, wrapped in `src/platform/secrets.ts`); module list and history updated. · 1.5 (0.16.0, 2026-10-01) — PUBLISH added (WP Studio rebuilt as a module, Phase 1: TILES; ADR-0010): CR-OD-4 decided; module list, code layout, data and history updated. · 1.4 (0.15.0, 2026-10-01) — CUBE design rework (CUBE requirements v1.2); module list and history updated. · 1.3 (0.14.0, 2026-10-01) — SKETCH Phase 1 built as an in-app module with its own WebGL2 raster engine (ADR-0009): CR-OD-3 decided; module list, code layout, data and history updated. · 1.2 (0.13.0, 2026-10-01) — CUBE Phase 1 built as an in-app module (ADR-0008): CR-OD-1 and CR-OD-2 decided; module list, code layout and history updated. · 1.1 (0.12.0, 2026-10-01) — the app is named **CREATIVE** and the first module **PERSPECTIVE** (was "Perspective Studio"); docs reorganised per module (`docs/modules/`); CUBE registered as the next module, its stack recorded and its integration decision opened (CR-OD-1); new-module requirements checklist (§7). · 1.0 (0.11.0, 2026-10-01) — home screen, module registry, PERSPECTIVE as the first module (ADR-0007).
+**Revisions:** 1.7 (0.18.0, 2026-10-02) — PUBLISH requirements v1.2 (old posts converted on Edit, compact layout, notepad); module list and history updated. · 1.6 (0.17.0, 2026-10-02) — PUBLISH publishes to WordPress (PUBLISH requirements v1.1; ADR-0011: Application Password in the Android Keystore through `@aparajita/capacitor-secure-storage`, wrapped in `src/platform/secrets.ts`); module list and history updated. · 1.5 (0.16.0, 2026-10-01) — PUBLISH added (WP Studio rebuilt as a module, Phase 1: TILES; ADR-0010): CR-OD-4 decided; module list, code layout, data and history updated. · 1.4 (0.15.0, 2026-10-01) — CUBE design rework (CUBE requirements v1.2); module list and history updated. · 1.3 (0.14.0, 2026-10-01) — SKETCH Phase 1 built as an in-app module with its own WebGL2 raster engine (ADR-0009): CR-OD-3 decided; module list, code layout, data and history updated. · 1.2 (0.13.0, 2026-10-01) — CUBE Phase 1 built as an in-app module (ADR-0008): CR-OD-1 and CR-OD-2 decided; module list, code layout and history updated. · 1.1 (0.12.0, 2026-10-01) — the app is named **CREATIVE** and the first module **PERSPECTIVE** (was "Perspective Studio"); docs reorganised per module (`docs/modules/`); CUBE registered as the next module, its stack recorded and its integration decision opened (CR-OD-1); new-module requirements checklist (§7). · 1.0 (0.11.0, 2026-10-01) — home screen, module registry, PERSPECTIVE as the first module (ADR-0007).
 
 ---
 
@@ -82,7 +82,7 @@ Built from the developer's mockup (`docs/brand/suite-home-mockup.png`).
 | Studio | `studio` | coming soon | — | — | — |
 | **Cube** | `cube` | **live (Phase 1: Studio, Question Bank)** | **0.15.0** | React · TypeScript · Konva · Three.js · SQLite (Capacitor) | `docs/modules/cube/REQUIREMENTS.md` (v1.2) |
 | **Perspective** | `perspective` | **live** | **0.12.0** | React · TypeScript · Konva · Vite · Capacitor · IndexedDB | `docs/modules/perspective/REQUIREMENTS.md` (v1.9) |
-| **Publish** | `publish` | **live (Tiles · Publish · Posts · Settings)** | **0.17.0** | React · TypeScript · Konva · SKETCH brush engine · IndexedDB · WordPress REST · Keystore secure storage | `docs/modules/publish/REQUIREMENTS.md` (v1.1) |
+| **Publish** | `publish` | **live (Tiles · Publish · Posts · Settings)** | **0.18.0** | React · TypeScript · Konva · SKETCH brush engine · IndexedDB · WordPress REST · Keystore secure storage | `docs/modules/publish/REQUIREMENTS.md` (v1.2) |
 | **Sketch** | `sketch` | **live (Phase 1)** | **0.14.0** | React · TypeScript · custom WebGL2 tiled raster engine · Pointer Events · IndexedDB | `docs/modules/sketch/REQUIREMENTS.md` (v1.1) |
 | Sequence | `sequence` | coming soon | — | — | — |
 | Sensitivity | `sensitivity` | coming soon | — | — | — |
@@ -102,6 +102,7 @@ Built from the developer's mockup (`docs/brand/suite-home-mockup.png`).
 
 | App | Date | Change |
 | :-- | :-- | :-- |
+| 0.18.0 | 2026-10-02 | PUBLISH: old posts converted on Edit; compact layout; Undo; notepad. |
 | 0.17.0 | 2026-10-02 | PUBLISH publishes to WordPress; secure storage plugin for the Application Password (ADR-0011). |
 | 0.16.0 | 2026-10-01 | PUBLISH module (Phase 1: TILES) on its tile; fonts Roboto + Ms Madi bundled (ADR-0010). |
 | 0.15.0 | 2026-10-01 | CUBE design rework (board, snap points, fill, image skin, 3D pop-up, bank paging). |
@@ -141,6 +142,7 @@ Built from the developer's mockup (`docs/brand/suite-home-mockup.png`).
 
 | Version | Date | Phase | Requirements | Summary |
 | :-- | :-- | :-- | :-- | :-- |
+| 0.18.0 | 2026-10-02 | 2.1 — Old posts, usability | v1.2 | WP Studio posts converted faithfully on Edit (fit into 9:16 on the background colour, rows of 1–2, exact trims, live text, decorations as one drawing); ordinary posts as a story (cover, picture + caption tiles, reading tiles); red / yellow dots; compact Publish tab (name + Publish on top, categories + help at the bottom); posts and pictures browsed and searched across the whole site; Undo for delete / discard / moves; denser Tiles; edge-to-edge editor, FP star, colour picker, notepad. |
 | 0.17.0 | 2026-10-02 | 2 — WordPress | v1.1 | Drafts in Tiles; Publish tab (name, categories, half / full row layout by hold-and-drag); publish with pictures found by a permanent in-file id or uploaded under names fixed at first publish; post meta `_creative_post` rendered by the studioview theme 0.9.0; Posts (latest 25, edit and republish with conflict check, old posts as red-dot tiles, search, pictures from WordPress); Settings with the Application Password in the Keystore; featured picture per tile. |
 | 0.16.0 | 2026-10-01 | 1 — Tiles | v1.0 | 9:16 tiles with pictures (media library: canonical names, dedup, trim, resize), live text (Roboto / Ms Madi), spiral text, drawings with SKETCH's brushes; soft snapping with guides, align, layers, undo, autosave. PUBLISH / WP / SETTINGS tabs as "coming next". Successor of the WP Studio app (not migrated). |
 

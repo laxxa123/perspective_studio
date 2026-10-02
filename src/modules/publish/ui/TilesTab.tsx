@@ -1,9 +1,9 @@
-// TILES (PUBLISH §3): the tiles of the next post, in post order, and below
+// TILES (PUBLISH §8): the tiles of the next post, in post order, and below
 // them the Drafts kept aside (never published). + makes a new 9:16 tile at
 // the end of the post. Hold a tile and drag it to reorder it or to move it
 // between the post and Drafts; ⋯ does the same plus rename, duplicate and
-// delete (a second tap confirms — no dialogs). A red dot marks a tile made
-// from an old post.
+// delete (at once, with Undo). A dot marks a tile made from an old post:
+// red from an ordinary post, yellow from WP Studio.
 import { useEffect, useRef, useState } from 'react';
 import { ArchiveRestore, Archive, Copy, Ellipsis, Pencil, Plus, Trash2 } from 'lucide-react';
 import { publishStore, type PostDraft, type TileSummary, type Workspace } from '../storage/PublishStore';
@@ -50,7 +50,6 @@ export function TilesTab() {
   const [ws, setWs] = useState<Workspace>({ live: [], drafts: [] });
   const [draft, setDraft] = useState<PostDraft | null>(null);
   const [menu, setMenu] = useState<string | null>(null);
-  const [confirm, setConfirm] = useState<string | null>(null);
   const [renaming, setRenaming] = useState<{ id: string; text: string } | null>(null);
   const root = useRef<HTMLDivElement>(null);
 
@@ -89,7 +88,6 @@ export function TilesTab() {
 
   const act = async (fn: () => Promise<unknown>) => {
     setMenu(null);
-    setConfirm(null);
     await fn();
     refresh();
   };
@@ -110,6 +108,24 @@ export function TilesTab() {
       await s.setWorkspace({ ...ws, [section]: list });
     });
 
+  const remove = (id: string) =>
+    act(async () => {
+      const s = await publishStore();
+      const before = ws;
+      const snap = await s.snapshot([id]);
+      await s.deleteTile(id);
+      const name = tiles?.get(id)?.name ?? 'Tile';
+      st().showSnack(`Deleted “${name}”`, {
+        label: 'Undo',
+        run: () =>
+          void (async () => {
+            await s.restore(snap);
+            await s.setWorkspace(before);
+            refresh();
+          })(),
+      });
+    });
+
   const card = (id: string, section: Section, index: number) => {
     const t = tiles?.get(id);
     if (!t) return null;
@@ -118,7 +134,7 @@ export function TilesTab() {
       <div key={id} className={`pb-card${drag?.id === id ? ' lifted' : ''}${mark}`} data-card data-section={section} data-index={index}>
         <button className="pb-open" onClick={() => void openTile(id)} aria-label={`Open ${t.name}`} {...handle(id)}>
           <Thumb id={id} stamp={t.updatedAt} />
-          {t.legacy && <span className="pb-dot" title="From an old post: arrange it, then republish" />}
+          {t.legacy && <span className={`pb-dot ${t.legacy}`} title={t.legacy === 'wpstudio' ? 'From a WP Studio post' : 'From an ordinary WordPress post'} />}
         </button>
         <div className="pb-card-foot">
           {renaming?.id === id ? (
@@ -126,7 +142,7 @@ export function TilesTab() {
           ) : (
             <span className="pb-card-name">{t.name}</span>
           )}
-          <button className="pb-icon sm" aria-label={`${t.name} actions`} onClick={() => (setMenu(menu === id ? null : id), setConfirm(null))}>
+          <button className="pb-icon sm" aria-label={`${t.name} actions`} onClick={() => setMenu(menu === id ? null : id)}>
             <Ellipsis size={18} />
           </button>
         </div>
@@ -147,8 +163,8 @@ export function TilesTab() {
                 <ArchiveRestore size={16} /> Move to the post
               </button>
             )}
-            <button className="danger" onClick={() => (confirm === id ? void act(async () => (await publishStore()).deleteTile(id)) : setConfirm(id))}>
-              <Trash2 size={16} /> {confirm === id ? 'Tap again to delete' : 'Delete'}
+            <button className="danger" onClick={() => void remove(id)}>
+              <Trash2 size={16} /> Delete
             </button>
           </div>
         )}
@@ -165,7 +181,7 @@ export function TilesTab() {
         <span>
           {draft?.title.trim() || 'Untitled'} · {ws.live.length} {ws.live.length === 1 ? 'tile' : 'tiles'}
         </span>
-        {draft?.legacy && <span className="pb-dot inline" title="An old post" />}
+        {draft?.legacy && <span className={`pb-dot inline ${draft.legacy}`} title="An old post" />}
       </div>
       <div className={`pb-grid${over?.section === 'live' ? ' target' : ''}`} data-zone="live">
         {ws.live.map((id, i) => card(id, 'live', i))}

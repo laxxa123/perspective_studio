@@ -2,12 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { drop, fromOrder, locate, order, reconcile, remove, rowCounts, type Layout } from './postLayout';
 import { crc32, readId, stampId, uidFromHash } from './imageId';
 import { buildPostMeta, parsePostMeta, pickFeatured, postContent, refsOf, tilesFromPost, type MediaRef, type Resolved } from './postMeta';
-import { htmlImages, htmlParagraphs, legacyTiles } from './legacy';
 import { publishName, renameCanonical } from './layout';
 import { addElement, createTile, imageFor, paintFor, spiralFor, textFor } from './tile';
 import type { TileDocument } from './types';
 
-const mono = (s: string, size: number) => [...s].length * size * 0.5;
 const full = (id: string) => ({ kind: 'full' as const, id });
 const half = (left: string | null, right: string | null) => ({ kind: 'half' as const, left, right });
 
@@ -204,41 +202,6 @@ describe('post meta', () => {
     expect(html).toContain('<p>Hello &lt;world&gt;<br>bye</p>');
     expect(html).toContain('class="wp-image-1"');
     expect(html).toContain('alt="coil"');
-  });
-});
-
-// ----- old posts -----
-
-describe('old posts into tiles', () => {
-  it('puts pictures in grid tiles with captions, then the text', () => {
-    const images = Array.from({ length: 14 }, (_, i) => ({ mediaId: `m${i}`, width: i % 2 ? 400 : 100, height: 300, caption: i === 0 ? 'First picture' : undefined }));
-    const paragraphs = Array.from({ length: 40 }, (_, i) => `Paragraph ${i} `.repeat(20));
-    const tiles = legacyTiles({ title: 'Old trip', images, paragraphs: ['', ...paragraphs] }, mono);
-    const pics = tiles.filter((t) => t.name.includes('pictures'));
-    expect(pics.map((t) => t.name)).toEqual(['Old trip · pictures 1', 'Old trip · pictures 2']);
-    expect(pics[0].elements.filter((e) => e.kind === 'image')).toHaveLength(12);
-    expect(pics[0].elements.find((e) => e.kind === 'text')).toMatchObject({ text: 'First picture', align: 'center' });
-    const texts = tiles.filter((t) => t.name.includes('text'));
-    expect(texts.length).toBeGreaterThan(2);
-    expect(texts[0].elements[0]).toMatchObject({ kind: 'text', text: 'Old trip', weight: 700 });
-    for (const t of tiles) {
-      expect(t.meta.legacy).toBe(true);
-      for (const e of t.elements) expect(e.y + e.h).toBeLessThanOrEqual(1 + 1e-9);
-    }
-  });
-  it('handles one picture and an empty title', () => {
-    const tiles = legacyTiles({ title: ' ', images: [{ mediaId: 'm', width: 300, height: 100 }], paragraphs: [] }, mono);
-    expect(tiles).toHaveLength(1);
-    expect(tiles[0].name).toBe('Imported · pictures');
-    expect(tiles[0].elements[0].w).toBeCloseTo((1080 - 108) / 1080);
-  });
-  it('reads paragraphs and pictures from post HTML', () => {
-    const html = '<p>One&nbsp;&amp; <b>two</b></p><figure><img src="x.jpg"></figure><h2>Head&#8217;s</h2><p>a<br/>b</p><script>bad()</script>';
-    expect(htmlParagraphs(html)).toEqual(['One & two', 'Head’s', 'a\nb']);
-    expect(htmlImages('<img class="wp-image-12" src="a.jpg"><img alt="no src"><img src=\'b.png\'>')).toEqual([
-      { id: 12, src: 'a.jpg' },
-      { id: null, src: 'b.png' },
-    ]);
   });
 });
 

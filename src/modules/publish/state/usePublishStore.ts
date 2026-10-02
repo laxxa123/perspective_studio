@@ -23,7 +23,8 @@ interface PublishState {
   overlay: Overlay;
   /** Snap guides while dragging (document px). */
   guides: { x: number | null; y: number | null };
-  toast: string | null;
+  /** A short message at the bottom with one action (Undo, View). */
+  snack: Snack | null;
   saving: boolean;
   /** A WordPress job in progress (its current step), shown over everything. */
   busy: string | null;
@@ -40,9 +41,17 @@ interface PublishState {
   undo: () => void;
   redo: () => void;
   showToast: (t: string) => void;
+  showSnack: (text: string, action?: Snack['action']) => void;
 }
 
-let toastTimer: ReturnType<typeof setTimeout> | undefined;
+export interface Snack {
+  text: string;
+  action?: { label: string; run?: () => void; href?: string };
+  /** Changes on every message, so a repeated message restarts its timer. */
+  key: number;
+}
+
+let snackTimer: ReturnType<typeof setTimeout> | undefined;
 
 export const usePublishStore = create<PublishState>((set, get) => ({
   tab: 'tiles',
@@ -54,7 +63,7 @@ export const usePublishStore = create<PublishState>((set, get) => ({
   sheet: 'none',
   overlay: 'none',
   guides: { x: null, y: null },
-  toast: null,
+  snack: null,
   saving: false,
   busy: null,
   fresh: null,
@@ -88,9 +97,12 @@ export const usePublishStore = create<PublishState>((set, get) => ({
     if (!tile || !future.length) return;
     set({ tile: future[0], past: [...past, tile], future: future.slice(1) });
   },
-  showToast: (t) => {
-    clearTimeout(toastTimer);
-    set({ toast: t });
-    toastTimer = setTimeout(() => set({ toast: null }), 2400);
+  // One message channel, at the bottom (the top belongs to the post's name and Publish).
+  showToast: (t) => get().showSnack(t),
+  showSnack: (text, action) => {
+    clearTimeout(snackTimer);
+    const key = Date.now();
+    set({ snack: { text, action, key } });
+    snackTimer = setTimeout(() => get().snack?.key === key && set({ snack: null }), action ? 6000 : 3000);
   },
 }));

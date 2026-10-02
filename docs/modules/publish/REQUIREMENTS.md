@@ -1,6 +1,7 @@
-> **Document:** PUBLISH requirements · **Version:** v1.1 (0.17.0, 2026-10-02) · **Location:** `docs/modules/publish/REQUIREMENTS.md` · **Part of:** CREATIVE (`docs/CREATIVE.md`)
+> **Document:** PUBLISH requirements · **Version:** v1.2 (0.18.0, 2026-10-02) · **Location:** `docs/modules/publish/REQUIREMENTS.md` · **Part of:** CREATIVE (`docs/CREATIVE.md`)
 >
-> **Revisions:** v1.1 (0.17.0, 2026-10-02) — Publishing to WordPress: Drafts in TILES; the PUBLISH tab (name, categories, row layout by drag, Publish); POSTS (latest 25, edit / republish, old posts as marked tiles, pictures on WordPress); SETTINGS (site, user, encrypted Application Password); permanent picture ids inside the files; names fixed at first publish; featured picture per tile; post meta `_creative_post` (§5, §7–§13; ADR-0011; theme: wp_studio requirements 2.10 §22).
+> **Revisions:** v1.2 (0.18.0, 2026-10-02) — Old posts converted on Edit (WP Studio posts faithfully, ordinary posts as a story; red / yellow dots); compact chrome (tiny title bar; Publish tab with the name and Publish on top, categories and help at the bottom); search and scroll through all posts and pictures; delete / discard / move with Undo; denser Tiles; editor edge to edge, FP star, colour picker, notepad (§6, §8, §9, §11, §14).
+> v1.1 (0.17.0, 2026-10-02) — Publishing to WordPress: Drafts in TILES; the PUBLISH tab (name, categories, row layout by drag, Publish); POSTS (latest 25, edit / republish, old posts as marked tiles, pictures on WordPress); SETTINGS (site, user, encrypted Application Password); permanent picture ids inside the files; names fixed at first publish; featured picture per tile; post meta `_creative_post` (§5, §7–§13; ADR-0011; theme: wp_studio requirements 2.10 §22).
 > v1.0 (0.16.0, 2026-10-01) — PUBLISH set up as a new CREATIVE module (the successor of the separate WP Studio app); Phase 1 (TILES) built; PUBLISH, WP and SETTINGS tabs in place as "coming next".
 
 # PUBLISH — tiles to WordPress
@@ -157,9 +158,11 @@ uploading).
 
 ### 6.1 Layout
 
-- Top: back (to Tiles, saving), the tile name (tap to rename), undo, redo.
-- The 9:16 tile fills the screen; a dashed **safe margin** (5 % = 54 px)
-  shows while editing and is never published.
+- Top (a slim bar): back (to Tiles, saving), the tile name (tap to rename),
+  notepad, undo, redo.
+- The 9:16 tile fills the screen edge to edge (the full width; the full
+  height on a short screen); a dashed **safe margin** (5 % = 54 px) shows
+  while editing and is never published.
 - One bottom bar. Nothing selected: **Media · Text · Draw · Spiral · Layers
   · Colour** (background). Something selected: its few actions —
   picture: **Trim · Style · Duplicate · Delete**; text and spiral: **Edit ·
@@ -169,7 +172,8 @@ uploading).
   or trim (picture). Handles are thumb-sized (22 px).
 - **Style** sheet: type controls for text / spiral, opacity, **Align** to the
   tile (left / centre / right margin, top / middle / bottom margin), **Order**
-  (front, forward, backward, back) and **Lock**.
+  (front, forward, backward, back), **Lock** and, for a picture, drawing or
+  spiral, the **FP** star (featured picture).
 - **Layers** sheet: every element top to bottom with its number, type and
   name; tap to select; move up / down.
 - Undo / redo (100 steps) for every change; a slider drag is one step.
@@ -219,6 +223,18 @@ picture's aspect while an edge snaps. Rotation snaps every 45°.
 - A drawing covers the tile, so it is not a tap target on the canvas;
   select it from Layers.
 
+### 6.6 Colour
+
+**Colour** (background): the swatches, then a compact picker — a
+saturation / brightness square, a hue strip, the hex code and the last six
+colours used. Dragging previews live; letting go is one undo step.
+
+### 6.7 Notepad
+
+A tiny notepad (top bar) floats over the tile: one shared note for quick
+notes while working, saved as you type. Copy (the selection or all), Place
+(puts the selection or all on the tile as text), Clear (with Undo), close.
+
 ## 7. Storage
 
 IndexedDB `creative-publish` (version 2): `tiles` (TileDocument JSON,
@@ -245,31 +261,41 @@ kept aside, never published, kept after publishing. **Hold a tile and
 drag** to reorder it or move it between the post and Drafts (the page
 scrolls near the edges; a bar shows where it lands). ⋯ renames, duplicates
 (drawings copied; the copy sits next to it), moves to Drafts / to the post,
-or deletes (a second tap confirms — no dialogs). A **red dot** marks a tile
-made from an old post (§11.3). The section heading shows the post's name
-and tile count, and "Editing" while a published post is being changed.
+or deletes (at once, with **Undo** in the message bar). A dot marks a tile
+made from an old post (§11.3): **red** from an ordinary WordPress post,
+**yellow** from WP Studio. The section heading shows the post's name and
+tile count, and "Editing" while a published post is being changed.
+Thumbnails are small (three or more per row) so the whole inventory shows.
 
-The editor's Style sheet has **Featured picture** for a photo, drawing or
-spiral (a star in Layers): the post's cover is the first tile's chosen one,
-else the top photo of the first tile with a photo.
+The editor's **FP** star (Style → Order row) marks a photo, drawing or
+spiral as the featured picture (a star in Layers): the post's cover is the
+first tile's chosen one, else the top photo of the first tile with a photo.
 
 ## 9. PUBLISH tab
 
 ### 9.1 The post
 
-- **Post name** (the title; it can change on every publish — the slug
-  WordPress made at first publish never changes).
-- **Categories:** chips of the site's categories (tap to pick one or more)
-  and `+ Category` to type a new one (created when publishing).
-- **Publish** (or **Update post**) — goes live at once. While it works a
-  card shows each step; nothing on the phone changes until WordPress has
-  confirmed the post.
-- After publishing: the post's tiles are cleared from TILES, the PUBLISH
-  tab is empty again, the post is at the top of POSTS; pictures stay in
-  Media; Drafts stay.
-- While a published post is edited: a band says so, links to the post on
-  the site, and offers **Drop changes** (a second tap confirms; the tiles
-  go, the post on WordPress is unchanged).
+The top of the tab is for publishing; the layout takes the rest; the
+bottom holds the categories. No standing instructions.
+
+- **Top (sticky):** the **post name** (the title; it can change on every
+  publish — the slug WordPress made at first publish never changes) and a
+  small **Publish** / **Update** button at its end. Tapping it without tiles
+  or a name says what is missing.
+- While a published post is edited, one small line under it: its dot (old
+  posts), "Editing a published post", ↗ (open on the site) and **Discard**
+  (the tiles go, the post on WordPress is unchanged; Undo in the message
+  bar).
+- **Bottom (sticky):** one sideways-scrolling row of small category chips
+  (tap to pick one or more; `+` types a new one, created when publishing)
+  and **?**, a pop-up with the drag rules and what the dots mean.
+- Publishing goes live at once. A small card shows each step; nothing on
+  the phone changes until WordPress has confirmed the post. Then the post's
+  tiles are cleared from TILES, the PUBLISH tab is empty again, the post is
+  at the top of POSTS ("Published · View" in the message bar); pictures
+  stay in Media; Drafts stay.
+- **Messages** appear in one bar at the bottom, with one action when there
+  is one (Undo, View).
 
 ### 9.2 Layout
 
@@ -291,6 +317,7 @@ drop:
 - onto a row's **top or bottom edge**, or above / below all rows → a new
   full row there.
 A quick swipe still scrolls; near the edges the list scrolls by itself.
+Every move can be undone from the message bar.
 
 ## 10. Publishing to WordPress
 
@@ -338,10 +365,13 @@ wp_studio requirements (2.10) §22.
 ### 11.1 Posts
 
 The latest 25 posts, newest first (published or opened here; older ones
-drop off the phone only). Each shows its cover, name and date; the one
-being edited is highlighted and shows its new name live. Refresh updates
-them from WordPress (an empty list starts from the site's newest 25).
-**Search** finds any post on WordPress. Open on the site (↗).
+drop off the phone only), then — as you scroll — every other post on the
+site, page by page. Each shows its cover, name and date; **tap it to
+edit**; ↗ opens it on the site. The one being edited is highlighted and
+shows its new name live. A dot marks an old post: **red** = ordinary
+WordPress post, **yellow** = WP Studio post, none = made with PUBLISH.
+Refresh updates them from WordPress. **Search** covers every post on the
+site (scrolls page by page too).
 
 ### 11.2 Edit
 
@@ -351,19 +381,44 @@ data), its name, categories and layout into PUBLISH. If TILES already holds
 tiles for another post, Edit first offers to move them to Drafts (one tap).
 Publishing replaces the post (§10.2).
 
-### 11.3 Old posts
+### 11.3 Old posts — converted on Edit
 
-A post not made by PUBLISH (WP Studio manifest posts, ordinary posts) opens
-as tiles for reference: all its pictures in grid tiles (12 per tile) with
-their captions as editable text under each, then the title and body text
-set for reading over as many text tiles as needed. Such posts and tiles
-carry a red dot. Once republished they are ordinary PUBLISH posts.
+There is no separate migration: tapping an old post converts it into tiles;
+publishing it is the approval, and it is a PUBLISH post from then on (its
+dot goes). Its pictures already on WordPress are reused, never uploaded
+again (a WP Studio flattened layer becomes this post's drawing).
+
+**WP Studio posts** (`_wpstudio_manifest`, versions 1–3; yellow) convert
+faithfully:
+- every tile becomes **9:16**: the old tile (9:16, 9:25, 4:5, square …) is
+  fitted inside it whole, and the rest is the tile's background colour;
+  type sizes and spacing scale with it;
+- rows keep **one or two** tiles; a longer row is split into pairs in
+  order, and a tile left over gets a full row;
+- pictures keep their box and turn; `cover` with its focal point and zoom
+  becomes the exact trim; `contain` shrinks the box to the picture; `fill`
+  (stretched) shows as a centred trim;
+- text stays live text with its box, size, weight, colour, alignment, line
+  height, spacing, turn and opacity; Roboto and Ms Madi stay, the old
+  condensed / mono families become Roboto;
+- the flattened layer (labels, spirals, shapes, drawings) becomes one
+  drawing, not editable as such;
+- layer order as published (v3: layer → pictures → text; v1/v2: photo →
+  layer → text).
+
+**Ordinary WordPress posts** (red) convert as a story, in reading order: a
+cover (featured picture and title), each picture on its own tile with its
+caption (figure caption, else the media caption), and the text flowed onto
+reading tiles — headings larger, list items as bullets, quotes in quotes.
+Text formatting and links are not kept. Pictures without an id in the HTML
+are found by file name.
 
 ### 11.4 Media
 
 **On this phone** (the library; a globe marks pictures on WordPress) and
-**On WordPress** (the newest 25, or a search). Tap a WordPress picture to
-download it into Media, under its WordPress name, to use in any tile.
+**On WordPress** (every picture, newest first, page by page as you scroll;
+search covers them all). Tap a WordPress picture to download it into
+Media, under its WordPress name, to use in any tile.
 
 ## 12. SETTINGS tab
 
@@ -372,7 +427,18 @@ and test** (signs in, checks the theme), **Remove password from this
 phone**. The password is stored encrypted by the Android Keystore
 (ADR-0011); site and user in `kv`.
 
-## 13. Conflict review (v1.0, v1.1)
+## 13. Usability review (v1.2)
+
+Benchmarks: Instagram and Canva (composing), the WordPress app
+(publishing), Google Photos (browsing a library), Notion (notes), Material
+and Apple phone guidance. Applied: a slim title bar; the primary action at
+the top end (as Instagram's Share); secondary choices (categories, help)
+at the bottom; no standing instructions (one ? pop-up); dense thumbnails;
+immediate delete / discard / move with Undo instead of confirmations; one
+message bar at the bottom; whole-row tap targets; small visuals keep a
+thumb-sized tap area; colour dots also explained in the pop-up.
+
+## 14. Conflict review (v1.0–v1.2)
 
 | Topic | Resolution |
 | :-- | :-- |
@@ -385,4 +451,7 @@ phone**. The password is stored encrypted by the Android Keystore
 | Spec "do not flatten anything" vs spirals and drawings on WordPress | Each is its own picture with its own id (never merged into the tile); its data stays in the meta, so it is rebuilt for editing. |
 | Edit while TILES has tiles | Offer to move them to Drafts (non-destructive) rather than clear them. |
 | WP Studio's `wpstudio_hash:` description tag | New tag `creative_uid:` with the permanent id inside the file; old tags are not read. |
+| "Fit" for tiles that are not 9:16 | Fitted whole and filled with the tile's background colour (no cropping), as decided. |
+| Separate migration workflow vs converting on Edit | No migration screen or batch: Edit converts; publishing approves. |
+| Confirm before delete (v1.0) vs Undo | Undo replaces tap-twice everywhere (tiles, Discard, layout moves). |
 

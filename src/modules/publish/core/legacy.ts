@@ -1,29 +1,36 @@
-// Old posts into tiles (PUBLISH §11.3): a post that was not made by PUBLISH
-// (WP Studio's manifest posts, plain WordPress posts) becomes editable tiles
-// for reference: every picture in one grid tile (more tiles past 12) with its
-// caption under it, then the title and body text set for reading. Every tile
-// is marked `legacy` (a red dot) until the post is republished. Pure.
+// Ordinary WordPress posts into tiles (PUBLISH §11.3): the post read as a
+// story, in its own order — a cover tile (featured picture and title), each
+// picture on its own tile with its caption, and the text flowed onto
+// reading tiles (headings larger, lists as bullets). Text formatting
+// (bold, italic, links) is not kept. Every tile is marked as coming from an
+// ordinary post (a red dot) until it is republished. Pure.
 import { textHeight, wrapText, type Measure } from './layout';
 import { createTile, newId } from './tile';
 import type { ImageElement, TextElement, TileDocument } from './types';
 import { MARGIN, TILE_H, TILE_W } from './types';
 
-export interface LegacyPost {
-  title: string;
-  images: { mediaId: string; width: number; height: number; caption?: string }[];
-  /** Plain-text paragraphs of the body, in order. */
-  paragraphs: string[];
-}
+/** A piece of a post, in reading order. */
+export type Block = { kind: 'heading' | 'para' | 'item' | 'quote'; text: string } | { kind: 'image'; id: number | null; src: string; caption: string };
 
-const GAP = 24;
-const CAPTION = 26;
+/** A picture block once it is on the phone. */
+export type Picture = { mediaId: string; width: number; height: number; caption?: string };
+export type StoryBlock = Exclude<Block, { kind: 'image' }> | ({ kind: 'image' } & Picture);
+
+const CAPTION = 28;
 const BODY = 36;
-const HEADING = 64;
-const PER_TILE = 12;
+const HEADING = 52;
+const TITLE = 64;
 const INNER_W = TILE_W - 2 * MARGIN;
 const INNER_H = TILE_H - 2 * MARGIN;
+const TEXT: Record<'heading' | 'para' | 'item' | 'quote' | 'title', { size: number; weight: number; lh: number }> = {
+  title: { size: TITLE, weight: 700, lh: 1.2 },
+  heading: { size: HEADING, weight: 700, lh: 1.25 },
+  para: { size: BODY, weight: 400, lh: 1.5 },
+  item: { size: BODY, weight: 400, lh: 1.5 },
+  quote: { size: BODY, weight: 300, lh: 1.5 },
+};
 
-const text = (t: string, x: number, y: number, w: number, size: number, weight: number, h: number, align: TextElement['align'] = 'left'): TextElement => ({
+const text = (t: string, x: number, y: number, w: number, size: number, weight: number, lh: number, h: number, align: TextElement['align'] = 'left'): TextElement => ({
   id: newId('txt'),
   kind: 'text',
   text: t,
@@ -32,7 +39,7 @@ const text = (t: string, x: number, y: number, w: number, size: number, weight: 
   size,
   color: '#111111',
   align,
-  lineHeight: size === BODY ? 1.5 : 1.25,
+  lineHeight: lh,
   letterSpacing: 0,
   x: x / TILE_W,
   y: y / TILE_H,
@@ -42,148 +49,174 @@ const text = (t: string, x: number, y: number, w: number, size: number, weight: 
   opacity: 1,
 });
 
-function imageTiles(p: LegacyPost, measure: Measure, base: string): TileDocument[] {
-  const out: TileDocument[] = [];
-  for (let s = 0; s < p.images.length; s += PER_TILE) {
-    const group = p.images.slice(s, s + PER_TILE);
-    const n = group.length;
-    const cols = n === 1 ? 1 : n <= 4 ? 2 : 3;
-    const rows = Math.ceil(n / cols);
-    const cw = (INNER_W - GAP * (cols - 1)) / cols;
-    const ch = (INNER_H - GAP * (rows - 1)) / rows;
-    const t = { ...createTile(`${base} · pictures${p.images.length > PER_TILE ? ` ${s / PER_TILE + 1}` : ''}`), meta: { legacy: true } };
-    group.forEach((im, i) => {
-      const cx = MARGIN + (i % cols) * (cw + GAP);
-      const cy = MARGIN + Math.floor(i / cols) * (ch + GAP);
-      const capLines = im.caption ? wrapText(im.caption, cw, CAPTION, 0, measure).slice(0, 3) : [];
-      const capH = capLines.length ? textHeight(capLines.length, CAPTION, 1.25) + 8 : 0;
-      const room = { w: cw, h: Math.max(40, ch - capH) };
-      const aspect = im.width / Math.max(1, im.height);
-      let w = room.w;
-      let h = w / aspect;
-      if (h > room.h) {
-        h = room.h;
-        w = h * aspect;
-      }
-      const el: ImageElement = { id: newId('img'), kind: 'image', mediaId: im.mediaId, crop: { x: 0, y: 0, w: 1, h: 1 }, x: (cx + (cw - w) / 2) / TILE_W, y: cy / TILE_H, w: w / TILE_W, h: h / TILE_H, rotation: 0, opacity: 1 };
-      t.elements.push(el);
-      if (capLines.length) t.elements.push(text(capLines.join('\n'), cx, cy + h + 8, cw, CAPTION, 400, capH - 8, 'center'));
-    });
-    out.push(t);
+/** A picture fitted into a box (document px), centred horizontally, from its top. */
+function fitted(p: Picture, x: number, y: number, w: number, h: number): ImageElement {
+  const aspect = p.width / Math.max(1, p.height);
+  let pw = w;
+  let ph = pw / aspect;
+  if (ph > h) {
+    ph = h;
+    pw = ph * aspect;
   }
-  return out;
+  return { id: newId('img'), kind: 'image', mediaId: p.mediaId, crop: { x: 0, y: 0, w: 1, h: 1 }, x: (x + (w - pw) / 2) / TILE_W, y: y / TILE_H, w: pw / TILE_W, h: ph / TILE_H, rotation: 0, opacity: 1 };
 }
 
-function textTiles(p: LegacyPost, measure: Measure, base: string): TileDocument[] {
+/** The tiles for an ordinary post. */
+export function storyTiles(p: { title: string; featured?: Picture; blocks: StoryBlock[] }, measure: Measure): TileDocument[] {
+  const base = p.title.trim().slice(0, 40) || 'Imported';
   const out: TileDocument[] = [];
-  const cur: { tile: TileDocument | null } = { tile: null };
-  let y = MARGIN;
-  const fresh = () => {
-    cur.tile = { ...createTile(`${base} · text ${out.length + 1}`), meta: { legacy: true } };
-    out.push(cur.tile);
-    y = MARGIN;
+  const tile = (label: string) => {
+    const t: TileDocument = { ...createTile(`${base} · ${label}`), meta: { legacy: 'wp' } };
+    out.push(t);
+    return t;
   };
-  const place = (lines: string[], size: number, weight: number) => {
-    const lh = size === BODY ? 1.5 : 1.25;
-    let rest = lines;
+  const lines = (s: string, size: number) => wrapText(s, INNER_W, size, 0, measure);
+
+  // Cover: the featured picture, then the title under it.
+  const titleLines = p.title.trim() ? lines(p.title.trim(), TITLE) : [];
+  const titleH = titleLines.length ? textHeight(titleLines.length, TITLE, TEXT.title.lh) : 0;
+  if (p.featured || titleLines.length) {
+    const cover = tile('cover');
+    let y = MARGIN;
+    if (p.featured) {
+      const img = fitted(p.featured, MARGIN, y, INNER_W, INNER_H - titleH - (titleH ? 40 : 0));
+      cover.elements.push(img);
+      y += img.h * TILE_H + 40;
+    }
+    if (titleLines.length) cover.elements.push(text(titleLines.join('\n'), MARGIN, y, INNER_W, TITLE, 700, TEXT.title.lh, titleH));
+  }
+
+  // Text flows onto reading tiles; a picture takes a tile of its own.
+  const cur: { tile: TileDocument | null; y: number } = { tile: null, y: MARGIN };
+  let pages = 0;
+  const place = (ls: string[], k: keyof typeof TEXT) => {
+    const { size, weight, lh } = TEXT[k];
+    let rest = ls;
     while (rest.length) {
-      if (!cur.tile) fresh();
-      const fit = Math.floor((MARGIN + INNER_H - y) / (size * lh));
+      if (!cur.tile) {
+        cur.tile = tile(`text ${++pages}`);
+        cur.y = MARGIN;
+      }
+      const fit = Math.floor((MARGIN + INNER_H - cur.y) / (size * lh));
       if (fit <= 0) {
-        fresh();
+        cur.tile = null;
         continue;
       }
       const chunk = rest.slice(0, fit);
       rest = rest.slice(fit);
       const h = textHeight(chunk.length, size, lh);
-      cur.tile!.elements.push(text(chunk.join('\n'), MARGIN, y, INNER_W, size, weight, h));
-      y += h + size * 0.8;
-      if (rest.length) fresh();
+      cur.tile.elements.push(text(chunk.join('\n'), MARGIN, cur.y, INNER_W, size, weight, lh, h));
+      cur.y += h + size * 0.7;
+      if (rest.length) cur.tile = null;
     }
   };
-  if (p.title.trim()) place(wrapText(p.title.trim(), INNER_W, HEADING, 0, measure), HEADING, 700);
-  for (const para of p.paragraphs) if (para.trim()) place(wrapText(para.trim(), INNER_W, BODY, 0, measure), BODY, 400);
+  let pictures = 0;
+  for (const b of p.blocks) {
+    if (b.kind === 'image') {
+      cur.tile = null;
+      const t = tile(`picture ${++pictures}`);
+      const cap = b.caption?.trim() ? lines(b.caption.trim(), CAPTION).slice(0, 6) : [];
+      const capH = cap.length ? textHeight(cap.length, CAPTION, 1.3) : 0;
+      const img = fitted(b, MARGIN, MARGIN, INNER_W, INNER_H - capH - (capH ? 24 : 0));
+      // The picture and its caption sit together in the middle of the tile.
+      const total = img.h * TILE_H + (capH ? capH + 24 : 0);
+      const top = MARGIN + (INNER_H - total) / 2;
+      img.y = top / TILE_H;
+      t.elements.push(img);
+      if (cap.length) t.elements.push(text(cap.join('\n'), MARGIN, top + img.h * TILE_H + 24, INNER_W, CAPTION, 400, 1.3, capH, 'center'));
+      continue;
+    }
+    const s = b.kind === 'item' ? `• ${b.text}` : b.kind === 'quote' ? `“${b.text}”` : b.text;
+    if (s.trim()) place(lines(s.trim(), TEXT[b.kind].size), b.kind);
+  }
   return out;
 }
 
-/** The tiles for an old post: pictures first, then the text. */
-export function legacyTiles(p: LegacyPost, measure: Measure): TileDocument[] {
-  const base = p.title.trim().slice(0, 40) || 'Imported';
-  return [...imageTiles(p, measure, base), ...textTiles(p, measure, base)];
-}
+// ----- reading post HTML -----
 
-/** Plain-text paragraphs from post HTML (block tags break paragraphs; tags and entities removed). */
-export function htmlParagraphs(html: string): string[] {
-  const decoded = html
-    .replace(/<(script|style|figure)[\s\S]*?<\/\1>/gi, '')
+/** Plain text from an HTML fragment (tags and entities removed, line breaks kept). */
+export function plain(html: string): string {
+  return html
+    .replace(/<(script|style)[\s\S]*?<\/\1>/gi, '')
     .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<\/(p|div|h[1-6]|li|blockquote|section|article)>/gi, '\n\n')
+    .replace(/<\/(p|li|h[1-6]|div)>/gi, '\n')
     .replace(/<[^>]+>/g, '')
     .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
     .replace(/&#0?39;|&#8217;|&rsquo;/g, '’')
+    .replace(/&#8216;|&lsquo;/g, '‘')
     .replace(/&#8220;|&ldquo;/g, '“')
     .replace(/&#8221;|&rdquo;/g, '”')
     .replace(/&#8211;|&ndash;/g, '–')
     .replace(/&#8212;|&mdash;/g, '—')
-    .replace(/&hellip;|&#8230;/g, '…');
-  return decoded
-    .split(/\n\s*\n/)
-    .map((s) => s.replace(/[ \t]+/g, ' ').trim())
-    .filter(Boolean);
+    .replace(/&hellip;|&#8230;/g, '…')
+    .replace(/&amp;/g, '&')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/ *\n */g, '\n')
+    .replace(/\n{2,}/g, '\n')
+    .trim();
 }
 
-/** Picture references in post HTML: attachment ids (wp-image-N) and sources, in order. */
-export function htmlImages(html: string): { id: number | null; src: string }[] {
-  const out: { id: number | null; src: string }[] = [];
-  for (const m of html.matchAll(/<img\b[^>]*>/gi)) {
-    const tag = m[0];
-    const src = tag.match(/\bsrc=["']([^"']+)["']/i)?.[1];
-    if (!src) continue;
-    const id = tag.match(/wp-image-(\d+)/)?.[1];
-    out.push({ id: id ? Number(id) : null, src });
-  }
-  return out;
+function imageOf(tag: string, caption: string): Block | null {
+  const src = tag.match(/\bsrc=["']([^"']+)["']/i)?.[1];
+  if (!src) return null;
+  const id = tag.match(/wp-image-(\d+)/)?.[1];
+  return { kind: 'image', id: id ? Number(id) : null, src, caption };
 }
 
 /**
- * Pictures and text of a WP Studio post (`_wpstudio_manifest`, schema
- * `wpstudio.post` v1–3): every picture layer (photo, images, flattened
- * overlay / background) by attachment id, then every text overlay, tile by
- * tile. Null when the meta is not a WP Studio manifest.
+ * The post body as blocks, in order: pictures (with their figure caption),
+ * headings, paragraphs, list items and quotes. Text outside any block (a
+ * classic-editor post stores bare text) is split into paragraphs at blank
+ * lines.
  */
-export function wpStudioContent(raw: unknown): { mediaIds: number[]; texts: string[] } | null {
-  let d: unknown = raw;
-  if (typeof raw === 'string') {
-    try {
-      d = JSON.parse(raw);
-    } catch {
-      return null;
+export function htmlBlocks(html: string): Block[] {
+  const out: Block[] = [];
+  const loose = (s: string) => {
+    for (const para of s.replace(/<(script|style)[\s\S]*?<\/\1>/gi, '').split(/\n\s*\n/)) {
+      const t = plain(para);
+      if (t) out.push({ kind: 'para', text: t });
     }
-  }
-  const m = d as { schema?: unknown; tiles?: unknown } | null;
-  if (!m || typeof m !== 'object' || m.schema !== 'wpstudio.post') return null;
-  const tiles = (Array.isArray(m.tiles) ? m.tiles : [m]) as Record<string, unknown>[];
-  const mediaIds: number[] = [];
-  const texts: string[] = [];
-  const pic = (v: unknown) => {
-    const id = Number((v as { mediaId?: unknown } | null)?.mediaId);
-    if (id > 0 && !mediaIds.includes(id)) mediaIds.push(id);
   };
-  for (const t of tiles) {
-    if (!t || typeof t !== 'object') continue;
-    pic(t.background);
-    pic(t.photo);
-    if (Array.isArray(t.images)) t.images.forEach(pic);
-    pic(t.overlay);
-    if (Array.isArray(t.textOverlays))
-      for (const o of t.textOverlays as Record<string, unknown>[]) {
-        const s = typeof o?.text === 'string' ? o.text : typeof o?.content === 'string' ? o.content : '';
-        if (s.trim()) texts.push(s.trim());
-      }
+  // Innermost figures (a gallery's figures hold one picture each), single images, text blocks.
+  const re = /<figure\b[^>]*>((?:(?!<figure\b)[\s\S])*?)<\/figure>|<img\b[^>]*>|<(h[1-6]|p|li|blockquote|pre)\b[^>]*>([\s\S]*?)<\/\2>/gi;
+  let at = 0;
+  for (const m of html.matchAll(re)) {
+    loose(html.slice(at, m.index));
+    at = m.index! + m[0].length;
+    if (m[1] !== undefined) {
+      const img = m[1].match(/<img\b[^>]*>/i)?.[0];
+      const cap = plain(m[1].match(/<figcaption\b[^>]*>([\s\S]*?)<\/figcaption>/i)?.[1] ?? '');
+      const b = img ? imageOf(img, cap) : null;
+      if (b) out.push(b);
+      else if (plain(m[1])) out.push({ kind: 'para', text: plain(m[1]) });
+      continue;
+    }
+    if (!m[2]) {
+      const b = imageOf(m[0], '');
+      if (b) out.push(b);
+      continue;
+    }
+    const inner = m[3];
+    // A paragraph may hold a picture (classic editor): the picture, then its text.
+    for (const img of inner.match(/<img\b[^>]*>/gi) ?? []) {
+      const b = imageOf(img, '');
+      if (b) out.push(b);
+    }
+    const t = plain(inner);
+    if (!t) continue;
+    const tag = m[2].toLowerCase();
+    out.push({ kind: tag.startsWith('h') ? 'heading' : tag === 'li' ? 'item' : tag === 'blockquote' ? 'quote' : 'para', text: t });
   }
-  return { mediaIds, texts };
+  loose(html.slice(at));
+  return out;
 }
+
+/** A picture's file name without WordPress's size suffix (`-300x200`), for finding it by name. */
+export const baseName = (src: string) =>
+  decodeURIComponent(src.split(/[?#]/)[0].split('/').pop() ?? '')
+    .replace(/\.[a-z0-9]+$/i, '')
+    .replace(/-\d+x\d+$/, '')
+    .replace(/-scaled$/, '');

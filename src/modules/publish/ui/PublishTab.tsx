@@ -4,9 +4,10 @@
 // to a row's left or right side it takes that half (the tile there moves
 // down to a row of its own); to a row's middle it takes the whole row (the
 // tiles there move above and below); between rows it gets a new row. Tap a
-// tile to edit it.
+// tile to edit it. The name and Publish sit at the top; categories and a
+// help pop-up at the bottom.
 import { useEffect, useRef, useState } from 'react';
-import { ExternalLink, Plus, RotateCcw, Send, X } from 'lucide-react';
+import { CircleHelp, ExternalLink, Plus, Send, X } from 'lucide-react';
 import { drop, reconcile, type Layout, type Zone } from '../core/postLayout';
 import { emptyDraft, publishStore, type PostDraft, type TileSummary } from '../storage/PublishStore';
 import { usePublishStore } from '../state/usePublishStore';
@@ -35,7 +36,7 @@ export function PublishTab() {
   const [cats, setCats] = useState<WpCategory[]>([]);
   const [adding, setAdding] = useState<string | null>(null);
   const [problem, setProblem] = useState<{ text: string; conflict?: boolean } | null>(null);
-  const [discard, setDiscard] = useState(false);
+  const [help, setHelp] = useState(false);
   const [width, setWidth] = useState(240);
   const root = useRef<HTMLDivElement>(null);
 
@@ -93,7 +94,13 @@ export function PublishTab() {
       if (y > rows.bottom) return { at: layout.length - 1, zone: 'after' };
       return null;
     },
-    drop: (id, t) => save({ layout: drop(layout, id, t.at, t.zone) }),
+    drop: (id, t) => {
+      const before = layout;
+      const next = drop(layout, id, t.at, t.zone);
+      if (JSON.stringify(next) === JSON.stringify(before)) return;
+      save({ layout: next });
+      st().showSnack('Moved', { label: 'Undo', run: () => save({ layout: before }) });
+    },
   });
 
   if (!draft) return null;
@@ -111,6 +118,11 @@ export function PublishTab() {
 
   const publish = async (force = false) => {
     setProblem(null);
+    if (!count) return st().showToast('Add tiles first (Tiles tab).');
+    if (!draft.title.trim()) {
+      root.current?.querySelector<HTMLInputElement>('.pb-title')?.focus();
+      return st().showToast('Give the post a name.');
+    }
     await (await publishStore()).setDraft(draft);
     const wp = await wpClient();
     if (!wp) {
@@ -119,9 +131,9 @@ export function PublishTab() {
     }
     st().set({ busy: 'Starting…' });
     try {
-      await publishPost(await pipelineDeps(wp), { newCategories: draft.newCategories, force });
+      const saved = await publishPost(await pipelineDeps(wp), { newCategories: draft.newCategories, force });
       st().set({ busy: null, tab: 'posts' });
-      st().showToast(editing ? 'Post updated.' : 'Published.');
+      st().showSnack(editing ? 'Post updated' : 'Published', saved.link ? { label: 'View', href: saved.link } : undefined);
     } catch (e) {
       st().set({ busy: null });
       if (e instanceof ConflictError) setProblem({ text: 'Someone changed this post on WordPress after you opened it. Publishing replaces their changes.', conflict: true });
@@ -129,109 +141,129 @@ export function PublishTab() {
     }
   };
 
-  const dropChanges = async () => {
-    setDiscard(false);
-    await clearPost(await publishStore());
+  /** Drops the edit of a published post (its tiles and the draft), with Undo. */
+  const discard = async () => {
+    const s = await publishStore();
+    const [ws, before] = [await s.workspace(), draft];
+    const snap = await s.snapshot(ws.live);
+    await clearPost(s);
     setDraft(emptyDraft());
     setTiles(new Map());
-    st().showToast('Changes dropped. The post on WordPress is unchanged.');
+    st().showSnack('Changes dropped', {
+      label: 'Undo',
+      run: () =>
+        void (async () => {
+          await s.restore(snap);
+          await s.setWorkspace(ws);
+          await s.setDraft(before);
+          setDraft(before);
+          setTiles(new Map((await s.listTiles()).map((t) => [t.id, t])));
+        })(),
+    });
   };
 
   const cellW = (width - GAP) / 2;
   const cell = (id: string | null, w: number, side: string) => {
     const t = id ? tiles.get(id) : null;
-    if (!id || !t)
-      return (
-        <div key={side} className="pb-cell empty" style={{ width: w }}>
-          <span>Empty half</span>
-        </div>
-      );
+    if (!id || !t) return <div key={side} className="pb-cell empty" style={{ width: w }} />;
     return (
       <button key={side} className={`pb-cell${drag?.id === id ? ' lifted' : ''}`} style={{ width: w }} aria-label={`Edit ${t.name}`} onClick={() => void openTile(id)} {...handle(id)}>
         <Thumb id={id} stamp={t.updatedAt} />
-        {t.legacy && <span className="pb-dot" />}
+        {t.legacy && <span className={`pb-dot ${t.legacy}`} />}
       </button>
     );
   };
 
   return (
     <div className="pb-compose" ref={root}>
+      <div className="pb-compose-top">
+        <input className="pb-title" value={draft.title} placeholder="Post name" aria-label="Post name" maxLength={120} onChange={(e) => save({ title: e.target.value })} />
+        <button className="pb-send" aria-label={editing ? 'Update post' : 'Publish'} onClick={() => void publish()}>
+          <Send size={14} /> {editing ? 'Update' : 'Publish'}
+        </button>
+      </div>
       {editing && (
         <div className="pb-editing">
-          <span>Updating a published post{draft.legacy ? ' (old format)' : ''}</span>
+          {draft.legacy && <span className={`pb-dot inline ${draft.legacy}`} />}
+          <span>Editing a published post</span>
           {draft.link && (
             <a href={draft.link} target="_blank" rel="noreferrer" aria-label="Open on the site">
-              <ExternalLink size={16} />
+              <ExternalLink size={13} />
             </a>
           )}
-          <button className="pb-pill ghost sm" onClick={() => (discard ? void dropChanges() : setDiscard(true))}>
-            <RotateCcw size={14} /> {discard ? 'Tap again: drop changes' : 'Drop changes'}
-          </button>
+          <button onClick={() => void discard()}>Discard</button>
         </div>
       )}
-      <input className="pb-title" value={draft.title} placeholder="Post name" aria-label="Post name" maxLength={120} onChange={(e) => save({ title: e.target.value })} />
-      <div className="pb-chips" aria-label="Categories">
-        {cats.map((c) => (
-          <button key={c.id} className={`pb-chip${draft.categories.includes(c.id) ? ' on' : ''}`} aria-pressed={draft.categories.includes(c.id)} onClick={() => toggle(c.id)}>
-            {c.name}
-          </button>
-        ))}
-        {(draft.newCategories ?? []).map((n) => (
-          <button key={n} className="pb-chip on new" aria-label={`Remove new category ${n}`} onClick={() => save({ newCategories: draft.newCategories!.filter((x) => x !== n) })}>
-            {n} <X size={12} />
-          </button>
-        ))}
-        {adding === null ? (
-          <button className="pb-chip add" onClick={() => setAdding('')}>
-            <Plus size={14} /> Category
-          </button>
-        ) : (
-          <input className="pb-chip-input" autoFocus value={adding} placeholder="New category" aria-label="New category" onChange={(e) => setAdding(e.target.value)} onBlur={addCategory} onKeyDown={(e) => e.key === 'Enter' && addCategory()} />
-        )}
-      </div>
+      {problem && (
+        <div className="pb-problem" role="alert">
+          <p>{problem.text}</p>
+          <div className="pb-row">
+            <button className="pb-pill ghost sm" onClick={() => setProblem(null)}>
+              {problem.conflict ? 'Cancel' : 'OK'}
+            </button>
+            {problem.conflict && (
+              <button className="pb-pill danger sm" onClick={() => void publish(true)}>
+                Publish anyway
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {count ? (
-        <>
-          <p className="pb-hint center">Hold and drag a tile · sides make half width · middle makes full width</p>
-          <div className="pb-rows" style={{ width }}>
-            {layout.map((r, i) => (
-              <div key={r.kind === 'full' ? r.id : `${r.left}|${r.right}|${i}`} className={`pb-prow${over?.at === i ? ` z-${over.zone}` : ''}`} data-row={i}>
-                {r.kind === 'full' ? cell(r.id, width, 'full') : [cell(r.left, cellW, 'left'), cell(r.right, cellW, 'right')]}
-              </div>
-            ))}
-          </div>
-        </>
+        <div className="pb-rows" style={{ width }}>
+          {layout.map((r, i) => (
+            <div key={r.kind === 'full' ? r.id : `${r.left}|${r.right}|${i}`} className={`pb-prow${over?.at === i ? ` z-${over.zone}` : ''}`} data-row={i}>
+              {r.kind === 'full' ? cell(r.id, width, 'full') : [cell(r.left, cellW, 'left'), cell(r.right, cellW, 'right')]}
+            </div>
+          ))}
+        </div>
       ) : (
         <div className="pb-empty">
           <p>No tiles in this post yet.</p>
-          <p className="pb-hint">Make tiles in TILES; they appear here in order.</p>
-          <button className="pb-pill" onClick={() => st().set({ tab: 'tiles' })}>
+          <button className="pb-pill sm" onClick={() => st().set({ tab: 'tiles' })}>
             Go to Tiles
           </button>
         </div>
       )}
 
-      <div className="pb-publish-bar">
-        {problem && (
-          <div className="pb-problem" role="alert">
-            <p>{problem.text}</p>
-            <div className="pb-row">
-              <button className="pb-pill ghost" onClick={() => setProblem(null)}>
-                {problem.conflict ? 'Cancel' : 'OK'}
-              </button>
-              {problem.conflict && (
-                <button className="pb-pill danger" onClick={() => void publish(true)}>
-                  Publish anyway
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-        <button className="pb-publish" disabled={!count || !draft.title.trim()} onClick={() => void publish()}>
-          <Send size={18} /> {editing ? 'Update post' : 'Publish'}
+      <div className="pb-compose-foot">
+        <div className="pb-chips" aria-label="Categories">
+          {cats.map((c) => (
+            <button key={c.id} className={`pb-chip${draft.categories.includes(c.id) ? ' on' : ''}`} aria-pressed={draft.categories.includes(c.id)} onClick={() => toggle(c.id)}>
+              {c.name}
+            </button>
+          ))}
+          {(draft.newCategories ?? []).map((n) => (
+            <button key={n} className="pb-chip on new" aria-label={`Remove new category ${n}`} onClick={() => save({ newCategories: draft.newCategories!.filter((x) => x !== n) })}>
+              {n} <X size={10} />
+            </button>
+          ))}
+          {adding === null ? (
+            <button className="pb-chip add" aria-label="New category" onClick={() => setAdding('')}>
+              <Plus size={12} />
+            </button>
+          ) : (
+            <input className="pb-chip-input" autoFocus value={adding} placeholder="New category" aria-label="New category" onChange={(e) => setAdding(e.target.value)} onBlur={addCategory} onKeyDown={(e) => e.key === 'Enter' && addCategory()} />
+          )}
+        </div>
+        <button className="pb-icon sm" aria-label="Help" aria-expanded={help} onClick={() => setHelp(!help)}>
+          <CircleHelp size={16} />
         </button>
-        {(!count || !draft.title.trim()) && <p className="pb-hint center">{!count ? 'Add tiles to publish.' : 'Give the post a name.'}</p>}
       </div>
+      {help && (
+        <div className="pb-help" role="dialog" aria-label="Help" onClick={() => setHelp(false)}>
+          <p>
+            <b>Arrange:</b> hold a tile, then drag it — to a side for half width, to the middle for full width, to a row’s edge for a new row. Tap a tile to edit it.
+          </p>
+          <p>
+            <b>Categories:</b> tap to pick; + adds a new one.
+          </p>
+          <p>
+            <span className="pb-dot inline wp" /> from an ordinary WordPress post · <span className="pb-dot inline wpstudio" /> from WP Studio. Publishing makes them normal posts.
+          </p>
+        </div>
+      )}
       {drag && tiles.get(drag.id) && (
         <div className="pb-ghost" style={{ left: drag.x - 45, top: drag.y - 50, width: 90 }}>
           <Thumb id={drag.id} stamp={tiles.get(drag.id)!.updatedAt} />

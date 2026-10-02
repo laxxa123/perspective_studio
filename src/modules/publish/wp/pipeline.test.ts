@@ -7,7 +7,7 @@ import { addElement, createTile, imageFor, paintFor, spiralFor, textFor } from '
 import type { TileDocument } from '../core/types';
 import { emptyDraft, PublishStore } from '../storage/PublishStore';
 import { FakeWp } from './fakeWp.test-util';
-import { ConflictError, clearPost, isOwnPost, publishPost, pullPost, summaryOf, type Deps } from './pipeline';
+import { ConflictError, clearPost, isOwnPost, originOf, publishPost, pullPost, summaryOf, type Deps } from './pipeline';
 import { WpClient } from './WpClient';
 
 function chunk(type: string, data: number[]): number[] {
@@ -32,6 +32,7 @@ async function setup() {
     thumbnail: async () => png(250),
     measure: (s, size) => s.length * size * 0.5,
     progress: (t) => steps.push(t),
+    placeOverlay: async (blob, box) => (steps.push(`overlay ${box.y}`), blob),
   };
   return { store, fake, wp, deps, steps };
 }
@@ -188,23 +189,36 @@ describe('editing a published post', () => {
     expect((await store.draft()).title).toBe('');
   });
 
-  it('brings an old WP Studio post in as marked tiles; republishing makes it a PUBLISH post', async () => {
-    const { store, fake, deps } = await setup();
-    const a = fake.addMedia(pngBytes(20), 'old-a.png', 'The harbour');
+  it('converts a WP Studio post on Edit: its layout, boxes and text kept; republishing makes it a PUBLISH post', async () => {
+    const { store, fake, deps, steps } = await setup();
+    const a = fake.addMedia(pngBytes(20), 'old-a.png');
     const b = fake.addMedia(pngBytes(21), 'old-b.png');
-    const manifest = { schema: 'wpstudio.post', version: 3, tiles: [{ images: [{ mediaId: a }], textOverlays: [{ text: 'Caption one' }] }, { photo: { mediaId: b }, textOverlays: [{ content: 'Old text' }] }] };
-    const id = fake.addPost({ title: 'Old trip', content: '<p>Body para.</p><p>Caption one</p>', meta: { _wpstudio_manifest: JSON.stringify(manifest) } });
+    const ov = fake.addMedia(pngBytes(22), 'old-overlay.png');
+    const manifest = {
+      schema: 'wpstudio.post',
+      version: 3,
+      layout: { rows: [{ count: 3 }] },
+      tiles: [
+        { tileId: 't1', width: 1080, height: 1350, overlay: { mediaId: ov }, images: [{ mediaId: a, x: 0, y: 0, width: 1, height: 0.5 }], textOverlays: [{ text: 'Caption one' }] },
+        { tileId: 't2', images: [{ mediaId: b }, { mediaId: 4242 }], textOverlays: [{ content: 'Old text' }] },
+        { tileId: 't3', overlay: { mediaId: 4343 } },
+      ],
+    };
+    const id = fake.addPost({ title: 'Old trip', content: '<p>ignored</p>', meta: { _wpstudio_manifest: JSON.stringify(manifest) } });
+    expect(originOf(await deps.wp.post(id))).toBe('wpstudio');
 
     const draft = await pullPost(deps, id);
-    expect(draft.legacy).toBe(true);
+    expect(draft.legacy).toBe('wpstudio');
+    expect(draft.layout).toEqual([
+      { kind: 'half', left: `wps-${id}-t1`, right: `wps-${id}-t2` },
+      { kind: 'full', id: `wps-${id}-t3` },
+    ]);
     const tiles = await Promise.all((await store.workspace()).live.map((x) => store.getTile(x)));
-    expect(tiles.map((t) => t!.name)).toEqual(['Old trip · pictures', 'Old trip · text 1']);
-    expect(tiles.every((t) => t!.meta.legacy)).toBe(true);
-    const texts = tiles[1]!.elements.map((e) => (e.kind === 'text' ? e.text : ''));
-    expect(texts).toEqual(['Old trip', 'Caption one', 'Old text', 'Body para.']);
-    expect(tiles[0]!.elements.find((e) => e.kind === 'text')).toMatchObject({ text: 'The harbour' });
-    expect((await store.listTiles()).every((t) => t.legacy)).toBe(true);
-    expect((await store.posts())[0]).toMatchObject({ wpId: id, legacy: true });
+    expect(tiles.map((t) => t!.elements.map((e) => e.kind))).toEqual([['paint', 'image', 'text'], ['image', 'text'], []]);
+    expect(tiles[0]!.elements[0]).toMatchObject({ x: 0, y: 0, w: 1, h: 1 });
+    expect(steps).toContain('overlay 285');
+    expect((await store.listTiles()).every((t) => t.legacy === 'wpstudio')).toBe(true);
+    expect((await store.posts())[0]).toMatchObject({ wpId: id, legacy: 'wpstudio' });
     // The old pictures keep their WordPress names and are not uploaded again.
     expect((await store.listMedia()).map((m) => m.name).sort()).toEqual(['old-a.png', 'old-b.png']);
 
@@ -213,24 +227,34 @@ describe('editing a published post', () => {
     expect(p.meta._wpstudio_manifest).toBeUndefined();
     const meta = parsePostMeta(p.meta._creative_post);
     expect(meta.tiles.every((t) => !t.meta.legacy)).toBe(true);
-    expect(fake.media.size).toBe(2);
+    // Photos reused; the flattened layer is uploaded once, as this post's drawing.
+    expect(fake.media.size).toBe(4);
     expect(isOwnPost(await deps.wp.post(id))).toBe(true);
+    expect(originOf(await deps.wp.post(id))).toBeUndefined();
   });
 
-  it('brings a plain post in from its HTML', async () => {
+  it('converts an ordinary post on Edit as a story', async () => {
     const { store, fake, deps } = await setup();
-    const a = fake.addMedia(pngBytes(30), 'plain.png');
-    const id = fake.addPost({ title: 'Plain', content: `<p>Hi</p><img class="wp-image-${a}" src="x"><img src="y"><img class="wp-image-9999" src="z">` });
-    await pullPost(deps, id);
+    const a = fake.addMedia(pngBytes(30), 'plain.png', 'From the media library');
+    const named = fake.addMedia(pngBytes(32), 'by-name.png');
+    const fm = fake.addMedia(pngBytes(31), 'f.png');
+    const id = fake.addPost({
+      title: 'Plain',
+      featured_media: fm,
+      content: `<figure><img class="wp-image-${fm}" src="f.png"></figure><h2>Day</h2><p>Hi</p><img class="wp-image-${a}" src="x"><figure><img src="https://site.test/u/by-name-300x200.png"><figcaption>Mine</figcaption></figure><img src="unknown.png"><img class="wp-image-9999" src="z">`,
+    });
+    expect(originOf(await deps.wp.post(id))).toBe('wp');
+    const draft = await pullPost(deps, id);
+    expect(draft.legacy).toBe('wp');
     const tiles = await Promise.all((await store.workspace()).live.map((x) => store.getTile(x)));
-    expect(tiles[0]!.elements.filter((e) => e.kind === 'image')).toHaveLength(1);
-    // Only the featured picture, when the body has none.
-    const { deps: d2, fake: f2, store: s2 } = await setup();
-    const fm = f2.addMedia(pngBytes(31), 'f.png');
-    await pullPost(d2, f2.addPost({ title: 'F', content: '<p>x</p>', featured_media: fm }));
-    expect(await s2.listMedia()).toHaveLength(1);
-    expect(summaryOf(await d2.wp.post(fm + 1), false, 't')).toMatchObject({ thumb: 't' });
-    expect(isOwnPost(await d2.wp.post(fm + 1))).toBe(false);
+    expect(tiles.map((t) => t!.name)).toEqual(['Plain · cover', 'Plain · text 1', 'Plain · picture 1', 'Plain · picture 2']);
+    expect(tiles[2]!.elements[1]).toMatchObject({ text: 'From the media library' });
+    expect(tiles[3]!.elements[1]).toMatchObject({ text: 'Mine' });
+    expect(tiles.every((t) => t!.meta.legacy === 'wp')).toBe(true);
+    expect((await store.listMedia()).length).toBe(3);
+    void named;
+    expect(summaryOf(await deps.wp.post(id), undefined, 't')).toMatchObject({ thumb: 't' });
+    expect(summaryOf(await deps.wp.post(id), undefined)).not.toHaveProperty('legacy');
   });
 });
 

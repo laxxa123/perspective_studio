@@ -27,8 +27,8 @@ const TABS: [Tab, string, typeof Send][] = [
 export default function PublishModule({ onExit }: { onExit: () => void }) {
   const tab = usePublishStore((s) => s.tab);
   const editing = usePublishStore((s) => s.tile !== null);
-  const toast = usePublishStore((s) => s.toast);
   const busy = usePublishStore((s) => s.busy);
+  const snack = usePublishStore((s) => s.snack);
 
   useEffect(() => {
     publishBack.current = () => {
@@ -58,8 +58,8 @@ export default function PublishModule({ onExit }: { onExit: () => void }) {
       ) : (
         <>
           <header className="pb-head">
-            <button className="pb-icon" aria-label="CREATIVE home" onClick={onExit}>
-              <ArrowLeft size={22} />
+            <button className="pb-icon sm" aria-label="CREATIVE home" onClick={onExit}>
+              <ArrowLeft size={18} />
             </button>
             <h1>Publish</h1>
           </header>
@@ -87,7 +87,27 @@ export default function PublishModule({ onExit }: { onExit: () => void }) {
           </div>
         </div>
       )}
-      {toast && <div className="pb-toast">{toast}</div>}
+      {snack && (
+        <div className={`pb-snack${editing ? ' over-bar' : ''}`} role="status" key={snack.key}>
+          <span>{snack.text}</span>
+          {snack.action?.href ? (
+            <a href={snack.action.href} target="_blank" rel="noreferrer" onClick={() => st().set({ snack: null })}>
+              {snack.action.label}
+            </a>
+          ) : (
+            snack.action && (
+              <button
+                onClick={() => {
+                  st().set({ snack: null });
+                  snack.action?.run?.();
+                }}
+              >
+                {snack.action.label}
+              </button>
+            )
+          )}
+        </div>
+      )}
     </div>
   );
 }

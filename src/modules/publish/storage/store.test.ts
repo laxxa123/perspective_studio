@@ -140,3 +140,19 @@ describe('publish store', () => {
     expect(await s.workspace()).toEqual({ live: [], drafts: [] });
   });
 });
+
+describe('undo', () => {
+  it('brings deleted tiles back with their thumbnails and drawings', async () => {
+    const s = await new PublishStore(`undo-${Date.now()}`).open();
+    const asset = await s.putAsset(new Blob(['paint'], { type: 'image/png' }));
+    const t = addElement(createTile('P'), paintFor(asset));
+    await s.saveTile(t, new Blob(['th']));
+    const snap = await s.snapshot([t.id, 'missing']);
+    await s.deleteTile(t.id);
+    expect(await s.getTile(t.id)).toBeNull();
+    await s.restore(snap);
+    expect(await s.getTile(t.id)).toEqual(t);
+    expect(await (await s.blob(asset))!.text()).toBe('paint');
+    expect(await s.thumb(t.id)).not.toBeNull();
+  });
+});

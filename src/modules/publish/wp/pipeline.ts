@@ -7,11 +7,12 @@
 // WordPress has confirmed the post.
 import { publishName, type Measure } from '../core/layout';
 import { readId, stampId, uidFromHash } from '../core/imageId';
-import { htmlImages, htmlParagraphs, legacyTiles, wpStudioContent } from '../core/legacy';
+import { baseName, htmlBlocks, storyTiles, type Picture, type StoryBlock } from '../core/legacy';
+import { overlayBox, readStudio, studioMedia, studioTiles } from '../core/wpStudio';
 import { buildPostMeta, parsePostMeta, postContent, POST_META_KEY, refsOf, tilesFromPost, type MediaRef, type PostMeta } from '../core/postMeta';
 import { fromOrder, order, reconcile } from '../core/postLayout';
 import { fontStack } from '../core/tile';
-import type { MediaAsset, SpiralElement, TextElement, TileDocument, TileElement } from '../core/types';
+import type { MediaAsset, Origin, SpiralElement, TextElement, TileDocument, TileElement } from '../core/types';
 import { emptyDraft, sha256, type PostDraft, type PostSummary, type PublishStore } from '../storage/PublishStore';
 import { WpError, type WpClient, type WpPost } from './WpClient';
 
@@ -28,6 +29,8 @@ export interface Deps {
   thumbnail(t: TileDocument): Promise<Blob>;
   /** Text measuring for laying out old posts. */
   measure: Measure;
+  /** An old post's flattened layer drawn into a transparent full-tile PNG at `box` (document px). */
+  placeOverlay(blob: Blob, box: { x: number; y: number; w: number; h: number }): Promise<Blob>;
   progress?(text: string): void;
 }
 
@@ -210,34 +213,106 @@ export async function pullPost(d: Deps, wpId: number, now = new Date()): Promise
     const flats = [...kinds].filter(([, k]) => k === 'paint' || k === 'spiral').map(([id]) => id);
     draft = { ...base, layout: back.layout, pulledMedia: flats };
   } else {
-    // An old post: pictures and text become tiles to rearrange by hand.
-    const studio = wpStudioContent(p.meta[LEGACY_META_KEY]);
-    const ids = studio ? studio.mediaIds : htmlImages(p.content).flatMap((x) => (x.id ? [x.id] : []));
-    if (!ids.length && p.featuredMedia) ids.push(p.featuredMedia);
-    const paragraphs = [...(studio?.texts ?? [])];
-    for (const para of htmlParagraphs(p.content)) if (!paragraphs.includes(para)) paragraphs.push(para);
-    const images: { mediaId: string; width: number; height: number; caption?: string }[] = [];
-    let i = 0;
-    for (const id of [...new Set(ids)]) {
-      say(`Pictures ${++i} of ${ids.length}…`);
-      try {
-        const m = await wp.media(id);
-        const local = await localPhoto(d, { wpMediaId: id, url: m.url, uid: m.uid ?? '', name: fileOf(m.url, `picture-${id}.jpg`), width: m.width, height: m.height });
-        images.push({ mediaId: local.id, width: local.width, height: local.height, ...(m.caption ? { caption: m.caption } : {}) });
-      } catch {
-        // A picture that is gone from WordPress is left out.
-      }
-    }
-    tiles = legacyTiles({ title: p.title, images, paragraphs }, d.measure);
-    draft = { ...base, layout: fromOrder(tiles.map((t) => t.id)), legacy: true };
+    const studio = readStudio(p.meta[LEGACY_META_KEY]);
+    const back = studio ? await fromStudio(d, p, studio) : await fromPlain(d, p);
+    tiles = back.tiles;
+    draft = { ...base, layout: back.layout, legacy: studio ? 'wpstudio' : 'wp' };
   }
 
   say('Making tiles…');
   for (const t of tiles) await store.saveTile(t, await d.thumbnail(t));
   await store.setWorkspace({ live: tiles.map((t) => t.id), drafts: ws.drafts });
   await store.setDraft(draft);
-  await store.rememberPost(summaryOf(p, !(typeof raw === 'string' && raw)));
+  await store.rememberPost(summaryOf(p, originOf(p)));
   return draft;
+}
+
+/** A WP Studio post: its own layout and boxes, every tile fitted into 9:16 (§11.3). */
+async function fromStudio(d: Deps, p: WpPost, studio: NonNullable<ReturnType<typeof readStudio>>): Promise<{ tiles: TileDocument[]; layout: ReturnType<typeof fromOrder> }> {
+  const { store, wp } = d;
+  const need = studioMedia(studio);
+  const photos = new Map<number, { id: string; width: number; height: number }>();
+  let i = 0;
+  const total = need.photos.length + need.overlays.length;
+  for (const id of need.photos) {
+    d.progress?.(`Pictures ${++i} of ${total}…`);
+    try {
+      const m = await wp.media(id);
+      const local = await localPhoto(d, { wpMediaId: id, url: m.url, uid: m.uid ?? '', name: fileOf(m.url, `picture-${id}.jpg`), width: m.width, height: m.height });
+      photos.set(id, { id: local.id, width: local.width, height: local.height });
+    } catch {
+      // A picture that is gone from WordPress is left out.
+    }
+  }
+  const back = studioTiles(studio, { photo: (id) => photos.get(id) ?? null }, { postId: p.id, title: p.title });
+  // Flattened layers become full-tile drawings (not editable as labels or spirals).
+  const layers = new Map<number, Blob | null>();
+  for (const t of back.tiles) {
+    const out: TileElement[] = [];
+    for (const e of t.elements) {
+      if (e.kind !== 'paint' || !e.assetId.startsWith('wp:')) {
+        out.push(e);
+        continue;
+      }
+      const id = Number(e.assetId.slice(3));
+      if (!layers.has(id)) {
+        d.progress?.(`Pictures ${++i} of ${total}…`);
+        layers.set(id, await wp.download(id).catch(() => null));
+      }
+      const blob = layers.get(id);
+      if (!blob) continue;
+      const asset = await store.putAsset(await d.placeOverlay(blob, overlayBox(e)));
+      out.push({ ...e, assetId: asset, x: 0, y: 0, w: 1, h: 1 });
+    }
+    t.elements = out;
+  }
+  return back;
+}
+
+/** An ordinary post, read as a story (§11.3). */
+async function fromPlain(d: Deps, p: WpPost): Promise<{ tiles: TileDocument[]; layout: ReturnType<typeof fromOrder> }> {
+  const { wp } = d;
+  const blocks = htmlBlocks(p.content);
+  const pics = blocks.filter((b) => b.kind === 'image').length + (p.featuredMedia ? 1 : 0);
+  let i = 0;
+  const picture = async (id: number | null, src: string, caption: string): Promise<Picture | null> => {
+    d.progress?.(`Pictures ${++i} of ${pics}…`);
+    try {
+      let wpId = id;
+      if (!wpId && src) {
+        // No attachment id in the HTML: find the picture by its file name.
+        const name = baseName(src);
+        const hit = name ? (await wp.listMedia({ search: name })).find((m) => baseName(m.url) === name) : undefined;
+        wpId = hit?.id ?? null;
+      }
+      if (!wpId) return null;
+      const m = await wp.media(wpId);
+      const local = await localPhoto(d, { wpMediaId: wpId, url: m.url, uid: m.uid ?? '', name: fileOf(m.url, `picture-${wpId}.jpg`), width: m.width, height: m.height });
+      const cap = caption.trim() || m.caption;
+      return { mediaId: local.id, width: local.width, height: local.height, ...(cap ? { caption: cap } : {}) };
+    } catch {
+      return null; // gone from WordPress: left out
+    }
+  };
+  const featured = p.featuredMedia ? await picture(p.featuredMedia, '', '') : null;
+  const story: StoryBlock[] = [];
+  let first = true;
+  for (const b of blocks) {
+    if (b.kind !== 'image') {
+      story.push(b);
+      continue;
+    }
+    // The featured picture repeated as the first picture of the body is shown once, on the cover.
+    if (first && featured && b.id === p.featuredMedia) {
+      first = false;
+      continue;
+    }
+    first = false;
+    const pic = await picture(b.id, b.src, b.caption);
+    if (pic) story.push({ kind: 'image', ...pic });
+  }
+  const tiles = storyTiles({ title: p.title, ...(featured ? { featured: { ...featured, caption: undefined } } : {}), blocks: story }, d.measure);
+  return { tiles, layout: fromOrder(tiles.map((t) => t.id)) };
 }
 
 /** The phone's copy of an uploaded picture (downloaded when it is not here yet). */
@@ -257,8 +332,14 @@ async function localPhoto(d: Deps, r: MediaRef): Promise<MediaAsset> {
   return media;
 }
 
-export function summaryOf(p: WpPost, legacy: boolean, thumb?: string): PostSummary {
-  return { wpId: p.id, title: p.title, link: p.link, date: p.date, modified: p.modified, ...(thumb ? { thumb } : {}), ...(legacy ? { legacy: true } : {}) };
+export function summaryOf(p: WpPost, legacy: Origin | undefined, thumb?: string): PostSummary {
+  return { wpId: p.id, title: p.title, link: p.link, date: p.date, modified: p.modified, ...(thumb ? { thumb } : {}), ...(legacy ? { legacy } : {}) };
+}
+
+/** Where a post comes from: PUBLISH (undefined), WP Studio, or an ordinary post. */
+export function originOf(p: WpPost): Origin | undefined {
+  if (isOwnPost(p)) return undefined;
+  return readStudio(p.meta[LEGACY_META_KEY]) ? 'wpstudio' : 'wp';
 }
 
 /** A post is PUBLISH's own when it carries the post meta. */

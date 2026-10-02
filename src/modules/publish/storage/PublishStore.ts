@@ -8,7 +8,7 @@ import { openDB, type IDBPDatabase } from 'idb';
 import { canonicalName, renameCanonical } from '../core/layout';
 import { readId, stampId, uidFromHash } from '../core/imageId';
 import { duplicateTile, mediaOf, newId, parseTile, assetsOf } from '../core/tile';
-import type { MediaAsset, TileDocument } from '../core/types';
+import type { MediaAsset, Origin, TileDocument } from '../core/types';
 import type { Layout } from '../core/postLayout';
 
 const DB = 'creative-publish';
@@ -17,7 +17,13 @@ export interface TileSummary {
   id: string;
   name: string;
   updatedAt: string;
-  legacy?: boolean;
+  legacy?: Origin;
+}
+
+export interface TileSnapshot {
+  tiles: TileDocument[];
+  thumbs: [string, Blob][];
+  assets: [string, Blob][];
 }
 
 /** Tiles on the workbench: those going into the post (in order) and drafts kept aside. */
@@ -36,7 +42,7 @@ export interface PostDraft {
   /** WordPress `modified_gmt` when the post was pulled (conflict check on republish). */
   modified: string | null;
   link?: string;
-  legacy?: boolean;
+  legacy?: Origin;
   /** Picture media this post used when pulled (old drawings / spirals are removed after republishing). */
   pulledMedia?: number[];
   /** Categories to create on WordPress when publishing. */
@@ -51,8 +57,8 @@ export interface PostSummary {
   date: string;
   modified: string;
   thumb?: string;
-  /** Not made by PUBLISH (opens as imported tiles). */
-  legacy?: boolean;
+  /** Not made by PUBLISH (opens as converted tiles): an ordinary post (red dot) or WP Studio (yellow). */
+  legacy?: Origin;
 }
 
 /** How many posts the POSTS list keeps (newest first; older ones drop off the phone only). */
@@ -106,7 +112,7 @@ export class PublishStore {
   /** Most recently edited first. */
   async listTiles(): Promise<TileSummary[]> {
     const all = (await this.d.getAll('tiles')) as TileDocument[];
-    return all.map(({ id, name, updatedAt, meta }) => ({ id, name, updatedAt, ...(meta?.legacy ? { legacy: true } : {}) })).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+    return all.map(({ id, name, updatedAt, meta }) => ({ id, name, updatedAt, ...(meta?.legacy ? { legacy: meta.legacy } : {}) })).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   }
 
   async getTile(id: string): Promise<TileDocument | null> {
@@ -152,6 +158,29 @@ export class PublishStore {
     const thumb = await this.thumb(id);
     await this.saveTile(copy, thumb ?? undefined);
     return copy.id;
+  }
+
+  /** Everything needed to bring tiles back after deleting them (Undo). */
+  async snapshot(ids: string[]): Promise<TileSnapshot> {
+    const snap: TileSnapshot = { tiles: [], thumbs: [], assets: [] };
+    for (const id of ids) {
+      const t = await this.getTile(id);
+      if (!t) continue;
+      snap.tiles.push(t);
+      const th = await this.thumb(id);
+      if (th) snap.thumbs.push([id, th]);
+      for (const a of assetsOf(t)) {
+        const b = await this.blob(a);
+        if (b) snap.assets.push([a, b]);
+      }
+    }
+    return snap;
+  }
+
+  async restore(snap: TileSnapshot): Promise<void> {
+    for (const [id, b] of snap.assets) await this.putAsset(b, id);
+    const thumbs = new Map(snap.thumbs);
+    for (const t of snap.tiles) await this.saveTile(t, thumbs.get(t.id));
   }
 
   async renameTile(id: string, name: string): Promise<void> {
@@ -321,8 +350,9 @@ export class PublishStore {
     await this.d.put('kv', d, 'post');
   }
 
-  posts(): Promise<PostSummary[]> {
-    return this.kv<PostSummary[]>('posts', []);
+  async posts(): Promise<PostSummary[]> {
+    // 0.17 marked every old post `legacy: true`.
+    return (await this.kv<PostSummary[]>('posts', [])).map((p) => ((p.legacy as unknown) === true ? { ...p, legacy: 'wp' } : p));
   }
   /** Puts a post at the top of the list (replacing an older entry for it); keeps the newest 25. */
   async rememberPost(p: PostSummary): Promise<PostSummary[]> {

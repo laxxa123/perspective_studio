@@ -41,7 +41,8 @@ export function TileCanvas({ tile }: { tile: TileDocument }) {
     };
   }, []);
 
-  const s = Math.min(size.w / TILE_W, size.h / TILE_H) * 0.96;
+  // Edge to edge: the tile takes the full width (or the full height on a short screen).
+  const s = Math.min(size.w / TILE_W, size.h / TILE_H);
   const ox = (size.w - TILE_W * s) / 2;
   const oy = (size.h - TILE_H * s) / 2;
   const sel = tile.elements.find((e) => e.id === selected) ?? null;

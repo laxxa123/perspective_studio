@@ -79,6 +79,9 @@ export type ElementKind = TileElement['kind'];
 /** Elements the theme rebuilds from data; the rest are published as pictures. */
 export const LIVE_KINDS: readonly ElementKind[] = ['image', 'text'];
 
+/** Where an old post came from: an ordinary WordPress post or WP Studio. */
+export type Origin = 'wp' | 'wpstudio';
+
 export interface TileDocument {
   schema: 'creative.publish.tile.v1';
   /** Stable tile id (the manifest's tileId). */
@@ -94,8 +97,8 @@ export interface TileDocument {
     caption?: string;
     /** The element chosen as the featured picture (an image, drawing or spiral). */
     featured?: string;
-    /** Made from an old post (not by PUBLISH): shown with a red dot until republished. */
-    legacy?: boolean;
+    /** Made from an old post: an ordinary WordPress post (red dot) or a WP Studio post (yellow dot), until republished. */
+    legacy?: Origin;
   };
 }
 

@@ -3,6 +3,29 @@
 User-visible changes per release. Versions: `package.json` semver; each
 milestone release bumps the minor version, and CI appends `-build.<run>`.
 
+## 0.18.0 — PUBLISH: old posts, compact layout, notepad
+
+- **Old posts convert when you edit them** — no separate migration. WP Studio
+  posts (yellow dot) keep their layout: every tile becomes 9:16 with the old
+  tile fitted inside on its background colour, rows of one or two tiles,
+  pictures with their crop, text still editable; decorations become one
+  drawing. Ordinary WordPress posts (red dot) come in as a story: a cover,
+  each picture with its caption, then the text. Publishing makes them normal
+  posts.
+- **Publish tab:** the post name and a small Publish button at the top, the
+  layout in the middle, categories as small chips at the bottom, and a ? for
+  help. Moves can be undone.
+- **Posts:** tap a post to edit it; scroll on through every post on the site;
+  search covers them all. Same for pictures.
+- **Undo** instead of "tap twice": deleting a tile, discarding an edit,
+  moving tiles. All messages appear in one bar at the bottom.
+- **Tiles:** smaller thumbnails, so more fit on screen.
+- **Editor:** the tile uses the full width; FP star for the featured picture
+  (Style → Order row); a proper colour picker for the background (square,
+  hue, hex, recent colours); a tiny notepad for quick notes, saved as you
+  type.
+- Slimmer title and tab bars.
+
 ## 0.17.0 — PUBLISH to WordPress
 
 - **Publish tab:** name the post, pick or add categories, and arrange the

@@ -132,7 +132,7 @@ export const tileSchema = z.object({
   updatedAt: z.string(),
   canvas: z.object({ width: z.literal(TILE_W), height: z.literal(TILE_H), background: z.string() }),
   elements: z.array(elementSchema),
-  meta: z.object({ caption: z.string().optional(), featured: z.string().optional(), legacy: z.boolean().optional() }),
+  meta: z.object({ caption: z.string().optional(), featured: z.string().optional(), legacy: z.preprocess((v) => (v === true ? 'wp' : v === false ? undefined : v), z.enum(['wp', 'wpstudio']).optional()) }),
 });
 
 export function parseTile(raw: unknown): TileDocument {

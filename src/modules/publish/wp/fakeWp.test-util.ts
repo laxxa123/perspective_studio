@@ -81,7 +81,10 @@ export class FakeWp {
       if (s) list = list.filter((x) => x.description.includes(s) || x.title.includes(s));
       const inc = q.get('include');
       if (inc) list = list.filter((x) => inc.split(',').includes(String(x.id)));
-      return this.res(list.slice(0, Number(q.get('per_page') ?? 10)).map((x) => this.mediaJson(x)));
+      const per = Number(q.get('per_page') ?? 10);
+      const page = Number(q.get('page') ?? 1);
+      if (page > 1 && (page - 1) * per >= list.length) return this.res({ code: 'rest_post_invalid_page_number' }, 400);
+      return this.res(list.slice((page - 1) * per, page * per).map((x) => this.mediaJson(x)));
     }
     if ((m = path.match(/^\/wp\/v2\/media\/(\d+)$/))) {
       const f = this.media.get(Number(m[1]));
@@ -102,7 +105,14 @@ export class FakeWp {
       this.posts.set(p.id, p);
       return this.res(this.savePost(p, await body()), 201);
     }
-    if (path === '/wp/v2/posts') return this.res([...this.posts.values()].reverse().map((p) => this.postJson(p)));
+    if (path === '/wp/v2/posts') {
+      const s = q.get('search')?.toLowerCase();
+      const list = [...this.posts.values()].reverse().filter((p) => !s || p.title.toLowerCase().includes(s) || p.content.toLowerCase().includes(s));
+      const per = Number(q.get('per_page') ?? 10);
+      const page = Number(q.get('page') ?? 1);
+      if (page > 1 && (page - 1) * per >= list.length) return this.res({ code: 'rest_post_invalid_page_number' }, 400);
+      return this.res(list.slice((page - 1) * per, page * per).map((p) => this.postJson(p)));
+    }
     if ((m = path.match(/^\/wp\/v2\/posts\/(\d+)$/))) {
       const p = this.posts.get(Number(m[1]));
       if (!p) return this.res({ code: 'rest_post_invalid_id' }, 404);

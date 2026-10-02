@@ -59,5 +59,14 @@ export async function pipelineDeps(wp: WpClient): Promise<Deps> {
       return ctx.measureText(s).width;
     },
     progress: (text) => usePublishStore.getState().set({ busy: text }),
+    placeOverlay: async (blob, box) => {
+      const c = document.createElement('canvas');
+      c.width = TILE_W;
+      c.height = TILE_H;
+      const bmp = await createImageBitmap(blob);
+      c.getContext('2d')!.drawImage(bmp, box.x, box.y, box.w, box.h);
+      bmp.close();
+      return canvasToBlob(c, 'image/png');
+    },
   };
 }

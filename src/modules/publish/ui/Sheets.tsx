@@ -7,6 +7,7 @@ import { restack, updateElement } from '../core/tile';
 import type { FontFamily, SpiralElement, TextElement, TileElement } from '../core/types';
 import { MARGIN, TILE_H, TILE_W } from '../core/types';
 import { fittedTextHeight } from '../render/draw';
+import { ColourPicker } from './ColourPicker';
 import { usePublishStore } from '../state/usePublishStore';
 
 const st = usePublishStore.getState;
@@ -33,15 +34,17 @@ function Slider({ label, value, min, max, step, show, onChange }: { label: strin
   );
 }
 
-function Swatches({ value, colours, onPick }: { value: string; colours: string[]; onPick: (c: string) => void }) {
+function Swatches({ value, colours, onPick, custom = true }: { value: string; colours: string[]; onPick: (c: string) => void; custom?: boolean }) {
   return (
     <div className="pb-swatches">
       {colours.map((c) => (
         <button key={c} className={`pb-swatch${c.toLowerCase() === value.toLowerCase() ? ' on' : ''}`} style={{ background: c }} aria-label={c} onClick={() => onPick(c)} />
       ))}
-      <label className="pb-swatch custom" aria-label="Custom colour">
-        <input type="color" value={value} onChange={(e) => onPick(e.target.value)} />
-      </label>
+      {custom && (
+        <label className="pb-swatch custom" aria-label="Custom colour">
+          <input type="color" value={value} onChange={(e) => onPick(e.target.value)} />
+        </label>
+      )}
     </div>
   );
 }
@@ -121,15 +124,6 @@ export function StyleSheet({ el }: { el: TileElement }) {
           <Slider label="Spacing" value={el.letterSpacing} min={-4} max={20} step={1} onChange={(v) => live<SpiralElement>({ letterSpacing: v })} />
         </>
       )}
-      {el.kind !== 'text' && (
-        <button className={`pb-feature${tile.meta.featured === el.id ? ' on' : ''}`} aria-pressed={tile.meta.featured === el.id} onClick={() => st().apply({ ...tile, meta: { ...tile.meta, featured: tile.meta.featured === el.id ? undefined : el.id } })}>
-          <Star size={18} fill={tile.meta.featured === el.id ? 'currentColor' : 'none'} />
-          <span>
-            Featured picture
-            <small>{tile.meta.featured === el.id ? 'The post’s cover when this is its first tile with one' : 'Use as the post’s cover'}</small>
-          </span>
-        </button>
-      )}
       <Slider label="Opacity" value={el.opacity} min={0.05} max={1} step={0.05} show={pct} onChange={(v) => live({ opacity: v })} />
       {el.kind !== 'paint' && (
         <div className="pb-row">
@@ -174,6 +168,17 @@ export function StyleSheet({ el }: { el: TileElement }) {
           {el.kind !== 'paint' && (
             <button className={el.locked ? 'on' : ''} aria-label={el.locked ? 'Unlock' : 'Lock'} onClick={() => now({ locked: !el.locked })}>
               {el.locked ? <Lock size={18} /> : <LockOpen size={18} />}
+            </button>
+          )}
+          {el.kind !== 'text' && (
+            <button
+              className={`pb-fp${tile.meta.featured === el.id ? ' on' : ''}`}
+              aria-label="Featured picture"
+              aria-pressed={tile.meta.featured === el.id}
+              onClick={() => st().apply({ ...tile, meta: { ...tile.meta, featured: tile.meta.featured === el.id ? undefined : el.id } })}
+            >
+              <Star size={16} fill={tile.meta.featured === el.id ? 'currentColor' : 'none'} />
+              <small>FP</small>
             </button>
           )}
         </div>
@@ -223,7 +228,13 @@ export function BackgroundSheet() {
   return (
     <Sheet title="Background">
       <span className="pb-label">Background</span>
-      <Swatches value={tile.canvas.background} colours={BACKGROUNDS} onPick={(c) => st().apply({ ...st().tile!, canvas: { ...tile.canvas, background: c } })} />
+      <Swatches value={tile.canvas.background} colours={BACKGROUNDS} custom={false} onPick={(c) => st().apply({ ...st().tile!, canvas: { ...tile.canvas, background: c } })} />
+      <ColourPicker
+        value={tile.canvas.background}
+        onLive={(c) => st().preview({ ...st().tile!, canvas: { ...st().tile!.canvas, background: c } })}
+        onDone={() => st().commit()}
+        onPick={(c) => st().apply({ ...st().tile!, canvas: { ...st().tile!.canvas, background: c } })}
+      />
     </Sheet>
   );
 }
