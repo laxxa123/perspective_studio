@@ -3,6 +3,23 @@
 User-visible changes per release. Versions: `package.json` semver; each
 milestone release bumps the minor version, and CI appends `-build.<run>`.
 
+## 0.19.0 — Drawing: faster, calmer, clearer
+
+- **Done is instant** when you finish drawing on a tile (it used to take
+  seconds while the picture was saved; now it is saved in the background).
+- **No more flicker:** the toolbars stay put while you draw (PUBLISH and
+  SKETCH).
+- **PUBLISH Draw looks like SKETCH:** the tile fills the screen; ‹ keeps your
+  drawing (⋯ has Show tile, Clear and Discard, each undoable); one floating
+  bar with colour, brush, eraser, grid, undo and redo.
+- **One-tap eraser** (PUBLISH and SKETCH): tap to erase, tap again for your
+  last brush; it remembers its own size.
+- **Brush sheet:** brush names; opacity as a strip of tinted cells (no more
+  mixing it up with sizes or colours); your five recent colours and + for
+  more.
+- **Eyedropper:** pick any colour from the tile / canvas with a loupe.
+- Your drawing settings are remembered.
+
 ## 0.18.0 — PUBLISH: old posts, compact layout, notepad
 
 - **Old posts convert when you edit them** — no separate migration. WP Studio

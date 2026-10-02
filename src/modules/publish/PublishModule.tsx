@@ -11,6 +11,7 @@ import { PublishTab } from './ui/PublishTab';
 import { PostsTab } from './ui/PostsTab';
 import { SettingsTab } from './ui/SettingsTab';
 import { TileEditor } from './ui/TileEditor';
+import { paintExit } from './ui/PaintScreen';
 import { closeTile, saveNow } from './ui/session';
 import { publishBack } from './index';
 import './publish.css';
@@ -35,7 +36,8 @@ export default function PublishModule({ onExit }: { onExit: () => void }) {
       const s = st();
       if (s.busy) return true;
       if (s.tile) {
-        if (s.overlay !== 'none') s.set({ overlay: 'none', fresh: null });
+        if (s.overlay === 'paint' && paintExit.current) paintExit.current();
+        else if (s.overlay !== 'none') s.set({ overlay: 'none', fresh: null });
         else if (s.sheet !== 'none') s.set({ sheet: 'none' });
         else if (s.selected) s.set({ selected: null });
         else void closeTile();

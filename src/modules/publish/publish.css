@@ -46,7 +46,6 @@
 .pb-editor { position: absolute; inset: 0; display: flex; flex-direction: column; background: var(--canvas); }
 .pb-top { display: flex; align-items: center; gap: 4px; padding: max(8px, env(safe-area-inset-top)) 8px 4px; z-index: 3; }
 .pb-top.dark { color: #fff; }
-.pb-top.fade, .pb-paint-bar.fade { opacity: 0; pointer-events: none; transition: opacity 0.12s; }
 .pb-name { flex: 1; min-width: 0; justify-content: flex-start; gap: 6px; height: 40px; border: 0; background: transparent; font-size: 15px; font-weight: 600; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .pb-canvas { flex: 1; min-height: 0; position: relative; touch-action: none; }
 .pb-canvas canvas { touch-action: none; }
@@ -95,11 +94,11 @@
 .pb-field input { height: 40px; font-size: 15px; color: var(--ink); }
 
 /* Full-screen tools */
-.pb-writer, .pb-trim, .pb-paint { position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column; }
+.pb-writer, .pb-trim { position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column; }
 .pb-writer { background: color-mix(in srgb, var(--surface) 96%, transparent); backdrop-filter: blur(6px); }
 .pb-writer textarea { flex: 1; margin: 8px 16px 24px; padding: 8px; border: 0; background: transparent; font-size: 28px; line-height: 1.35; resize: none; outline: none; color: var(--ink); }
-.pb-trim, .pb-paint { background: #18191b; color: #fff; }
-.pb-trim .pb-hint, .pb-paint .pb-hint { color: #ccc; }
+.pb-trim { background: #18191b; color: #fff; }
+.pb-trim .pb-hint { color: #ccc; }
 .pb-trim-area { position: relative; flex: 1; min-height: 0; touch-action: none; overflow: hidden; }
 .pb-trim-area img { position: absolute; user-select: none; -webkit-user-drag: none; pointer-events: none; }
 .pb-shade { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.55); pointer-events: none; }
@@ -113,26 +112,10 @@
 .pb-trim-bar button { flex: 0 0 auto; height: 36px; padding: 0 14px; border-radius: 18px; border: 0; background: #2a2b2e; color: #eee; font-size: 13px; }
 .pb-trim-bar button.on { background: #fff; color: #111; }
 
-.pb-paint-area { position: relative; flex: 1; min-height: 0; touch-action: none; }
-.pb-paint-area canvas { display: block; width: 100%; height: 100%; touch-action: none; }
-.pb-paint-bar { display: flex; flex-direction: column; gap: 10px; padding: 10px 14px max(12px, env(safe-area-inset-bottom)); background: #1f2023; }
-.pb-brushes { display: flex; justify-content: space-between; gap: 2px; }
-.pb-brushes button { flex: 1; height: 42px; border: 0; border-radius: 12px; background: transparent; color: #ddd; }
-.pb-brushes button.on { background: #fff; color: #111; }
-.pb-dot-btn { width: 36px; height: 36px; padding: 0; border-radius: 50%; border: 2px solid transparent; background: #2a2b2e; }
-.pb-dot-btn i { display: block; border-radius: 50%; background: #fff; }
-.pb-dot-btn.on { border-color: #4dabf7; }
-.pb-paint .pb-swatch { border-color: #1f2023; box-shadow: 0 0 0 1px #444; }
-.pb-paint .pb-swatch.on { box-shadow: 0 0 0 2px #4dabf7; }
 
 .pb-toast { position: fixed; left: 50%; transform: translateX(-50%); top: calc(max(10px, env(safe-area-inset-top)) + 50px); z-index: 50; padding: 9px 16px; border-radius: 18px; background: var(--ink); color: var(--canvas); font-size: 13px; max-width: calc(100% - 40px); pointer-events: none; }
 
 .pb-top .pb-hint { flex: 1; text-align: center; }
-.pb-paint-bar .pb-row { flex-wrap: nowrap; gap: 4px; }
-.pb-paint-bar .pb-dot-btn { width: 32px; height: 32px; flex: 0 0 auto; }
-.pb-dot-btn i { box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.55); }
-.pb-paint .pb-swatches { gap: 6px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
-.pb-paint .pb-swatch { width: 28px; height: 28px; flex: 0 0 auto; }
 
 /* 0.17 — sections, drag, publish, posts, settings */
 .pb-section-head { display: flex; align-items: baseline; gap: 8px; padding: 10px 16px 2px; }
@@ -312,3 +295,48 @@ a.pb-icon { display: inline-flex; align-items: center; justify-content: center; 
 .pb-notepad-bar button.undo { width: auto; padding: 0 8px; font-size: 12px; color: var(--accent); }
 .pb-hue { display: block; box-sizing: border-box; max-width: 100%; }
 .pb-snack.over-bar { bottom: calc(max(6px, env(safe-area-inset-bottom)) + 66px); }
+
+/* Draw (0.19): SKETCH's layout — tile edge to edge, round ‹ / ⋯, one floating bar. Bars never hide while drawing. */
+.pb-draw { position: absolute; inset: 0; z-index: 20; background: var(--canvas); color: var(--ink); }
+.pb-draw-area { position: absolute; inset: 0; touch-action: none; }
+.pb-draw-area canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.pb-draw button:focus:not(:focus-visible) { outline: none; }
+.pb-draw-top { position: absolute; top: max(8px, env(safe-area-inset-top)); left: 10px; right: 10px; display: flex; align-items: flex-start; gap: 8px; pointer-events: none; }
+.pb-draw-top > * { pointer-events: auto; }
+.pb-draw-top .pb-fab:last-child { margin-left: auto; }
+.pb-draw .pb-fab { position: static; width: 42px; height: 42px; padding: 0; border: 0; border-radius: 50%; background: var(--bar); color: var(--ink); box-shadow: var(--shadow); }
+.pb-draw .pb-fab.on { color: var(--accent); }
+.pb-draw-chip { margin: 0 auto; display: flex; align-items: center; gap: 6px; height: 34px; padding: 0 4px 0 12px; border-radius: 17px; background: var(--bar); box-shadow: var(--shadow); font-size: 12px; }
+.pb-draw-chip button { width: 28px; height: 28px; padding: 0; border: 0; border-radius: 50%; background: transparent; }
+.pb-draw-bar { position: absolute; left: 0; right: 0; margin: 0 auto; width: fit-content; bottom: max(14px, calc(env(safe-area-inset-bottom) + 8px)); display: flex; gap: 2px; padding: 5px; border-radius: 26px; background: var(--bar); box-shadow: var(--shadow); }
+.pb-draw-bar button { width: 46px; height: 42px; padding: 0; border: 0; border-radius: 21px; background: transparent; color: var(--ink); }
+.pb-draw-bar button:disabled { opacity: 0.3; }
+.pb-draw-bar button.cur { background: var(--accent-soft); color: var(--accent); }
+.pb-draw-bar button.on { box-shadow: inset 0 0 0 2px var(--accent); }
+.pb-draw-bar button.lit { color: var(--accent); }
+.pb-draw-dot { width: 26px; height: 26px; border-radius: 50%; box-shadow: 0 0 0 2px var(--surface), 0 0 0 3px var(--line); }
+.pb-draw-sheet { position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(max(14px, calc(env(safe-area-inset-bottom) + 8px)) + 62px); width: min(420px, calc(100% - 20px)); max-height: 62vh; overflow: auto; box-sizing: border-box; padding: 12px; border-radius: 18px; background: var(--surface); box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 12px; }
+.pb-draw-brushes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.pb-draw-brushes button { flex-direction: column; gap: 3px; height: 56px; padding: 4px; border-radius: 12px; font-size: 11px; background: var(--canvas); border: 1px solid transparent; color: var(--ink); }
+.pb-draw-brushes button.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.pb-draw-row { display: flex; align-items: center; gap: 10px; }
+.pb-draw-row > span { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); min-width: 58px; }
+.pb-draw-sizes { display: flex; flex: 1; justify-content: space-between; gap: 6px; }
+.pb-draw-sizes button { width: 40px; height: 40px; padding: 0; border-radius: 50%; background: var(--canvas); border: 2px solid transparent; }
+.pb-draw-sizes button i { display: block; border-radius: 50%; background: #495057; }
+.pb-draw-sizes button.on { border-color: var(--accent); }
+.pb-draw-opacity { display: flex; flex: 1; height: 36px; border-radius: 10px; overflow: hidden; box-shadow: 0 0 0 1px var(--line); }
+.pb-draw-opacity button { flex: 1; height: 100%; padding: 0; border: 0; border-radius: 0; }
+.pb-draw-opacity button + button { border-left: 1px solid rgba(255, 255, 255, 0.7); }
+.pb-draw-opacity button.on { box-shadow: inset 0 0 0 2px var(--accent); border-radius: 10px; }
+.pb-draw-colours { display: flex; flex: 1; justify-content: space-between; gap: 6px; }
+.pb-draw-colours button, .pb-draw-palette button { width: 34px; height: 34px; padding: 0; border-radius: 50%; border: 3px solid var(--surface); box-shadow: 0 0 0 1px var(--line); }
+.pb-draw-colours button.on, .pb-draw-palette button.on { box-shadow: 0 0 0 2px var(--accent); }
+.pb-draw-colours button.more, .pb-draw-palette button.pick { background: var(--canvas); color: var(--ink); border-color: var(--canvas); }
+.pb-draw-palette { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; justify-items: center; }
+.pb-draw-menu { position: absolute; right: 10px; top: calc(max(8px, env(safe-area-inset-top)) + 50px); min-width: 210px; padding: 6px; border-radius: 14px; background: var(--surface); box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 2px; }
+.pb-draw-menu button, .pb-draw-check { display: flex; align-items: center; justify-content: flex-start; gap: 10px; height: 42px; padding: 0 10px; border: 0; border-radius: 10px; background: transparent; font-size: 14px; color: var(--ink); }
+.pb-draw-menu button.danger { color: var(--danger); }
+.pb-draw-check input { width: 18px; height: 18px; margin: 0; accent-color: var(--accent); }
+.pb-pick { position: absolute; inset: 0; z-index: 2; touch-action: none; cursor: crosshair; }
+.pb-loupe { position: absolute; width: 56px; height: 56px; margin-left: -28px; border-radius: 50%; border: 4px solid #fff; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35); pointer-events: none; }

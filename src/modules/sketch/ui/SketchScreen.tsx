@@ -1,5 +1,5 @@
 // The drawing screen (SKETCH §4, §5): the canvas fills the phone; a few
-// floating controls fade away while drawing and come back afterwards.
+// floating controls stay put while drawing (an open panel closes).
 import { useEffect, useRef, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { RasterEngine } from '../engine/RasterEngine';
@@ -11,6 +11,7 @@ import { engineRef, saveNow, scheduleSave, syncBrush } from './session';
 import { ToolBar } from './ToolBar';
 import { Panels } from './Panels';
 import { SelectionBar } from './SelectionBar';
+import { Eyedropper } from './Eyedropper';
 
 const st = useSketchStore.getState;
 
@@ -31,6 +32,7 @@ export function SketchScreen({ projectId }: { projectId: string }) {
   const [error, setError] = useState('');
   const [attempt, setAttempt] = useState(0);
   const drawing = useSketchStore((s) => s.drawing);
+  const picking = useSketchStore((s) => s.picking);
 
   useEffect(() => {
     let alive = true;
@@ -124,7 +126,7 @@ export function SketchScreen({ projectId }: { projectId: string }) {
           e.dispose();
         });
       }
-      st().set({ doc: null, panel: 'none', mode: 'draw', drawing: false, hasSelection: false, floating: false });
+      st().set({ doc: null, panel: 'none', mode: 'draw', drawing: false, picking: false, hasSelection: false, floating: false });
     };
   }, [projectId, attempt]);
 
@@ -162,9 +164,15 @@ export function SketchScreen({ projectId }: { projectId: string }) {
       )}
       {status === 'ready' && (
         <>
-          <ToolBar />
-          <SelectionBar />
-          <Panels />
+          {picking ? (
+            <Eyedropper />
+          ) : (
+            <>
+              <ToolBar />
+              <SelectionBar />
+              <Panels />
+            </>
+          )}
         </>
       )}
     </div>

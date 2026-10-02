@@ -22,8 +22,10 @@ interface SketchState {
   floating: boolean;
   panel: Panel;
   mode: InputMode;
-  /** A stroke is in progress: the UI fades away. */
+  /** A stroke is in progress (the controls stay put). */
   drawing: boolean;
+  /** The eyedropper is waiting for a touch on the canvas. */
+  picking: boolean;
   toast: string | null;
   saving: boolean;
   presetId: string;
@@ -31,12 +33,20 @@ interface SketchState {
   opacityLevel: number;
   color: string;
   recent: string[];
+  /** The one-tap eraser returns to this brush and its size; it keeps its own size. */
+  lastBrush: string;
+  brushSize: number;
+  eraserSize: number;
   settings: SketchSettings;
   set: (p: Partial<SketchState>) => void;
   showToast: (t: string) => void;
   setSettings: (p: Partial<SketchSettings>) => void;
   pickColor: (c: string) => void;
+  toggleEraser: () => void;
+  chooseBrush: (id: string) => void;
 }
+
+export const ERASER = 'eraser';
 
 const initial = loadSettings();
 let toastTimer: ReturnType<typeof setTimeout> | undefined;
@@ -53,6 +63,7 @@ export const useSketchStore = create<SketchState>((set, get) => ({
   panel: 'none',
   mode: 'draw',
   drawing: false,
+  picking: false,
   toast: null,
   saving: false,
   presetId: initial.defaultPreset,
@@ -60,6 +71,9 @@ export const useSketchStore = create<SketchState>((set, get) => ({
   opacityLevel: initial.defaultOpacity,
   color: initial.defaultColor,
   recent: [],
+  lastBrush: initial.defaultPreset === 'eraser' ? 'pen' : initial.defaultPreset,
+  brushSize: initial.defaultSize,
+  eraserSize: 3,
   settings: initial,
   set: (p) => set(p),
   showToast: (t) => {
@@ -73,8 +87,19 @@ export const useSketchStore = create<SketchState>((set, get) => ({
     set({ settings });
   },
   pickColor: (c) => {
+    // Choosing a colour means drawing with it: the eraser is left.
+    if (get().presetId === ERASER) get().toggleEraser();
     const recent = [c, ...get().recent.filter((x) => x !== c)].slice(0, 8);
-    set({ color: c, recent });
+    set({ color: c, recent, mode: 'draw' });
+  },
+  toggleEraser: () => {
+    const s = get();
+    if (s.presetId === ERASER) set({ presetId: s.lastBrush, eraserSize: s.sizeLevel, sizeLevel: s.brushSize, mode: 'draw' });
+    else set({ lastBrush: s.presetId, brushSize: s.sizeLevel, presetId: ERASER, sizeLevel: s.eraserSize, mode: 'draw' });
+  },
+  chooseBrush: (id) => {
+    if (get().presetId === ERASER) get().toggleEraser();
+    set({ presetId: id, lastBrush: id, mode: 'draw' });
   },
 }));
 

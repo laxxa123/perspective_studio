@@ -43,3 +43,10 @@ export function hsvToHex({ h, s, v }: Hsv): string {
 
 /** Adds a colour to the front of a recent list (no repeats, at most `keep`). */
 export const pushRecent = (list: string[], c: string, keep = 6) => [c, ...list.filter((x) => x !== c)].slice(0, keep);
+
+/** `rgba()` for a hex colour at an alpha (0..1). */
+export function withAlpha(hex: string, a: number): string {
+  const n = normHex(hex) ?? '#000000';
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(n.slice(i, i + 2), 16));
+  return `rgba(${r}, ${g}, ${b}, ${Math.max(0, Math.min(1, a))})`;
+}

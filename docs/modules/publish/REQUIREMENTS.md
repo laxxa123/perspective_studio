@@ -1,6 +1,7 @@
-> **Document:** PUBLISH requirements · **Version:** v1.2 (0.18.0, 2026-10-02) · **Location:** `docs/modules/publish/REQUIREMENTS.md` · **Part of:** CREATIVE (`docs/CREATIVE.md`)
+> **Document:** PUBLISH requirements · **Version:** v1.3 (0.19.0, 2026-10-02) · **Location:** `docs/modules/publish/REQUIREMENTS.md` · **Part of:** CREATIVE (`docs/CREATIVE.md`)
 >
-> **Revisions:** v1.2 (0.18.0, 2026-10-02) — Old posts converted on Edit (WP Studio posts faithfully, ordinary posts as a story; red / yellow dots); compact chrome (tiny title bar; Publish tab with the name and Publish on top, categories and help at the bottom); search and scroll through all posts and pictures; delete / discard / move with Undo; denser Tiles; editor edge to edge, FP star, colour picker, notepad (§6, §8, §9, §11, §14).
+> **Revisions:** v1.3 (0.19.0, 2026-10-02) — Draw rebuilt on SKETCH's layout (one floating bar, brush sheet with names, opacity strip, five recent colours, palette with eyedropper, one-tap eraser, grid, show tile); controls no longer hide while drawing; Done returns at once (§6.5).
+> v1.2 (0.18.0, 2026-10-02) — Old posts converted on Edit (WP Studio posts faithfully, ordinary posts as a story; red / yellow dots); compact chrome (tiny title bar; Publish tab with the name and Publish on top, categories and help at the bottom); search and scroll through all posts and pictures; delete / discard / move with Undo; denser Tiles; editor edge to edge, FP star, colour picker, notepad (§6, §8, §9, §11, §14).
 > v1.1 (0.17.0, 2026-10-02) — Publishing to WordPress: Drafts in TILES; the PUBLISH tab (name, categories, row layout by drag, Publish); POSTS (latest 25, edit / republish, old posts as marked tiles, pictures on WordPress); SETTINGS (site, user, encrypted Application Password); permanent picture ids inside the files; names fixed at first publish; featured picture per tile; post meta `_creative_post` (§5, §7–§13; ADR-0011; theme: wp_studio requirements 2.10 §22).
 > v1.0 (0.16.0, 2026-10-01) — PUBLISH set up as a new CREATIVE module (the successor of the separate WP Studio app); Phase 1 (TILES) built; PUBLISH, WP and SETTINGS tabs in place as "coming next".
 
@@ -212,16 +213,39 @@ picture's aspect while an edge snaps. Rotation snaps every 45°.
 
 ### 6.5 Drawing
 
-- **Draw** opens full screen with **SKETCH's brush engine**: the eight
-  brushes (Pencil, Pen, Marker, Brush, Soft Brush, Airbrush, Blender,
-  Eraser), five sizes, five opacities, colours, undo / redo, pressure and
-  tilt, two fingers to pan / zoom, two-finger tap undo, three-finger tap
-  redo. The tile shows underneath (locked).
-- Done keeps the drawing as one full-tile transparent PNG (a `paint`
-  element). Editing it again loads it back into the engine. Nothing drawn →
-  nothing added; an emptied drawing is removed.
-- A drawing covers the tile, so it is not a tap target on the canvas;
-  select it from Layers.
+**Draw** opens full screen with **SKETCH's brush engine** (pressure and tilt,
+two fingers to pan / zoom, two-finger tap undo, three-finger tap redo), laid
+out like SKETCH (usability review: v1.3 in §13):
+
+- **Top:** round **‹** (= done: keeps the drawing and returns; Android back
+  does the same) and round **⋯**: *Show tile underneath* (on / off,
+  remembered), *Clear drawing* (Undo in the message bar), *Discard changes*
+  (Undo restores them).
+- **The tile** fills the screen; the tile's text and pictures show under the
+  drawing (locked) unless turned off.
+- **One floating bar:** **colour** (opens the palette) · **brush** (opens
+  the brush sheet; shows the current brush) · **eraser** (one tap; tap again
+  for the last brush; it keeps its own size) · **grid** (3 × 3, on / off) ·
+  **undo** · **redo**. The bar and the round buttons **stay put while
+  drawing** — nothing hides and reappears with each stroke; an open sheet
+  closes when drawing starts.
+- **Brush sheet:** the seven brushes with their names (Pencil, Pen, Marker,
+  Brush, Soft Brush, Airbrush, Blender); **Size** as five round dots;
+  **Opacity** as a strip of five full cells tinted with the current colour
+  over a faint checker (so it never reads as size or as colours; the chosen
+  cell has a thin inner outline); **Colour**: the five most recent colours
+  and **+**.
+- **Palette** (from the colour button or +): the quick colours, an
+  **eyedropper** (touch the tile; a loupe shows the colour under the
+  finger), and the picker (square, hue, hex, recent).
+- Brush, size, opacity, colour, recent colours, eraser size, grid and show
+  tile are remembered between drawings.
+- **Done returns at once:** the drawing is put on the tile from memory and
+  its PNG is written in the background (a save of the tile waits for it).
+- The drawing is one full-tile transparent PNG (a `paint` element). Editing
+  it again loads it back into the engine. Nothing drawn → nothing added; an
+  emptied drawing is removed. A drawing covers the tile, so it is not a tap
+  target on the canvas; select it from Layers.
 
 ### 6.6 Colour
 
@@ -438,7 +462,16 @@ immediate delete / discard / move with Undo instead of confirmations; one
 message bar at the bottom; whole-row tap targets; small visuals keep a
 thumb-sized tap area; colour dots also explained in the pop-up.
 
-## 14. Conflict review (v1.0–v1.2)
+### 13.1 Draw (v1.3)
+
+Three independent reviews and the developer's own concept agreed: the eraser
+must be one tap and always visible; size and opacity must look different
+(round dots vs a strip of cells); colours need recent ones, a picker and an
+eyedropper; undo / redo within thumb reach; nothing lost by a stray tap.
+The developer observed that hiding the bars during each stroke made them
+flicker, so they stay put.
+
+## 14. Conflict review (v1.0–v1.3)
 
 | Topic | Resolution |
 | :-- | :-- |
@@ -454,4 +487,6 @@ thumb-sized tap area; colour dots also explained in the pop-up.
 | "Fit" for tiles that are not 9:16 | Fitted whole and filled with the tile's background colour (no cropping), as decided. |
 | Separate migration workflow vs converting on Edit | No migration screen or batch: Edit converts; publishing approves. |
 | Confirm before delete (v1.0) vs Undo | Undo replaces tap-twice everywhere (tiles, Discard, layout moves). |
+| Controls fade while drawing (v1.0, from SKETCH §4) vs the developer's observation that they flicker with every stroke | They stay put (PUBLISH and SKETCH). |
+| Draw's Cancel / Done | ‹ is done; discarding is in ⋯ with Undo. |
 

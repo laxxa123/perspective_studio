@@ -1,7 +1,8 @@
-// The floating controls (SKETCH §5): colour · brush · grid · layers · undo /
-// redo at the bottom; sketches and "more" at the top. They fade while drawing.
-import { ChevronLeft, Ellipsis, Grid3x3, Layers, Redo2, Undo2 } from 'lucide-react';
-import { useSketchStore, type Panel } from '../state/useSketchStore';
+// The floating controls (SKETCH §5): colour · brush · eraser · grid · layers ·
+// undo / redo at the bottom; sketches and "more" at the top. They stay put
+// while drawing (no flicker).
+import { ChevronLeft, Ellipsis, Eraser, Grid3x3, Layers, Redo2, Undo2 } from 'lucide-react';
+import { ERASER, useSketchStore, type Panel } from '../state/useSketchStore';
 import { engineRef, saveNow } from './session';
 import { PresetIcon } from './PresetIcon';
 
@@ -20,6 +21,8 @@ export function ToolBar() {
   const canUndo = useSketchStore((s) => s.canUndo);
   const canRedo = useSketchStore((s) => s.canRedo);
   const presetId = useSketchStore((s) => s.presetId);
+  const lastBrush = useSketchStore((s) => s.lastBrush);
+  const erasing = presetId === ERASER;
   const mode = useSketchStore((s) => s.mode);
   const grid = useSketchStore((s) => s.doc?.guides.type ?? 'none');
   const toggle = (p: Panel) => st().set({ panel: panel === p ? 'none' : p });
@@ -60,8 +63,11 @@ export function ToolBar() {
         <button className={`sk-tool${panel === 'color' ? ' on' : ''}`} onClick={() => toggle('color')} aria-label="Colour">
           <span className="sk-swatch" style={{ background: color }} />
         </button>
-        <button className={`sk-tool${panel === 'brush' ? ' on' : ''}`} onClick={() => toggle('brush')} aria-label="Brush">
-          <PresetIcon id={presetId} size={22} />
+        <button className={`sk-tool${panel === 'brush' ? ' on' : ''}${!erasing && mode === 'draw' ? ' cur' : ''}`} onClick={() => toggle('brush')} aria-label="Brush">
+          <PresetIcon id={erasing ? lastBrush : presetId} size={22} />
+        </button>
+        <button className={`sk-tool${erasing && mode === 'draw' ? ' cur' : ''}`} onClick={() => st().toggleEraser()} aria-label="Eraser" aria-pressed={erasing}>
+          <Eraser size={22} />
         </button>
         <button className={`sk-tool${panel === 'grid' ? ' on' : ''}${grid !== 'none' ? ' lit' : ''}`} onClick={() => toggle('grid')} aria-label="Grid">
           <Grid3x3 size={22} />

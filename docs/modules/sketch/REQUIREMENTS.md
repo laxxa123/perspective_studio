@@ -1,6 +1,6 @@
-> **Document:** SKETCH requirements · **Version:** v1.1 (0.14.0, 2026-10-01) · **Location:** `docs/modules/sketch/REQUIREMENTS.md` · **Part of:** CREATIVE (`docs/CREATIVE.md`)
+> **Document:** SKETCH requirements · **Version:** v1.2 (0.19.0, 2026-10-02) · **Location:** `docs/modules/sketch/REQUIREMENTS.md` · **Part of:** CREATIVE (`docs/CREATIVE.md`)
 >
-> **Revisions:** v1.1 (0.14.0, 2026-10-01) — Phase 1 built; §30 records what was built and the choices made where this specification leaves room. · v1.0 (2026-10-01) — Final Product & Engineering Requirement, as written by the developer (§1–§29 below, unchanged).
+> **Revisions:** v1.2 (0.19.0, 2026-10-02) — Controls no longer fade while drawing; one-tap eraser on the bar; opacity strip; five recent colours in the brush panel; eyedropper (§31). · v1.1 (0.14.0, 2026-10-01) — Phase 1 built; §30 records what was built and the choices made where this specification leaves room. · v1.0 (2026-10-01) — Final Product & Engineering Requirement, as written by the developer (§1–§29 below, unchanged).
 
 # SKETCH — Final Product & Engineering Requirement
 
@@ -816,8 +816,9 @@ The engine never imports the UI; React never sees a pointer move (§3, §26.1).
   when the device reports them.
 - Pan / zoom only redraws the composite as one textured quad (mipmapped when
   zoomed out, nearest-pixel above 2× device scale); nothing is re-rasterised.
-- The floating controls fade while a stroke is drawn and return when it ends;
-  tapping the canvas with a navigating finger closes an open panel.
+- The floating controls stay put while a stroke is drawn (v1.2, §31: they
+  used to fade and came back after every stroke, which flickered); drawing
+  or tapping the canvas closes an open panel.
 
 ### 30.3 Brush engine (§6–§9)
 
@@ -948,3 +949,23 @@ The engine never imports the UI; React never sees a pointer move (§3, §26.1).
 | §5 controls return "with a light tap" | They return by themselves when the stroke ends; a tap also closes panels. |
 | §22 "PNG resolution / quality" | PNG is lossless: full or half size. |
 | §28.1 "open SKETCH and immediately draw" | SKETCH opens on the latest sketch, or a new one. |
+
+## 31. Drawing controls review (v1.2, release 0.19.0)
+
+From device use and a consolidated usability review (shared with PUBLISH's
+Draw, PUBLISH requirements §6.5):
+- **No fading:** the bar and round buttons stay put while drawing; fading
+  them for each stroke made them flicker. This supersedes "UI fades /
+  minimizes" in §4 by the developer's decision.
+- **Eraser on the bar:** colour · brush · **eraser** · grid · layers · undo ·
+  redo. One tap erases, the next returns to the last brush; the eraser keeps
+  its own size. The eraser is no longer in the brush panel.
+- **Brush panel:** brushes with names; Size as round dots; **Opacity as a
+  strip of five tinted cells** (never confused with sizes or colours);
+  **Colour: the five most recent colours and +** (opens the colour panel);
+  the selection tools and brush settings as before.
+- **Eyedropper** in the colour panel: touch the canvas; a loupe shows the
+  colour under the finger; letting go picks it.
+- Choosing a colour leaves the eraser. One accent colour marks selection
+  (no stray focus rings).
+

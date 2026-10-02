@@ -1,6 +1,7 @@
-// Colour (SKETCH §8): quick swatches, recent colours and a compact
-// hue / saturation-value picker. No colour-management UI (SKETCH §27).
+// Colour (SKETCH §8): quick swatches, an eyedropper, recent colours and a
+// compact hue / saturation-value picker. No colour-management UI (SKETCH §27).
 import { useState, type PointerEvent as RPointerEvent } from 'react';
+import { Pipette } from 'lucide-react';
 import { QUICK_COLOURS } from '../core/presets';
 import { useSketchStore } from '../state/useSketchStore';
 
@@ -66,6 +67,9 @@ export function ColorPanel() {
         {QUICK_COLOURS.map((c) => (
           <button key={c} className={`sk-dot${c === color ? ' on' : ''}`} style={{ background: c }} onClick={() => choose(c)} aria-label={c} />
         ))}
+        <button className="sk-dot pick" onClick={() => st().set({ picking: true, panel: 'none' })} aria-label="Pick a colour from the canvas">
+          <Pipette size={16} />
+        </button>
       </div>
       <div className="sk-sv" data-part="sv" style={{ background: hsvToHex(hsv[0], 1, 1) }} {...drag}>
         <div className="sk-sv-w" />

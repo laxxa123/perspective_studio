@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { baseName, htmlBlocks, plain, storyTiles } from './legacy';
 import { objectPosition, overlayBox, placePicture, readStudio, splitRows, studioMedia, studioTiles } from './wpStudio';
 import { parseTile } from './tile';
-import { hexToHsv, hsvToHex, normHex, pushRecent } from './colour';
+import { hexToHsv, hsvToHex, normHex, pushRecent, withAlpha } from './colour';
+import { chooseBrush, chooseColour, defaultPrefs, erasing, readPrefs, toggleEraser } from './drawPrefs';
 import type { ImageElement, PaintElement, TextElement } from './types';
 
 const mono = (s: string, size: number) => [...s].length * size * 0.5;
@@ -222,5 +223,35 @@ describe('colours', () => {
     expect(hexToHsv('#ff0000')).toEqual({ h: 0, s: 1, v: 1 });
     expect(hexToHsv('nope')).toEqual({ h: 0, s: 0, v: 0 });
     expect(pushRecent(['#a', '#b', '#c'], '#b', 2)).toEqual(['#b', '#a']);
+  });
+});
+
+describe('drawing settings', () => {
+  const ids = ['pen', 'pencil', 'marker', 'eraser'];
+  it('reads saved settings defensively', () => {
+    expect(readPrefs(null, ids)).toEqual(defaultPrefs());
+    const p = readPrefs({ preset: 'pencil', size: 4, opacity: 9, color: '#ABC', recent: ['#ff0000', 'bad', 3], lastBrush: 'eraser', showTile: false, grid: true }, ids);
+    expect(p).toMatchObject({ preset: 'pencil', size: 4, opacity: 4, color: '#aabbcc', lastBrush: 'pen', showTile: false, grid: true });
+    expect(p.recent).toHaveLength(5);
+    expect(p.recent[0]).toBe('#ff0000');
+    expect(readPrefs({ preset: 'nope', color: 'red' }, ids)).toMatchObject({ preset: 'pen', color: '#111111' });
+  });
+  it('switches to the eraser and back, each with its own size', () => {
+    const p = { ...defaultPrefs(), preset: 'marker', size: 1, eraserSize: 4 };
+    const e = toggleEraser(p);
+    expect(e).toMatchObject({ preset: 'eraser', size: 4, lastBrush: 'marker', brushSize: 1 });
+    expect(erasing(e)).toBe(true);
+    const back = toggleEraser({ ...e, size: 3 });
+    expect(back).toMatchObject({ preset: 'marker', size: 1, eraserSize: 3 });
+    expect(chooseBrush(e, 'pencil')).toMatchObject({ preset: 'pencil', size: 1, lastBrush: 'pencil' });
+    expect(chooseBrush(p, 'pen')).toMatchObject({ preset: 'pen', size: 1 });
+  });
+  it('keeps the five most recent colours and leaves the eraser on a colour', () => {
+    const p = chooseColour(toggleEraser(defaultPrefs()), '#1C7ED6');
+    expect(p.color).toBe('#1c7ed6');
+    expect(p.preset).toBe('pen');
+    expect(p.recent).toEqual(['#1c7ed6', '#111111', '#c92a2a', '#2b8a3e', '#5f3dc4']);
+    expect(chooseColour(p, 'nope').color).toBe('#1c7ed6');
+    expect(withAlpha('#ff0000', 0.4)).toBe('rgba(255, 0, 0, 0.4)');
   });
 });

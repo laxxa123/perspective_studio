@@ -17,9 +17,17 @@ export async function thumbnail(t: TileDocument): Promise<Blob> {
   return canvasToBlob(renderTile(t, imageCache, 0.25), 'image/jpeg', 0.85);
 }
 
-/** Saves the open tile when it changed (queued; never two saves at once). */
+/** Picture files still being written (a drawing is shown at once and stored in the background). */
+const writes = new Set<Promise<unknown>>();
+export function backgroundWrite(p: Promise<unknown>) {
+  const w = p.catch((e) => st().showToast(`Could not store a drawing: ${e instanceof Error ? e.message : String(e)}`)).finally(() => writes.delete(w));
+  writes.add(w);
+}
+
+/** Saves the open tile when it changed (queued; never two saves at once; after pending picture writes). */
 export function saveNow(): Promise<void> {
   chain = chain.then(async () => {
+    await Promise.all(writes);
     const t = st().tile;
     if (!t || t === lastSaved) return;
     st().set({ saving: true });
