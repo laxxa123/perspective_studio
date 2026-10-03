@@ -1,6 +1,7 @@
-> **Document:** PUBLISH requirements · **Version:** v1.4 (0.20.0, 2026-10-02) · **Location:** `docs/modules/publish/REQUIREMENTS.md` · **Part of:** CREATIVE (`docs/CREATIVE.md`)
+> **Document:** PUBLISH requirements · **Version:** v1.5 (0.21.0, 2026-10-03) · **Location:** `docs/modules/publish/REQUIREMENTS.md` · **Part of:** CREATIVE (`docs/CREATIVE.md`)
 >
-> **Revisions:** v1.4 (0.20.0, 2026-10-02) — Style is a compact bar (chips + one control) that keeps the tile in view; the developer's value set (2 fonts, 3 weights, 5 text sizes, spiral size 25–100, coils 1–5 …); two-finger pinch / twist and the spiral's centre knob; half-height action bar (§6.1).
+> **Revisions:** v1.5 (0.21.0, 2026-10-03) — Draw: hold the eraser to clear the drawing; tap "Colour" for the default colours (black, white, #cccccc, red), as in SKETCH (§6.5).
+> v1.4 (0.20.0, 2026-10-02) — Style is a compact bar (chips + one control) that keeps the tile in view; the developer's value set (2 fonts, 3 weights, 5 text sizes, spiral size 25–100, coils 1–5 …); two-finger pinch / twist and the spiral's centre knob; half-height action bar (§6.1).
 > v1.3 (0.19.0, 2026-10-02) — Draw rebuilt on SKETCH's layout (one floating bar, brush sheet with names, opacity strip, five recent colours, palette with eyedropper, one-tap eraser, grid, show tile); controls no longer hide while drawing; Done returns at once (§6.5).
 > v1.2 (0.18.0, 2026-10-02) — Old posts converted on Edit (WP Studio posts faithfully, ordinary posts as a story; red / yellow dots); compact chrome (tiny title bar; Publish tab with the name and Publish on top, categories and help at the bottom); search and scroll through all posts and pictures; delete / discard / move with Undo; denser Tiles; editor edge to edge, FP star, colour picker, notepad (§6, §8, §9, §11, §14).
 > v1.1 (0.17.0, 2026-10-02) — Publishing to WordPress: Drafts in TILES; the PUBLISH tab (name, categories, row layout by drag, Publish); POSTS (latest 25, edit / republish, old posts as marked tiles, pictures on WordPress); SETTINGS (site, user, encrypted Application Password); permanent picture ids inside the files; names fixed at first publish; featured picture per tile; post meta `_creative_post` (§5, §7–§13; ADR-0011; theme: wp_studio requirements 2.10 §22).
@@ -251,7 +252,8 @@ out like SKETCH (usability review: v1.3 in §13):
   drawing (locked) unless turned off.
 - **One floating bar:** **colour** (opens the palette) · **brush** (opens
   the brush sheet; shows the current brush) · **eraser** (one tap; tap again
-  for the last brush; it keeps its own size) · **grid** (3 × 3, on / off) ·
+  for the last brush; it keeps its own size; **hold** clears the drawing,
+  with Undo — a small corner mark shows it can be held) · **grid** (3 × 3, on / off) ·
   **undo** · **redo**. The bar and the round buttons **stay put while
   drawing** — nothing hides and reappears with each stroke; an open sheet
   closes when drawing starts.
@@ -260,7 +262,8 @@ out like SKETCH (usability review: v1.3 in §13):
   **Opacity** as a strip of five full cells tinted with the current colour
   over a faint checker (so it never reads as size or as colours; the chosen
   cell has a thin inner outline); **Colour**: the five most recent colours
-  and **+**.
+  and **+**; tapping the word **Colour** loads the default colours (black,
+  white, #cccccc, red and the colour in use), as in SKETCH.
 - **Palette** (from the colour button or +): the quick colours, an
   **eyedropper** (touch the tile; a loupe shows the colour under the
   finger), and the picker (square, hue, hex, recent).

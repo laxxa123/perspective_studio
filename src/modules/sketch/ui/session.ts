@@ -18,6 +18,7 @@ export function syncBrush() {
   if (!e) return;
   const s = st();
   e.brush = { preset: currentPreset(s), color: s.color, sizeScale: sizeScale(s.sizeLevel), opacity: opacityValue(s.opacityLevel) };
+  e.setSnap(s.snap);
 }
 
 /** Saves what changed (queued; never two saves at once). */

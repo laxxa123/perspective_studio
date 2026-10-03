@@ -4,6 +4,7 @@
 import type { BrushPreset, InputPoint, LayerModel, ReferenceModel, SketchDocument, GuideModel } from '../core/types';
 import { DOC_H, DOC_W, TILE } from '../core/types';
 import { insertLayer, layerIndex, moveLayer as moveLayerIn, newLayer, nextLayerName, patchLayer as patchLayerIn, removeLayer, activeLayer } from '../core/document';
+import { cubeDots, cubeLetters, cubeOutline, nearestSnap, snapPoints } from '../core/grids';
 import { actualSizeView, fitView, guideHandles, pageGuideSegments, polygonBounds, toDoc, type GuideHandle, type Pt, type SelTransform, type View } from '../core/geometry';
 import type { Command } from '../core/history';
 import { bindTarget, hexToRgb, type GL, type Target } from './gl';
@@ -68,6 +69,9 @@ export class RasterEngine {
   editingRef: string | null = null;
   /** The GPU context was lost (the UI reopens the project from storage). */
   lost = false;
+  /** Strokes start and end on a grid's snap point when they are near one. */
+  private snap = false;
+  private snapCache: { g: GuideModel; pts: readonly Pt[] } | null = null;
   private fitted = false;
 
   constructor(
@@ -395,6 +399,26 @@ export class RasterEngine {
     this.editDoc(patchLayerIn(this.doc, id, patch), 'Layer', record, before);
   }
 
+  /** Clears every visible, unlocked layer as one undo step; false when there was nothing to clear. */
+  clearSheet(): boolean {
+    this.commitFloating();
+    const parts: Command[] = [];
+    for (const l of this.doc.layers) {
+      const s = this.surfaces.get(l.id);
+      if (!s || !s.tiles.size || l.locked || !l.visible) continue;
+      const before = new Map<number, Target | null>();
+      for (const i of [...s.tiles.keys()]) {
+        before.set(i, s.snapshot(i));
+        s.restore(i, null);
+      }
+      parts.push(this.undoEngine.tiles('Clear sheet', l.id, before));
+      this.tilesChanged(l.id, before.keys());
+    }
+    if (!parts.length) return false;
+    this.undoEngine.push(this.undoEngine.group('Clear sheet', parts));
+    return true;
+  }
+
   /** Clears a layer's pixels (undoable). */
   clearLayer(id: string) {
     const s = this.surfaces.get(id);
@@ -416,6 +440,24 @@ export class RasterEngine {
     this.invalidate();
     this.emit();
     this.dirtied();
+  }
+
+  setSnap(on: boolean) {
+    if (on === this.snap) return;
+    this.snap = on;
+    this.invalidate();
+  }
+
+  private snapPts(): readonly Pt[] {
+    const g = this.doc.guides;
+    if (this.snapCache?.g !== g) this.snapCache = { g, pts: snapPoints(g) };
+    return this.snapCache.pts;
+  }
+
+  /** Soft snap: the grid point near a document point (within a finger's reach, never more than a third of the dot spacing), or null. */
+  snapTo(p: Pt, reach = 16): Pt | null {
+    if (!this.snap) return null;
+    return nearestSnap(this.snapPts(), p, Math.min(reach / this.view.scale, 20));
   }
 
   /** The guide handle under a screen point (CSS px), if the grid can be edited. */
@@ -624,7 +666,18 @@ export class RasterEngine {
     const g = this.doc.guides;
     if (g.visible && g.type !== 'none') {
       const a = g.opacity;
-      this.r.drawLines(pageGuideSegments(g), v, scr, 1.1, [GUIDE_COLOR[0] * a, GUIDE_COLOR[1] * a, GUIDE_COLOR[2] * a, a]);
+      const tint = (k: number) => [GUIDE_COLOR[0] * a * k, GUIDE_COLOR[1] * a * k, GUIDE_COLOR[2] * a * k, a * k];
+      if (g.type === 'cube') {
+        // The square faintly, the six faces firmly, their letters and dots.
+        this.r.drawLines(pageGuideSegments(g), v, scr, 1, tint(0.45));
+        this.r.drawLines(cubeOutline(), v, scr, 1.6, tint(1));
+        this.r.drawLines(cubeLetters(), v, scr, 1.2, tint(0.7));
+        this.r.drawDots(cubeDots().map((d) => ({ ...d, r: 2 })), v, scr, tint(1), this.dpr, false);
+      } else {
+        this.r.drawLines(pageGuideSegments(g), v, scr, 1.1, tint(1));
+        // The snap points show while snapping is on.
+        if (this.snap) this.r.drawDots(this.snapPts().map((d) => ({ ...d, r: 2.5 })), v, scr, tint(1), this.dpr, false);
+      }
       if (!g.locked) this.r.drawDots(guideHandles(g).map((h) => ({ ...h.at, r: 9 })), v, scr, [0.11, 0.49, 0.84, 1], this.dpr);
     }
     const outline = (poly: Pt[] | null, closed = true) => {

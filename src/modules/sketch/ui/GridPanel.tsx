@@ -1,4 +1,5 @@
-// Grid / guides (SKETCH §13): none, 3×3 and 1-, 2-, 3-point perspective.
+// Grid / guides (SKETCH §13): none, cube net, 3×3 and 1-, 2-, 3-point
+// perspective (held grid button). The grid chosen is the one a tap brings back.
 // Vanishing points are dragged on the canvas (when the grid is unlocked).
 import { Eye, EyeOff, Lock, LockOpen, RotateCcw } from 'lucide-react';
 import { defaultGuides, gridPreset } from '../core/presets';
@@ -8,6 +9,7 @@ import { engineRef } from './session';
 
 const TYPES: [GridType, string][] = [
   ['none', 'None'],
+  ['cube', 'Cube'],
   ['thirds', '3 × 3'],
   ['1pt', '1-point'],
   ['2pt', '2-point'],
@@ -18,12 +20,12 @@ export function GridPanel() {
   const g = useSketchStore((s) => s.doc?.guides);
   if (!g) return null;
   const set = (next: typeof g) => engineRef.current?.setGuides(next);
-  const perspective = g.type !== 'none' && g.type !== 'thirds';
+  const perspective = g.type !== 'none' && g.type !== 'thirds' && g.type !== 'cube';
   return (
     <div className="sk-panel" role="dialog" aria-label="Grid">
       <div className="sk-blends">
         {TYPES.map(([t, label]) => (
-          <button key={t} className={`sk-mini${g.type === t ? ' on' : ''}`} onClick={() => set({ ...gridPreset(g, t), visible: true })}>
+          <button key={t} className={`sk-mini${g.type === t ? ' on' : ''}`} onClick={() => (set({ ...gridPreset(g, t), visible: true }), t !== 'none' && useSketchStore.getState().set({ lastGrid: t }))}>
             {label}
           </button>
         ))}
@@ -44,9 +46,11 @@ export function GridPanel() {
             <button className="sk-chipbtn" onClick={() => set({ ...g, visible: !g.visible })}>
               {g.visible ? <Eye size={18} /> : <EyeOff size={18} />} {g.visible ? 'Visible' : 'Hidden'}
             </button>
-            <button className="sk-chipbtn" onClick={() => set({ ...g, locked: !g.locked })}>
-              {g.locked ? <Lock size={18} /> : <LockOpen size={18} />} {g.locked ? 'Locked' : 'Free'}
-            </button>
+            {perspective && (
+              <button className="sk-chipbtn" onClick={() => set({ ...g, locked: !g.locked })}>
+                {g.locked ? <Lock size={18} /> : <LockOpen size={18} />} {g.locked ? 'Locked' : 'Free'}
+              </button>
+            )}
             {perspective && (
               <button className="sk-chipbtn" onClick={() => set({ ...gridPreset({ ...defaultGuides(), density: g.density }, g.type), opacity: g.opacity, visible: g.visible, locked: g.locked })} aria-label="Reset vanishing points">
                 <RotateCcw size={18} />

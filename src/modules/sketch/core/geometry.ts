@@ -1,4 +1,5 @@
 // Tiles, view transform, guides and selection maths (SKETCH §4, §13, §15, §17). Pure.
+import { cubeLines } from './grids';
 import type { GuideModel } from './types';
 import { DOC_H, DOC_W, TILE, TILES_X, TILES_Y } from './types';
 
@@ -108,6 +109,8 @@ export function guideSegments(g: GuideModel): Segment[] {
   switch (g.type) {
     case 'none':
       return [];
+    case 'cube':
+      return [...cubeLines()];
     case 'thirds':
       return [
         [DOC_W / 3, 0, DOC_W / 3, DOC_H],
@@ -171,7 +174,7 @@ export type GuideHandle = 'horizon' | 'vp1' | 'vp2' | 'vp3';
 
 /** Draggable guide handles for the grid type, in document px. */
 export function guideHandles(g: GuideModel): { id: GuideHandle; at: Pt }[] {
-  if (g.type === 'none' || g.type === 'thirds') return [];
+  if (g.type === 'none' || g.type === 'thirds' || g.type === 'cube') return [];
   const hs: { id: GuideHandle; at: Pt }[] = [{ id: 'vp1', at: g.vp1 }];
   if (g.type !== '1pt') hs.push({ id: 'vp2', at: g.vp2 });
   if (g.type === '3pt') hs.push({ id: 'vp3', at: g.vp3 });

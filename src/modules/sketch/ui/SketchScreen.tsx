@@ -7,6 +7,7 @@ import { PointerInput } from '../input/PointerInput';
 import { projectStore } from '../storage/ProjectStore';
 import { useSketchStore } from '../state/useSketchStore';
 import { onPause } from '../../../platform/lifecycle';
+import { haptics } from '../../../platform/haptics';
 import { engineRef, saveNow, scheduleSave, syncBrush } from './session';
 import { ToolBar } from './ToolBar';
 import { Panels } from './Panels';
@@ -100,6 +101,7 @@ export function SketchScreen({ projectId }: { projectId: string }) {
           if (e) e.setReferences(e.doc.references.map((x) => (x.id === r.id ? r : x)));
         },
         onTap: () => st().set({ panel: 'none' }),
+        onSnap: () => haptics.tick(),
       });
       cleanups.push(onPause(() => void saveNow()));
       setStatus('ready');
@@ -109,7 +111,7 @@ export function SketchScreen({ projectId }: { projectId: string }) {
       setStatus('error');
     });
     const unsubBrush = useSketchStore.subscribe((s, prev) => {
-      if (s.presetId !== prev.presetId || s.color !== prev.color || s.sizeLevel !== prev.sizeLevel || s.opacityLevel !== prev.opacityLevel || s.settings.presets !== prev.settings.presets) syncBrush();
+      if (s.presetId !== prev.presetId || s.color !== prev.color || s.sizeLevel !== prev.sizeLevel || s.opacityLevel !== prev.opacityLevel || s.snap !== prev.snap || s.settings.presets !== prev.settings.presets) syncBrush();
     });
     return () => {
       alive = false;

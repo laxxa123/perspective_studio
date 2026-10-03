@@ -234,11 +234,12 @@ in vec2 v_uv;
 flat in float v_r;
 uniform vec4 u_color;
 uniform float u_dpr;
+uniform float u_ring; // 1: a white ring (handles); 0: a plain dot (grid dots)
 out vec4 o;
 void main() {
   float d = length(v_uv);
   float aa = 1.0 / u_dpr;
   float fill = 1.0 - smoothstep(v_r - aa, v_r + aa, d);
   float ring = 1.0 - smoothstep(v_r - 2.0 - aa, v_r - 2.0 + aa, d);
-  o = mix(vec4(1.0), u_color, ring) * fill;
+  o = mix(mix(vec4(1.0), u_color, ring), u_color, 1.0 - u_ring) * fill;
 }`;

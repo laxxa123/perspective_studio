@@ -1,6 +1,6 @@
-> **Document:** SKETCH requirements · **Version:** v1.2 (0.19.0, 2026-10-02) · **Location:** `docs/modules/sketch/REQUIREMENTS.md` · **Part of:** CREATIVE (`docs/CREATIVE.md`)
+> **Document:** SKETCH requirements · **Version:** v1.3 (0.21.0, 2026-10-03) · **Location:** `docs/modules/sketch/REQUIREMENTS.md` · **Part of:** CREATIVE (`docs/CREATIVE.md`)
 >
-> **Revisions:** v1.2 (0.19.0, 2026-10-02) — Controls no longer fade while drawing; one-tap eraser on the bar; opacity strip; five recent colours in the brush panel; eyedropper (§31). · v1.1 (0.14.0, 2026-10-01) — Phase 1 built; §30 records what was built and the choices made where this specification leaves room. · v1.0 (2026-10-01) — Final Product & Engineering Requirement, as written by the developer (§1–§29 below, unchanged).
+> **Revisions:** v1.3 (0.21.0, 2026-10-03) — Cube-net grid with dots; soft snap (on / off) to the grid's dots; tap the grid button for on / off, hold it for grid options; hold the eraser to clear the sheet; tap "Colour" for the default colours; the brush and its settings are remembered (§32). · v1.2 (0.19.0, 2026-10-02) — Controls no longer fade while drawing; one-tap eraser on the bar; opacity strip; five recent colours in the brush panel; eyedropper (§31). · v1.1 (0.14.0, 2026-10-01) — Phase 1 built; §30 records what was built and the choices made where this specification leaves room. · v1.0 (2026-10-01) — Final Product & Engineering Requirement, as written by the developer (§1–§29 below, unchanged).
 
 # SKETCH — Final Product & Engineering Requirement
 
@@ -331,6 +331,7 @@ Grid is a first-class guide system, not artwork.
 Available:
 
 - None
+- Cube net (v1.3, §32)
 - 3 × 3
 - 1-point perspective
 - 2-point perspective
@@ -969,3 +970,42 @@ Draw, PUBLISH requirements §6.5):
 - Choosing a colour leaves the eraser. One accent colour marks selection
   (no stray focus rings).
 
+## 32. Grid, snap and quick actions (v1.3, release 0.21.0)
+
+From the developer's marked-up screenshots:
+- **Cube net grid** (the grid a tap turns on, until another is chosen): a
+  4 × 4 square of faint cells across the page, centred; the six faces of an
+  unfolded cube (A on top; B C D E across; F below) outlined firmly and
+  lettered top left; each face carries a 4 × 4 dot grid (dots on its edges
+  too). Opacity and visible / hidden as for the other grids (no lock: it
+  has nothing to drag).
+- **Soft snap** (Snap chip in the brush panel, on by default, remembered):
+  a stroke that starts or ends near a snap point starts or ends exactly on
+  it, with a light haptic tick; anywhere else drawing is untouched. "Near"
+  is a fingertip (16 screen px), never more than a third of the dot
+  spacing, so a zoomed-out view does not snap everything. Snap points: every
+  dot of the cube net; on the 3 × 3 grid, points along its lines (sixths
+  across, twelfths down; shown as dots while Snap is on). Perspective grids
+  have none. A hidden grid does not snap.
+- **Grid button:** tap = grid on / off (the last grid used, cube net at
+  first); **hold** = the grid options (type, opacity, visible, and for
+  perspective lock and reset). A small corner mark shows that a button can
+  be held; the first few times the grid comes on, a hint says so.
+- **Eraser button:** tap = eraser on / off (as before); **hold** = clear the
+  sheet: every visible, unlocked layer, as one undo step ("Sheet cleared ·
+  Undo brings it back"). The first few times the eraser is chosen, a hint
+  says it can be held.
+- **Colour label** (brush panel): tap "Colour" (dotted underline) to load
+  the default colours: black, white, #cccccc, red — the fifth is the colour
+  in use (blue if that is one of the four). The colour in use does not
+  change.
+- **Remembered tools:** the brush (shown on the brush button), its size and
+  opacity, the colour, the five colours, the eraser size, Snap and the last
+  grid are remembered between sessions. The app always opens on the brush,
+  never on the eraser. Changing a drawing default in Settings applies at
+  once.
+- Brush panel actions: **Select** (rectangle), **Lasso**, brush settings,
+  **Snap**.
+- The same hold-to-clear eraser and Colour label are in PUBLISH's Draw
+  (PUBLISH requirements §6.5); its five colours start from the same
+  defaults.

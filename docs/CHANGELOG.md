@@ -3,6 +3,21 @@
 User-visible changes per release. Versions: `package.json` semver; each
 milestone release bumps the minor version, and CI appends `-build.<run>`.
 
+## 0.21.0 — SKETCH: cube grid, soft snap, quicker controls
+
+- **Cube grid:** an unfolded cube (faces A–F) on a 4 × 4 square, with a dot
+  grid on every face. Tap the grid button to show / hide it; hold it for
+  the other grids and options.
+- **Soft snap** (Snap in the brush panel): a line that starts or ends near
+  a dot starts or ends exactly on it, with a light tick. Also along the
+  3 × 3 grid's lines.
+- **Hold the eraser** to clear the sheet (one Undo brings it back) — in
+  SKETCH and in PUBLISH Draw.
+- **Tap "Colour"** in the brush panel for the default colours: black,
+  white, light grey, red.
+- **Your brush is remembered** between sessions (with its size, opacity,
+  colour and colours); the brush button shows it.
+
 ## 0.20.0 — PUBLISH: a compact Style bar and gestures
 
 - **Style no longer covers the tile:** one row of small chips (Font, Weight,

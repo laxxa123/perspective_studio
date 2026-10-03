@@ -23,6 +23,8 @@ export interface InputHooks {
   onReference(r: ReferenceModel): void;
   /** A single short tap on the canvas (no stroke made). */
   onTap?(): void;
+  /** A stroke's start or end was pulled onto a snap point. */
+  onSnap?(): void;
 }
 
 interface Ptr {
@@ -103,6 +105,14 @@ export class PointerInput {
     return { x: p.x, y: p.y, pressure: pen ? (e.pressure > 0 ? e.pressure : 0.5) : 1, tilt, azimuth, t: e.timeStamp };
   }
 
+  /** Soft snap: a stroke starting near a snap point starts on it. */
+  private snapped(p: InputPoint): InputPoint {
+    const s = this.engine.snapTo(p);
+    if (!s) return p;
+    this.hooks.onSnap?.();
+    return { ...p, x: s.x, y: s.y };
+  }
+
   private fingers() {
     let n = 0;
     for (const p of this.ptrs.values()) if (p.type === 'touch') n++;
@@ -165,7 +175,7 @@ export class PointerInput {
       return;
     }
     if (mode === 'draw' && this.canDraw(e.pointerType)) {
-      const why = this.engine.strokeBegin(this.sample(e));
+      const why = this.engine.strokeBegin(this.snapped(this.sample(e)));
       if (why) {
         this.hooks.onRefused(why);
         this.state = { kind: 'wait' };
@@ -279,7 +289,17 @@ export class PointerInput {
       case 'stroke':
         if (st.id === e.pointerId) {
           const evs = e.getCoalescedEvents?.() ?? [];
-          if (!cancelled && evs.length) this.engine.strokeMove(evs.map((c) => this.sample(c)));
+          if (!cancelled) {
+            const pts = (evs.length ? evs : [e]).map((c) => this.sample(c));
+            // Soft snap: a stroke ending near a snap point ends on it.
+            const last = pts[pts.length - 1];
+            const end = this.engine.snapTo(last);
+            if (end) {
+              pts.push({ ...last, x: end.x, y: end.y });
+              this.hooks.onSnap?.();
+            }
+            this.engine.strokeMove(pts);
+          }
           this.engine.strokeEnd();
           this.hooks.onStroke(false);
           this.state = { kind: 'idle' };

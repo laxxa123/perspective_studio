@@ -1,6 +1,6 @@
 # CREATIVE — main app document
 
-> **App version:** 0.20.0 · **Document version:** 1.9 (2026-10-02) · Owner: sole developer/user · Location: `docs/CREATIVE.md`
+> **App version:** 0.21.0 · **Document version:** 1.10 (2026-10-03) · Owner: sole developer/user · Location: `docs/CREATIVE.md`
 
 CREATIVE is the app; its tools are **modules** (plugins). This document holds
 what belongs to the app as a whole: the home screen, how modules plug in, the
@@ -9,7 +9,7 @@ functions modules will share, and what every new module's requirements must
 settle up front. Each module has its own requirements in
 `docs/modules/<id>/REQUIREMENTS.md`.
 
-**Revisions:** 1.9 (0.20.0, 2026-10-02) — PUBLISH requirements v1.4 (compact Style bar, gestures); module list and history updated. · 1.8 (0.19.0, 2026-10-02) — Drawing controls reworked in PUBLISH (requirements v1.3) and SKETCH (requirements v1.2); module list and history updated. · 1.7 (0.18.0, 2026-10-02) — PUBLISH requirements v1.2 (old posts converted on Edit, compact layout, notepad); module list and history updated. · 1.6 (0.17.0, 2026-10-02) — PUBLISH publishes to WordPress (PUBLISH requirements v1.1; ADR-0011: Application Password in the Android Keystore through `@aparajita/capacitor-secure-storage`, wrapped in `src/platform/secrets.ts`); module list and history updated. · 1.5 (0.16.0, 2026-10-01) — PUBLISH added (WP Studio rebuilt as a module, Phase 1: TILES; ADR-0010): CR-OD-4 decided; module list, code layout, data and history updated. · 1.4 (0.15.0, 2026-10-01) — CUBE design rework (CUBE requirements v1.2); module list and history updated. · 1.3 (0.14.0, 2026-10-01) — SKETCH Phase 1 built as an in-app module with its own WebGL2 raster engine (ADR-0009): CR-OD-3 decided; module list, code layout, data and history updated. · 1.2 (0.13.0, 2026-10-01) — CUBE Phase 1 built as an in-app module (ADR-0008): CR-OD-1 and CR-OD-2 decided; module list, code layout and history updated. · 1.1 (0.12.0, 2026-10-01) — the app is named **CREATIVE** and the first module **PERSPECTIVE** (was "Perspective Studio"); docs reorganised per module (`docs/modules/`); CUBE registered as the next module, its stack recorded and its integration decision opened (CR-OD-1); new-module requirements checklist (§7). · 1.0 (0.11.0, 2026-10-01) — home screen, module registry, PERSPECTIVE as the first module (ADR-0007).
+**Revisions:** 1.10 (0.21.0, 2026-10-03) — SKETCH requirements v1.3 (cube-net grid, soft snap, hold actions), PUBLISH requirements v1.5; module list and history updated. · 1.9 (0.20.0, 2026-10-02) — PUBLISH requirements v1.4 (compact Style bar, gestures); module list and history updated. · 1.8 (0.19.0, 2026-10-02) — Drawing controls reworked in PUBLISH (requirements v1.3) and SKETCH (requirements v1.2); module list and history updated. · 1.7 (0.18.0, 2026-10-02) — PUBLISH requirements v1.2 (old posts converted on Edit, compact layout, notepad); module list and history updated. · 1.6 (0.17.0, 2026-10-02) — PUBLISH publishes to WordPress (PUBLISH requirements v1.1; ADR-0011: Application Password in the Android Keystore through `@aparajita/capacitor-secure-storage`, wrapped in `src/platform/secrets.ts`); module list and history updated. · 1.5 (0.16.0, 2026-10-01) — PUBLISH added (WP Studio rebuilt as a module, Phase 1: TILES; ADR-0010): CR-OD-4 decided; module list, code layout, data and history updated. · 1.4 (0.15.0, 2026-10-01) — CUBE design rework (CUBE requirements v1.2); module list and history updated. · 1.3 (0.14.0, 2026-10-01) — SKETCH Phase 1 built as an in-app module with its own WebGL2 raster engine (ADR-0009): CR-OD-3 decided; module list, code layout, data and history updated. · 1.2 (0.13.0, 2026-10-01) — CUBE Phase 1 built as an in-app module (ADR-0008): CR-OD-1 and CR-OD-2 decided; module list, code layout and history updated. · 1.1 (0.12.0, 2026-10-01) — the app is named **CREATIVE** and the first module **PERSPECTIVE** (was "Perspective Studio"); docs reorganised per module (`docs/modules/`); CUBE registered as the next module, its stack recorded and its integration decision opened (CR-OD-1); new-module requirements checklist (§7). · 1.0 (0.11.0, 2026-10-01) — home screen, module registry, PERSPECTIVE as the first module (ADR-0007).
 
 ---
 
@@ -82,8 +82,8 @@ Built from the developer's mockup (`docs/brand/suite-home-mockup.png`).
 | Studio | `studio` | coming soon | — | — | — |
 | **Cube** | `cube` | **live (Phase 1: Studio, Question Bank)** | **0.15.0** | React · TypeScript · Konva · Three.js · SQLite (Capacitor) | `docs/modules/cube/REQUIREMENTS.md` (v1.2) |
 | **Perspective** | `perspective` | **live** | **0.12.0** | React · TypeScript · Konva · Vite · Capacitor · IndexedDB | `docs/modules/perspective/REQUIREMENTS.md` (v1.9) |
-| **Publish** | `publish` | **live (Tiles · Publish · Posts · Settings)** | **0.20.0** | React · TypeScript · Konva · SKETCH brush engine · IndexedDB · WordPress REST · Keystore secure storage | `docs/modules/publish/REQUIREMENTS.md` (v1.4) |
-| **Sketch** | `sketch` | **live (Phase 1)** | **0.19.0** | React · TypeScript · custom WebGL2 tiled raster engine · Pointer Events · IndexedDB | `docs/modules/sketch/REQUIREMENTS.md` (v1.2) |
+| **Publish** | `publish` | **live (Tiles · Publish · Posts · Settings)** | **0.21.0** | React · TypeScript · Konva · SKETCH brush engine · IndexedDB · WordPress REST · Keystore secure storage | `docs/modules/publish/REQUIREMENTS.md` (v1.5) |
+| **Sketch** | `sketch` | **live (Phase 1)** | **0.21.0** | React · TypeScript · custom WebGL2 tiled raster engine · Pointer Events · IndexedDB | `docs/modules/sketch/REQUIREMENTS.md` (v1.3) |
 | Sequence | `sequence` | coming soon | — | — | — |
 | Sensitivity | `sensitivity` | coming soon | — | — | — |
 | Toolbox | `toolbox` | coming soon | — | — | — |
@@ -102,6 +102,7 @@ Built from the developer's mockup (`docs/brand/suite-home-mockup.png`).
 
 | App | Date | Change |
 | :-- | :-- | :-- |
+| 0.21.0 | 2026-10-03 | SKETCH: cube-net grid with dots, soft snap, tap / hold grid, hold eraser to clear, default colours, remembered brush (also in PUBLISH Draw). |
 | 0.20.0 | 2026-10-02 | PUBLISH: compact Style bar, pinch / twist gestures, slimmer action bar. |
 | 0.19.0 | 2026-10-02 | Drawing controls (PUBLISH Draw, SKETCH): instant Done, no flicker, one-tap eraser, opacity strip, recent colours, eyedropper. |
 | 0.18.0 | 2026-10-02 | PUBLISH: old posts converted on Edit; compact layout; Undo; notepad. |

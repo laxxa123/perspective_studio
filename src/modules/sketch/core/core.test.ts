@@ -261,3 +261,39 @@ describe('document', () => {
     expect(touch(d, new Date(1000)).updatedAt).toBe(new Date(1000).toISOString());
   });
 });
+
+describe('cube net grid and soft snap (SKETCH §13)', () => {
+  it('draws a 4 × 4 square, six lettered faces and a dot grid on each face', async () => {
+    const { cubeDots, cubeLetters, cubeOutline, CUBE_CELL, CUBE_FACES } = await import('./grids');
+    const g = { ...gridPreset(defaultGuides(), 'cube'), visible: true };
+    expect(guideSegments(g)).toHaveLength(10);
+    expect(guideHandles(g)).toEqual([]);
+    expect(CUBE_FACES.map((f) => f[2]).join('')).toBe('ABCDEF');
+    expect(CUBE_CELL).toBe(250);
+    // 6 faces × 4 edges, shared edges once: 24 − 5.
+    expect(cubeOutline()).toHaveLength(19);
+    expect(cubeLetters().length).toBeGreaterThan(20);
+    // The cross: 17 × 5 across, 20 above, 20 below.
+    expect(cubeDots()).toHaveLength(125);
+    expect(cubeDots()).toContainEqual({ x: 40, y: 710 });
+  });
+
+  it('snaps only near a point, and only on a visible grid that has points', async () => {
+    const { nearestSnap, snapPoints, thirdsPoints } = await import('./grids');
+    const cube = { ...gridPreset(defaultGuides(), 'cube'), visible: true };
+    const pts = snapPoints(cube);
+    expect(nearestSnap(pts, { x: 45, y: 705 }, 20)).toEqual({ x: 40, y: 710 });
+    expect(nearestSnap(pts, { x: 70, y: 740 }, 20)).toBeNull();
+    expect(snapPoints({ ...cube, visible: false })).toEqual([]);
+    expect(snapPoints({ ...cube, type: '2pt' })).toEqual([]);
+    expect(snapPoints({ ...cube, type: 'thirds' })).toBe(thirdsPoints());
+    expect(thirdsPoints()).toHaveLength(36);
+    expect(thirdsPoints()).toContainEqual({ x: 360, y: 640 });
+  });
+
+  it('default colours: black, white, light grey, red and the current colour (or blue)', async () => {
+    const { defaultFive } = await import('./presets');
+    expect(defaultFive('#7048E8')).toEqual(['#000000', '#ffffff', '#cccccc', '#e03131', '#7048e8']);
+    expect(defaultFive('#000000')).toEqual(['#000000', '#ffffff', '#cccccc', '#e03131', '#1c7ed6']);
+  });
+});

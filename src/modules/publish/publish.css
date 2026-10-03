@@ -369,3 +369,8 @@ a.pb-icon { display: inline-flex; align-items: center; justify-content: center; 
 /* Half-height action bar: icon and label side by side */
 .pb-bar { padding: 3px 4px max(4px, env(safe-area-inset-bottom)); gap: 0; }
 .pb-tool { flex-direction: row; gap: 4px; height: 34px; font-size: 11px; border-radius: 10px; max-width: none; }
+
+/* Draw: "Colour" is also a button (the default colours); the eraser's hold mark. */
+.pb-draw-label { background: none; border: 0; padding: 0; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); min-width: 58px; text-decoration: underline dotted; text-underline-offset: 3px; -webkit-touch-callout: none; user-select: none; }
+.pb-draw-bar button.hold { position: relative; -webkit-touch-callout: none; user-select: none; }
+.pb-draw-bar button.hold::after { content: ''; position: absolute; right: 9px; bottom: 7px; border: 3px solid transparent; border-right-color: currentColor; border-bottom-color: currentColor; opacity: 0.45; }

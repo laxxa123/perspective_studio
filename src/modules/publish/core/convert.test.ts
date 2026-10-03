@@ -4,7 +4,7 @@ import { objectPosition, overlayBox, placePicture, readStudio, splitRows, studio
 import { parseTile } from './tile';
 import { hexToHsv, hsvToHex, normHex, pushRecent, withAlpha } from './colour';
 import { clamp, nearest, softSnap, span, spiralGesture, TEXT_SIZES, textGesture, turnBetween, WEIGHTS, wrap360 } from './styleScale';
-import { chooseBrush, chooseColour, defaultPrefs, erasing, readPrefs, toggleEraser } from './drawPrefs';
+import { chooseBrush, chooseColour, defaultColours, defaultPrefs, erasing, readPrefs, toggleEraser } from './drawPrefs';
 import type { ImageElement, PaintElement, TextElement } from './types';
 
 const mono = (s: string, size: number) => [...s].length * size * 0.5;
@@ -251,8 +251,9 @@ describe('drawing settings', () => {
     const p = chooseColour(toggleEraser(defaultPrefs()), '#1C7ED6');
     expect(p.color).toBe('#1c7ed6');
     expect(p.preset).toBe('pen');
-    expect(p.recent).toEqual(['#1c7ed6', '#111111', '#c92a2a', '#2b8a3e', '#5f3dc4']);
+    expect(p.recent).toEqual(['#1c7ed6', '#000000', '#ffffff', '#cccccc', '#e03131']);
     expect(chooseColour(p, 'nope').color).toBe('#1c7ed6');
+    expect(defaultColours(p).recent).toEqual(['#000000', '#ffffff', '#cccccc', '#e03131', '#1c7ed6']);
     expect(withAlpha('#ff0000', 0.4)).toBe('rgba(255, 0, 0, 0.4)');
   });
 });

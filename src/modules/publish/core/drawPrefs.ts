@@ -1,6 +1,7 @@
 // Drawing settings (PUBLISH §6.5): brush, size, opacity, colour, the five
 // recent colours and the one-tap eraser, which keeps its own size and
 // returns to the last brush. Remembered between drawings. Pure.
+import { defaultFive } from '../../sketch/core/presets';
 import { normHex, pushRecent } from './colour';
 
 export interface DrawPrefs {
@@ -23,7 +24,8 @@ export interface DrawPrefs {
 
 export const ERASER = 'eraser';
 export const RECENT = 5;
-const STARTER = ['#111111', '#c92a2a', '#2b8a3e', '#5f3dc4', '#f2b705'];
+/** The default colours (as SKETCH's) with the starting ink. */
+const STARTER = defaultFive('#111111');
 
 export const defaultPrefs = (): DrawPrefs => ({ preset: 'pen', size: 2, opacity: 4, color: '#111111', recent: [...STARTER], lastBrush: 'pen', brushSize: 2, eraserSize: 3, showTile: true, grid: false });
 
@@ -64,6 +66,11 @@ export function chooseBrush(p: DrawPrefs, id: string): DrawPrefs {
 }
 
 /** Choosing a colour means drawing with it: it joins the recent five and leaves the eraser. */
+/** Tap on "Colour": the five colours go back to the defaults (the current colour stays). */
+export function defaultColours(p: DrawPrefs): DrawPrefs {
+  return { ...p, recent: defaultFive(p.color) };
+}
+
 export function chooseColour(p: DrawPrefs, c: string): DrawPrefs {
   const color = normHex(c) ?? p.color;
   const base = erasing(p) ? toggleEraser(p) : p;

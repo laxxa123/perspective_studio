@@ -215,7 +215,7 @@ export class Renderer {
   }
 
   /** Round handles at document points, radius in CSS px. */
-  drawDots(dots: readonly { x: number; y: number; r: number }[], view: View, screen: [number, number], color: readonly number[], dpr: number) {
+  drawDots(dots: readonly { x: number; y: number; r: number }[], view: View, screen: [number, number], color: readonly number[], dpr: number, ring = true) {
     if (!dots.length) return;
     const gl = this.gl;
     const d = this.ensureInst(dots.length * 3);
@@ -226,6 +226,7 @@ export class Renderer {
     gl.uniform2fv(p.u.u_screen, screen);
     gl.uniform4fv(p.u.u_color, color);
     gl.uniform1f(p.u.u_dpr, dpr);
+    gl.uniform1f(p.u.u_ring, ring ? 1 : 0);
     this.instances(d, dots.length, [3, 0, 0]);
     blend(gl, Blend.Over);
     gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, dots.length);

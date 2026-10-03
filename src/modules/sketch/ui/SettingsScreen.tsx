@@ -161,6 +161,7 @@ export function SettingsScreen() {
             value={s.defaultGrid}
             options={[
               ['none', 'None'],
+              ['cube', 'Cube'],
               ['thirds', '3 × 3'],
               ['1pt', '1-pt'],
               ['2pt', '2-pt'],

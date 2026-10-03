@@ -1,8 +1,12 @@
 // The floating controls (SKETCH §5): colour · brush · eraser · grid · layers ·
 // undo / redo at the bottom; sketches and "more" at the top. They stay put
-// while drawing (no flicker).
+// while drawing (no flicker). The brush button shows the brush in use. Hold
+// the eraser to clear the sheet; tap the grid to show / hide it, hold it for
+// the grid options.
 import { ChevronLeft, Ellipsis, Eraser, Grid3x3, Layers, Redo2, Undo2 } from 'lucide-react';
 import { ERASER, useSketchStore, type Panel } from '../state/useSketchStore';
+import { gridPreset } from '../core/presets';
+import { firstTimes, useHold } from '../../../platform/hold';
 import { engineRef, saveNow } from './session';
 import { PresetIcon } from './PresetIcon';
 
@@ -24,8 +28,31 @@ export function ToolBar() {
   const lastBrush = useSketchStore((s) => s.lastBrush);
   const erasing = presetId === ERASER;
   const mode = useSketchStore((s) => s.mode);
-  const grid = useSketchStore((s) => s.doc?.guides.type ?? 'none');
+  const gridOn = useSketchStore((s) => !!s.doc && s.doc.guides.type !== 'none' && s.doc.guides.visible);
   const toggle = (p: Panel) => st().set({ panel: panel === p ? 'none' : p });
+
+  const eraser = useHold(
+    () => {
+      st().toggleEraser();
+      if (st().presetId === ERASER && firstTimes('sketch.eraser')) st().showToast('Hold the eraser to clear the sheet');
+    },
+    () => {
+      const cleared = engineRef.current?.clearSheet();
+      st().set({ panel: 'none' });
+      st().showToast(cleared ? 'Sheet cleared · Undo brings it back' : 'Nothing to clear');
+    },
+  );
+  const grid = useHold(
+    () => {
+      const e = engineRef.current;
+      if (!e) return;
+      const g = e.doc.guides;
+      if (g.type !== 'none' && g.visible) return e.setGuides({ ...g, visible: false });
+      e.setGuides(g.type === 'none' ? { ...gridPreset(g, st().lastGrid), visible: true } : { ...g, visible: true });
+      if (firstTimes('sketch.grid')) st().showToast('Hold the grid button for grid options');
+    },
+    () => toggle('grid'),
+  );
 
   const leave = async () => {
     const e = engineRef.current;
@@ -66,10 +93,10 @@ export function ToolBar() {
         <button className={`sk-tool${panel === 'brush' ? ' on' : ''}${!erasing && mode === 'draw' ? ' cur' : ''}`} onClick={() => toggle('brush')} aria-label="Brush">
           <PresetIcon id={erasing ? lastBrush : presetId} size={22} />
         </button>
-        <button className={`sk-tool${erasing && mode === 'draw' ? ' cur' : ''}`} onClick={() => st().toggleEraser()} aria-label="Eraser" aria-pressed={erasing}>
+        <button className={`sk-tool hold${erasing && mode === 'draw' ? ' cur' : ''}`} {...eraser} aria-label="Eraser (hold to clear the sheet)" aria-pressed={erasing}>
           <Eraser size={22} />
         </button>
-        <button className={`sk-tool${panel === 'grid' ? ' on' : ''}${grid !== 'none' ? ' lit' : ''}`} onClick={() => toggle('grid')} aria-label="Grid">
+        <button className={`sk-tool hold${panel === 'grid' ? ' on' : ''}${gridOn ? ' lit' : ''}`} {...grid} aria-label="Grid (hold for options)" aria-pressed={gridOn}>
           <Grid3x3 size={22} />
         </button>
         <button className={`sk-tool${panel === 'layers' ? ' on' : ''}`} onClick={() => toggle('layers')} aria-label="Layers">

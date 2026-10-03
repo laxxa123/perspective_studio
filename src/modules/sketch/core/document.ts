@@ -61,7 +61,7 @@ export const DocumentSchema = z.object({
     .max(MAX_LAYERS),
   activeLayer: z.string(),
   guides: z.object({
-    type: z.enum(['none', 'thirds', '1pt', '2pt', '3pt']),
+    type: z.enum(['none', 'cube', 'thirds', '1pt', '2pt', '3pt']),
     visible: z.boolean(),
     opacity: unit,
     locked: z.boolean(),

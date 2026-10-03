@@ -12,7 +12,7 @@ import { DEFAULT_PRESETS, OPACITY_LEVELS, QUICK_COLOURS, SIZE_LEVELS, gridPreset
 import { RasterEngine } from '../../sketch/engine/RasterEngine';
 import { PointerInput } from '../../sketch/input/PointerInput';
 import { withAlpha } from '../core/colour';
-import { chooseBrush, chooseColour, ERASER, erasing, readPrefs, toggleEraser, type DrawPrefs } from '../core/drawPrefs';
+import { chooseBrush, chooseColour, defaultColours, ERASER, erasing, readPrefs, toggleEraser, type DrawPrefs } from '../core/drawPrefs';
 import { addElement, newId, paintFor, updateElement } from '../core/tile';
 import type { PaintElement } from '../core/types';
 import { TILE_H, TILE_W } from '../core/types';
@@ -24,6 +24,7 @@ import { usePublishStore } from '../state/usePublishStore';
 import { ColourPicker } from './ColourPicker';
 import { backgroundWrite, trackAsset } from './session';
 import { PresetGlyph } from './PresetGlyph';
+import { useHold } from '../../../platform/hold';
 
 const st = usePublishStore.getState;
 const KEY = 'creative.publish.draw';
@@ -171,6 +172,8 @@ export function PaintScreen({ el }: { el: PaintElement | null }) {
     setPanel('none');
     st().showSnack('Drawing cleared', { label: 'Undo', run: () => engine.current?.undo() });
   };
+  // Tap: eraser on / off; hold: clear the drawing (as in SKETCH).
+  const eraserHold = useHold(() => update(toggleEraser(prefs)), clear);
 
   /** Eyedropper: the colour at a point — the drawing over the tile. */
   const startPick = () => {
@@ -297,7 +300,9 @@ export function PaintScreen({ el }: { el: PaintElement | null }) {
                 </div>
               </div>
               <div className="pb-draw-row">
-                <span>Colour</span>
+                <button className="pb-draw-label" aria-label="Default colours" title="Default colours" onClick={() => (update(defaultColours(prefs)), st().showSnack('Default colours'))}>
+                  Colour
+                </button>
                 <div className="pb-draw-colours">
                   {prefs.recent.map((c) => (
                     <button key={c} className={c === color ? 'on' : ''} style={{ background: c }} aria-label={`Colour ${c}`} onClick={() => update(chooseColour(prefs, c))} />
@@ -333,7 +338,7 @@ export function PaintScreen({ el }: { el: PaintElement | null }) {
         <button className={`${panel === 'brush' ? 'on' : ''}${erase ? '' : ' cur'}`} aria-label={`Brush: ${BRUSHES.find((b) => b.id === brushId)?.name ?? ''}`} onClick={() => setPanel(panel === 'brush' ? 'none' : 'brush')}>
           <PresetGlyph id={brushId} size={22} />
         </button>
-        <button className={erase ? 'cur' : ''} aria-label="Eraser" aria-pressed={erase} onClick={() => update(toggleEraser(prefs))}>
+        <button className={`hold${erase ? ' cur' : ''}`} aria-label="Eraser (hold to clear the drawing)" aria-pressed={erase} {...eraserHold}>
           <Eraser size={22} />
         </button>
         <button className={prefs.grid ? 'lit' : ''} aria-label="Grid" aria-pressed={prefs.grid} onClick={() => update({ ...prefs, grid: !prefs.grid })}>

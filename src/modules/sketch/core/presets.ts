@@ -36,6 +36,12 @@ export const SIZE_LEVELS = [0.35, 0.6, 1, 1.6, 2.6] as const;
 /** Quick opacity levels. */
 export const OPACITY_LEVELS = [0.2, 0.4, 0.6, 0.8, 1] as const;
 
+/** The default colours (tap "Colour"): black, white, light grey, red, then the current colour (or blue). */
+export const DEFAULT_COLOURS = ['#000000', '#ffffff', '#cccccc', '#e03131'];
+export function defaultFive(current: string): string[] {
+  return [...DEFAULT_COLOURS, DEFAULT_COLOURS.includes(current.toLowerCase()) ? '#1c7ed6' : current.toLowerCase()];
+}
+
 export const QUICK_COLOURS = ['#212529', '#495057', '#ffffff', '#e03131', '#f08c00', '#fab005', '#2f9e44', '#1c7ed6', '#7048e8', '#e64980', '#8d6e63', '#0c8599'];
 
 export function defaultGuides(): GuideModel {

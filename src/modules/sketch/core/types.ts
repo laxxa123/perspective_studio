@@ -24,7 +24,8 @@ export interface LayerModel {
   blend: BlendMode;
 }
 
-export type GridType = 'none' | 'thirds' | '1pt' | '2pt' | '3pt';
+/** `cube`: a cube net with snap dots (SKETCH §13). */
+export type GridType = 'none' | 'cube' | 'thirds' | '1pt' | '2pt' | '3pt';
 
 /** Guides are not artwork (SKETCH §13). Points in document px. */
 export interface GuideModel {

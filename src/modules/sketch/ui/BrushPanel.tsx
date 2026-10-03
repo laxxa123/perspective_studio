@@ -1,7 +1,8 @@
 // Brush panel (SKETCH §6, §8, §9): the brushes (the eraser is on the bar),
-// five sizes, an opacity strip, the five recent colours (+ for more) and the
-// two selection tools. Advanced parameters live in Settings.
-import { Lasso, Plus, SlidersHorizontal, SquareDashed } from "lucide-react";
+// five sizes, an opacity strip, the five recent colours (+ for more; tap
+// "Colour" for the default colours), the two selection tools and Snap.
+// Advanced parameters live in Settings.
+import { Lasso, Magnet, Plus, SlidersHorizontal, SquareDashed } from "lucide-react";
 import { OPACITY_LEVELS, QUICK_COLOURS, SIZE_LEVELS } from "../core/presets";
 import { ERASER, useSketchStore } from "../state/useSketchStore";
 
@@ -24,6 +25,7 @@ export function BrushPanel() {
   const mode = useSketchStore((s) => s.mode);
   const color = useSketchStore((s) => s.color);
   const recent = useSketchStore((s) => s.recent);
+  const snap = useSketchStore((s) => s.snap);
   const erasing = presetId === ERASER;
   const five = [
     ...recent,
@@ -94,7 +96,14 @@ export function BrushPanel() {
             </div>
           </div>
           <div className="sk-row">
-            <span className="sk-label">Colour</span>
+            <button
+              className="sk-label tap"
+              aria-label="Default colours"
+              title="Default colours"
+              onClick={() => (st().defaultColours(), st().showToast("Default colours"))}
+            >
+              Colour
+            </button>
             <div className="sk-colours">
               {five.map((c) => (
                 <button
@@ -121,7 +130,7 @@ export function BrushPanel() {
           className={`sk-chipbtn${mode === "rect" ? " on" : ""}`}
           onClick={() => st().set({ mode: "rect", panel: "none" })}
         >
-          <SquareDashed size={18} /> Rectangle select
+          <SquareDashed size={18} /> Select
         </button>
         <button
           className={`sk-chipbtn${mode === "lasso" ? " on" : ""}`}
@@ -137,6 +146,14 @@ export function BrushPanel() {
           aria-label="Brush settings"
         >
           <SlidersHorizontal size={18} />
+        </button>
+        <button
+          className={`sk-chipbtn${snap ? " on" : ""}`}
+          aria-pressed={snap}
+          aria-label="Snap to the grid's dots"
+          onClick={() => st().set({ snap: !snap })}
+        >
+          <Magnet size={18} /> Snap
         </button>
       </div>
     </div>
