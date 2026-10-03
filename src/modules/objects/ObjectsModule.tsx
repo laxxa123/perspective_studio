@@ -103,7 +103,7 @@ export default function ObjectsModule({ onExit }: { onExit: () => void }) {
           {status === 'saving' ? <Loader2 size={13} className="spin" /> : status === 'saved' ? <Check size={13} /> : null}
           {status === 'saving' ? 'Saving…' : status === 'saved' ? 'Saved' : ''}
         </span>
-        <NoteButton className="icon ob-note" size={18} />
+        <NoteButton className="icon ob-notes-btn" size={18} />
       </header>
       <nav className="ob-pages" aria-label="OBJECTS">
         {PAGES.map(([p, l]) => (

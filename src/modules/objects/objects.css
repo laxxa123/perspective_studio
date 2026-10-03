@@ -100,5 +100,5 @@
 .ob-tools button.icon { width: 34px; height: 34px; min-width: 34px; min-height: 34px; padding: 0; box-shadow: none; background: transparent; }
 .ob-steps > button { padding: 0 10px; }
 .ob-steps { gap: 2px; }
-.ob-note { width: 34px; height: 34px; min-width: 34px; min-height: 34px; padding: 0; box-shadow: none; background: transparent; }
-.ob-note.on, .cube-note.on { color: var(--accent); }
+.ob-notes-btn { width: 34px; height: 34px; min-width: 34px; min-height: 34px; padding: 0; box-shadow: none; background: transparent; }
+.ob-notes-btn.on { color: var(--accent); }
