@@ -3,6 +3,15 @@
 User-visible changes per release. Versions: `package.json` semver; each
 milestone release bumps the minor version, and CI appends `-build.<run>`.
 
+## 0.23.0 — OBJECTS (first look)
+
+- **New module OBJECTS** on the home screen, for making visualisation and
+  spatial-reasoning questions. This first step: build an object from
+  blocks in a 3D view (tap to add, eraser to remove, turn about X / Y / Z,
+  undo, fit, clear) and see it as the isometric line drawing that
+  questions will use, at three sizes. One finger turns the view, two pan
+  and zoom.
+
 ## 0.22.0 — New icon; CUBE fits the phone
 
 - **New app icon:** a 2 × 2 × 2 cube with one blue side.

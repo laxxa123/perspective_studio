@@ -22,7 +22,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['src/core/**/*.ts', 'src/modules/sketch/**/*.{ts,tsx}', 'src/modules/publish/**/*.{ts,tsx}'],
+    files: ['src/core/**/*.ts', 'src/modules/sketch/**/*.{ts,tsx}', 'src/modules/publish/**/*.{ts,tsx}', 'src/modules/objects/**/*.{ts,tsx}'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'error', // NFR-M-01
     },
@@ -51,7 +51,9 @@ export default tseslint.config(
         { type: 'sketch', pattern: 'src/modules/sketch/**' },
         // PUBLISH: a pure core and the module; it reuses SKETCH's brush engine as a library (ADR-0010).
         { type: 'publish-core', pattern: 'src/modules/publish/core/**' },
+        { type: 'objects-core', pattern: 'src/modules/objects/core/**' },
         { type: 'publish', pattern: 'src/modules/publish/**' },
+        { type: 'objects', pattern: 'src/modules/objects/**' },
         { type: 'app', pattern: 'src/*.{ts,tsx}', partialMatch: false },
       ],
     },
@@ -80,7 +82,7 @@ export default tseslint.config(
             { from: { element: { type: 'theme' } }, allow: { to: { element: { types: { anyOf: ['theme', 'core'] } } } } },
             { from: { element: { type: 'export' } }, allow: { to: { element: { types: { anyOf: ['export', 'core', 'theme'] } } } } },
             { from: { element: { type: 'platform' } }, allow: { to: { element: { type: 'platform' } } } },
-            { from: { element: { type: 'app' } }, allow: { to: { element: { types: { anyOf: ['app', 'ui', 'state', 'core', 'platform', 'suite', 'cube', 'sketch', 'publish'] } } } } },
+            { from: { element: { type: 'app' } }, allow: { to: { element: { types: { anyOf: ['app', 'ui', 'state', 'core', 'platform', 'suite', 'cube', 'sketch', 'publish', 'objects'] } } } } },
             // CUBE never imports PERSPECTIVE (modules are independent); its core is pure (CUBE §22).
             { from: { element: { type: 'cube-core' } }, allow: { to: { element: { type: 'cube-core' } } } },
             { from: { element: { type: 'cube' } }, allow: { to: { element: { types: { anyOf: ['cube', 'cube-core', 'platform'] } } } } },
@@ -90,6 +92,9 @@ export default tseslint.config(
             { from: { element: { type: 'sketch' } }, allow: { to: { element: { types: { anyOf: ['sketch', 'sketch-engine', 'sketch-core', 'platform'] } } } } },
             // PUBLISH may use SKETCH's UI-free engine and core (never its UI or storage).
             { from: { element: { type: 'publish-core' } }, allow: { to: { element: { types: { anyOf: ['publish-core', 'sketch-core'] } } } } },
+            // OBJECTS (OBJECTS §5.2, §60): the core is pure; the module may use platform.
+            { from: { element: { type: 'objects-core' } }, allow: { to: { element: { type: 'objects-core' } } } },
+            { from: { element: { type: 'objects' } }, allow: { to: { element: { types: { anyOf: ['objects', 'objects-core', 'platform'] } } } } },
             { from: { element: { type: 'publish' } }, allow: { to: { element: { types: { anyOf: ['publish', 'publish-core', 'sketch-engine', 'sketch-core', 'platform'] } } } } },
             // The suite shell (CREATIVE.md): its own files, UI state to open a module.
             { from: { element: { type: 'suite' } }, allow: { to: { element: { types: { anyOf: ['suite', 'state', 'platform', 'theme'] } } } } },
@@ -104,7 +109,7 @@ export default tseslint.config(
               disallow: { to: { module: { origin: 'external', source: [...NOT_IN_CORE, 'three', '@capacitor-community/*'] } } },
             },
             {
-              from: { element: { types: { anyOf: ['sketch-core', 'sketch-engine', 'publish-core'] } } },
+              from: { element: { types: { anyOf: ['sketch-core', 'sketch-engine', 'publish-core', 'objects-core'] } } },
               disallow: { to: { module: { origin: 'external', source: [...NOT_IN_CORE, 'three', '@capacitor-community/*'] } } },
             },
           ],

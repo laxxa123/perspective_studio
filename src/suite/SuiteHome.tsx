@@ -16,6 +16,7 @@ export function SuiteHome() {
     else if (m.entry === 'cube') ui().set({ screen: 'cube' });
     else if (m.entry === 'sketch') ui().set({ screen: 'sketch' });
     else if (m.entry === 'publish') ui().set({ screen: 'publish' });
+    else if (m.entry === 'objects') ui().set({ screen: 'objects' });
     else soon(m.title);
   };
 

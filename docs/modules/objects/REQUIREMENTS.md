@@ -1,6 +1,6 @@
-> **Document:** OBJECTS requirements · **Version:** v1.1 (planned module, 2026-10-03) · **Location:** `docs/modules/objects/REQUIREMENTS.md` · **Part of:** CREATIVE (`docs/CREATIVE.md`)
+> **Document:** OBJECTS requirements · **Version:** v1.2 (0.23.0, 2026-10-03) · **Location:** `docs/modules/objects/REQUIREMENTS.md` · **Part of:** CREATIVE (`docs/CREATIVE.md`)
 >
-> **Revisions:** v1.1 (2026-10-03) — Design review decisions (Part A): blocks first (general solids in 1b, construction in 1c); 2D figures and their transformations in OBJECTS; question figures are isometric line drawings; exact correctness and option sameness; one gesture per meaning; difficulty and Question DNA merged; what an option is; milestones re-cut. · v1.0 (2026-10-03) — Phase 1 Product & Engineering Specification, as written by the developer (sections 0–93 below, unchanged except for "v1.1" notes).
+> **Revisions:** v1.2 (0.23.0, 2026-10-03) — M0 built: block viewport, isometric renderer, the module on the home screen (§A.12). · v1.1 (2026-10-03) — Design review decisions (Part A): blocks first (general solids in 1b, construction in 1c); 2D figures and their transformations in OBJECTS; question figures are isometric line drawings; exact correctness and option sameness; one gesture per meaning; difficulty and Question DNA merged; what an option is; milestones re-cut. · v1.0 (2026-10-03) — Phase 1 Product & Engineering Specification, as written by the developer (sections 0–93 below, unchanged except for "v1.1" notes).
 
 # OBJECTS Module --- Phase 1 Product & Engineering Specification
 
@@ -14,7 +14,7 @@
 > **Primary user:** Educator / mentor / question designer\
 > **Authoring domain:** 2D figures, block objects and (later) general 3D
 > objects for visualisation and spatial-reasoning question authoring\
-> **Document version:** v1.1\
+> **Document version:** v1.2\
 > **Date:** 2026-10-03
 
 ------------------------------------------------------------------------
@@ -249,6 +249,33 @@ engine then re-checks that exactly one option is correct.
   the phone's navigation bar, one floating tool bar, properties in a
   small sheet.
 - Requirement IDs: `OB-` prefix (decisions `OB-D#`).
+
+## A.12 M0 built (v1.2, release 0.23.0)
+
+What the M0 device spike contains (ADR-0012):
+- **Home tile** "Objects" opens the module (Android back returns home).
+- **3D viewport** (Three.js, `render/BlockScene.ts`): light grey blocks with
+  dark edges on a floor grid. One finger turns the camera, two fingers pan
+  and zoom (pinch never changes the object); the view frames the object
+  for any screen shape.
+- **Building:** with **Add** (cube icon), tap the floor or a block face to
+  add a block there; a new block must touch the object face to face ("Add
+  next to a block"); limits 6 × 6 × 6 and 30 blocks, with a message when
+  reached. With **Remove** (eraser icon), tap a block. **⟳ X / Y / Z** turn
+  the whole object a quarter (it stays on the floor). Undo / redo, **Fit**,
+  **Clear** (undoable). The status shows the block count and "✓ One piece"
+  or "⚠ Not in one piece" (removing can split it).
+- **Isometric drawings** (`core/iso.ts`, pure SVG): the object as every
+  question will show it — front-right-top corner, black outlines, white
+  faces, no shading — at question size, option size and small, updating
+  as you build.
+- The object is kept on the device as you work (localStorage draft
+  `creative.objects.draft.v0`, until the M4 database).
+- Core (`core/blocks.ts`, `core/iso.ts`) is unit-tested (limits,
+  attachment, one-piece check, quarter turns, four turns = identity,
+  drawing faces and bounds).
+
+Device checklist: `docs/modules/objects/checklists/M0.md`.
 
 ------------------------------------------------------------------------
 
@@ -3554,6 +3581,10 @@ underneath is doing the hard work**.
 ------------------------------------------------------------------------
 
 # 93. Changelog
+
+## v1.2 --- 2026-10-03
+
+M0 built (§A.12, ADR-0012).
 
 ## v1.1 --- 2026-10-03
 

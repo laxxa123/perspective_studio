@@ -9,7 +9,7 @@ import type { Viewport } from '../core/viewport/viewport';
 
 export type ToolId = 'select' | 'shape' | 'sketch' | 'perspective';
 /** home = CREATIVE's home (CREATIVE.md §2); gallery / editor = PERSPECTIVE; cube = CUBE; sketch = SKETCH; publish = PUBLISH. */
-export type Screen = 'home' | 'gallery' | 'editor' | 'settings' | 'cube' | 'sketch' | 'publish';
+export type Screen = 'home' | 'gallery' | 'editor' | 'settings' | 'cube' | 'sketch' | 'publish' | 'objects';
 export type SnapMode = 'off' | 'soft' | 'locked';
 
 export interface SketchSettings {
