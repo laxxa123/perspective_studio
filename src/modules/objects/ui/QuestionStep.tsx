@@ -3,6 +3,7 @@
 // the correct one and builds intentional wrong ones; the author can reorder,
 // regenerate or edit any of them, change the wording and the difficulty,
 // preview, and commit.
+import { questionRef } from '../../../shared/ids/questionId';
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowDown, ArrowUp, Eye, Pencil, RefreshCw, Shuffle } from 'lucide-react';
 import { FAMILIES, moveOption, regenerateOption, replaceOption, RULES, stemItems, validate, type Item } from '../core/questions';
@@ -28,8 +29,8 @@ export function QuestionStep() {
   // Arriving with no question (or one for another object): make one.
   useEffect(() => {
     const s = st();
-    const src = JSON.stringify([s.blocks, s.marked, s.figure, s.fold]);
-    const qsrc = s.question && JSON.stringify([s.question.source.blocks, s.question.source.marked, s.question.source.figure, s.question.source.fold]);
+    const src = JSON.stringify([s.blocks, s.holes, s.marked, s.figure, s.fold]);
+    const qsrc = s.question && JSON.stringify([s.question.source.blocks, s.question.source.holes, s.question.source.marked, s.question.source.figure, s.question.source.fold]);
     if (!s.question || s.question.family !== s.family || qsrc !== src) s.generate();
   }, []);
 
@@ -51,7 +52,7 @@ export function QuestionStep() {
     try {
       const saved = await commit(q, asNew ? null : (editing?.id ?? null));
       st().set({ question: saved, editing: { id: saved.questionId!, version: saved.version } });
-      st().showToast(`${saved.questionId} · v${saved.version} saved to the Question Bank`);
+      st().showToast(`${questionRef(saved.questionId!, saved.version)} saved to the Question Bank`);
     } catch (e) {
       st().showToast(`Not saved: ${e instanceof Error ? e.message : String(e)}`);
     } finally {
@@ -133,7 +134,7 @@ export function QuestionStep() {
               <Eye size={16} /> Preview
             </button>
             <button className="ob-primary" disabled={!check.ready || busy} onClick={() => void doCommit(false)}>
-              {editing ? `Commit v${editing.version + 1}` : 'Commit'}
+              {editing ? `Commit ${questionRef(editing.id, editing.version + 1)}` : 'Commit'}
             </button>
             {editing && (
               <button disabled={!check.ready || busy} onClick={() => void doCommit(true)}>

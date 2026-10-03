@@ -86,14 +86,61 @@ export function turn(c: Cell, axis: Axis): Cell {
 
 /** Turns the whole object a quarter about an axis and sets it back on the floor, centred where it was. */
 export function turnAll(b: Blocks, axis: Axis): Blocks {
-  if (!b.length) return b;
+  return turnAllWith(b, [], axis).blocks;
+}
+
+/** The same turn for the object and its holes (a hole's axis turns with it). */
+export function turnAllWith(b: Blocks, holes: readonly Hole[], axis: Axis): { blocks: Blocks; holes: Hole[] } {
+  if (!b.length) return { blocks: b, holes: [...holes] };
   const before = bounds(b)!;
   const t = b.map((c) => turn(c, axis));
   const after = bounds(t)!;
   // Keep the footprint's centre (rounded to cells) and stand on y = 0.
   const cx = Math.floor((before.min[0] + before.max[0]) / 2) - Math.floor((after.min[0] + after.max[0]) / 2);
   const cz = Math.floor((before.min[2] + before.max[2]) / 2) - Math.floor((after.min[2] + after.max[2]) / 2);
-  return t.map((c) => [c[0] + cx, c[1] - after.min[1], c[2] + cz] as Cell);
+  const place = (c: Cell): Cell => [c[0] + cx, c[1] - after.min[1], c[2] + cz];
+  const unit: Record<Axis, Cell> = { x: [1, 0, 0], y: [0, 1, 0], z: [0, 0, 1] };
+  return { blocks: t.map(place), holes: holes.map((h) => ({ c: place(turn(h.c, axis)), axis: axisOf(turn(unit[h.axis], axis)) })) };
+}
+
+// ----- holes (OBJECTS §A.14) -----
+
+/** A round hole through a block, along an axis. */
+export interface Hole {
+  c: Cell;
+  axis: Axis;
+}
+export const holeKey = (h: Hole) => `${key(h.c)}:${h.axis}`;
+/** The axis a face normal (or any axis-aligned vector) points along. */
+export const axisOf = (n: Cell): Axis => (n[0] ? 'x' : n[1] ? 'y' : 'z');
+const AX: Record<Axis, number> = { x: 0, y: 1, z: 2 };
+
+/**
+ * The Hole tool: a tap on a face drills straight through every block in the
+ * line perpendicular to that face; a tap on a face whose line is drilled
+ * fills it again. Blocks added later are not drilled.
+ */
+export function drill(b: Blocks, holes: readonly Hole[], c: Cell, normal: Cell): Hole[] {
+  const axis = axisOf(normal);
+  const i = AX[axis];
+  const line = b.filter((d) => [0, 1, 2].every((k) => k === i || d[k] === c[k]));
+  const drilled = (d: Cell) => holes.some((h) => h.axis === axis && key(h.c) === key(d));
+  if (drilled(c)) return holes.filter((h) => !(h.axis === axis && line.some((d) => key(d) === key(h.c))));
+  return [...holes, ...line.filter((d) => !drilled(d)).map((d) => ({ c: d, axis }))];
+}
+
+/** Holes of blocks that still exist (a removed block takes its holes with it). */
+export const keepHoles = (b: Blocks, holes: readonly Hole[]): Hole[] => holes.filter((h) => has(b, h.c));
+
+/** Reads saved holes; anything unusable is dropped. */
+export function readHoles(raw: unknown): Hole[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.flatMap((h): Hole[] => {
+    const o = h as Record<string, unknown>;
+    const c = o?.c;
+    if (!Array.isArray(c) || c.length !== 3 || !c.every((v) => Number.isInteger(v)) || !['x', 'y', 'z'].includes(o.axis as string)) return [];
+    return [{ c: [c[0], c[1], c[2]] as Cell, axis: o.axis as Axis }];
+  });
 }
 
 /** A starter object: every block visible in the drawing, so every question type can use it. */

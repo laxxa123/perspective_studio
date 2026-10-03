@@ -42,6 +42,7 @@ export default tseslint.config(
         { type: 'platform', pattern: 'src/platform/**' },
         { type: 'theme', pattern: 'src/theme/**' },
         { type: 'suite', pattern: 'src/suite/**' },
+        { type: 'shared-ids', pattern: 'src/shared/ids/**' },
         { type: 'shared', pattern: 'src/shared/**' },
         // CUBE (CREATIVE.md §3): a pure core (model, geometry, question, SVG) and the rest of the module.
         { type: 'cube-core', pattern: 'src/modules/cube/{model,geometry,question,render}/**' },
@@ -83,24 +84,26 @@ export default tseslint.config(
             { from: { element: { type: 'theme' } }, allow: { to: { element: { types: { anyOf: ['theme', 'core'] } } } } },
             { from: { element: { type: 'export' } }, allow: { to: { element: { types: { anyOf: ['export', 'core', 'theme'] } } } } },
             { from: { element: { type: 'platform' } }, allow: { to: { element: { type: 'platform' } } } },
-            { from: { element: { type: 'app' } }, allow: { to: { element: { types: { anyOf: ['app', 'ui', 'state', 'core', 'platform', 'suite', 'cube', 'sketch', 'publish', 'objects', 'shared'] } } } } },
+            { from: { element: { type: 'app' } }, allow: { to: { element: { types: { anyOf: ['app', 'ui', 'state', 'core', 'platform', 'suite', 'cube', 'sketch', 'publish', 'objects', 'shared', 'shared-ids'] } } } } },
             // CUBE never imports PERSPECTIVE (modules are independent); its core is pure (CUBE §22).
-            { from: { element: { type: 'cube-core' } }, allow: { to: { element: { type: 'cube-core' } } } },
-            { from: { element: { type: 'cube' } }, allow: { to: { element: { types: { anyOf: ['cube', 'cube-core', 'platform', 'shared'] } } } } },
+            { from: { element: { type: 'cube-core' } }, allow: { to: { element: { types: { anyOf: ['cube-core', 'shared-ids'] } } } } },
+            { from: { element: { type: 'cube' } }, allow: { to: { element: { types: { anyOf: ['cube', 'cube-core', 'platform', 'shared', 'shared-ids'] } } } } },
             // SKETCH is independent of the other modules; the paint engine never depends on the UI (SKETCH §26.10).
             { from: { element: { type: 'sketch-core' } }, allow: { to: { element: { type: 'sketch-core' } } } },
             { from: { element: { type: 'sketch-engine' } }, allow: { to: { element: { types: { anyOf: ['sketch-engine', 'sketch-core'] } } } } },
-            { from: { element: { type: 'sketch' } }, allow: { to: { element: { types: { anyOf: ['sketch', 'sketch-engine', 'sketch-core', 'platform', 'shared'] } } } } },
+            { from: { element: { type: 'sketch' } }, allow: { to: { element: { types: { anyOf: ['sketch', 'sketch-engine', 'sketch-core', 'platform', 'shared', 'shared-ids'] } } } } },
             // PUBLISH may use SKETCH's UI-free engine and core (never its UI or storage).
             { from: { element: { type: 'publish-core' } }, allow: { to: { element: { types: { anyOf: ['publish-core', 'sketch-core'] } } } } },
             // OBJECTS (OBJECTS §5.2, §60): the core is pure; the module may use platform.
-            { from: { element: { type: 'objects-core' } }, allow: { to: { element: { type: 'objects-core' } } } },
-            { from: { element: { type: 'objects' } }, allow: { to: { element: { types: { anyOf: ['objects', 'objects-core', 'platform', 'shared'] } } } } },
-            { from: { element: { type: 'publish' } }, allow: { to: { element: { types: { anyOf: ['publish', 'publish-core', 'sketch-engine', 'sketch-core', 'platform', 'shared'] } } } } },
+            { from: { element: { type: 'objects-core' } }, allow: { to: { element: { types: { anyOf: ['objects-core', 'shared-ids'] } } } } },
+            { from: { element: { type: 'objects' } }, allow: { to: { element: { types: { anyOf: ['objects', 'objects-core', 'platform', 'shared', 'shared-ids'] } } } } },
+            { from: { element: { type: 'publish' } }, allow: { to: { element: { types: { anyOf: ['publish', 'publish-core', 'sketch-engine', 'sketch-core', 'platform', 'shared', 'shared-ids'] } } } } },
             // The suite shell (CREATIVE.md): its own files, UI state to open a module.
             { from: { element: { type: 'suite' } }, allow: { to: { element: { types: { anyOf: ['suite', 'state', 'platform', 'theme', 'shared'] } } } } },
             // Shared UI every screen may use (the app-wide note, CREATIVE.md §2.4).
-            { from: { element: { type: 'shared' } }, allow: { to: { element: { types: { anyOf: ['shared', 'platform'] } } } } },
+            { from: { element: { type: 'shared' } }, allow: { to: { element: { types: { anyOf: ['shared', 'shared-ids', 'platform'] } } } } },
+            // Question ids (CREATIVE.md §3.1): pure, usable from any module's core.
+            { from: { element: { type: 'shared-ids' } }, allow: { to: { element: { type: 'shared-ids' } } } },
             // External packages: allowed everywhere except the core list above.
             { allow: { to: { module: { origin: 'external' } } } },
             {

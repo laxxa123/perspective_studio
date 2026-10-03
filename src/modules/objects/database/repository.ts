@@ -1,5 +1,6 @@
 // Repositories (OBJECTS §49): the only way the module reads or writes stored
 // questions and drafts. React components never touch storage.
+import { questionId, questionRef } from '../../../shared/ids/questionId';
 import { familyLabel, kindOf, type Family, type Kind, type Question } from '../core/questions';
 import { parseQuestion } from '../core/schema';
 import type { ObjectsTables } from './tables';
@@ -19,7 +20,8 @@ export interface QuestionSummary {
   updatedAt: string;
 }
 
-export const formatId = (seq: number) => `OBJECTS-Q-${String(seq).padStart(6, '0')}`;
+/** OBJECTS-Q-1, OBJECTS-Q-2 … (CREATIVE.md §3.1); a version reads OBJECTS-Q-1.1. */
+export const formatId = (seq: number) => questionId('OBJECTS', seq);
 
 const summaryOf = (q: Question, id: string, updatedAt: string): QuestionSummary => ({
   id,
@@ -101,5 +103,5 @@ export class DraftRepository {
 /** Search and filters (OBJECTS §46): text matches the id, the type or the question; filters by kind and type. */
 export function filterSummaries(list: QuestionSummary[], f: { text?: string; kind?: Kind | null; family?: Family | null }): QuestionSummary[] {
   const t = (f.text ?? '').trim().toLowerCase();
-  return list.filter((s) => (!f.kind || s.kind === f.kind) && (!f.family || s.family === f.family) && (!t || `${s.id} ${s.label} ${s.stem}`.toLowerCase().includes(t)));
+  return list.filter((s) => (!f.kind || s.kind === f.kind) && (!f.family || s.family === f.family) && (!t || `${s.id} ${questionRef(s.id, s.version)} ${s.label} ${s.stem}`.toLowerCase().includes(t)));
 }

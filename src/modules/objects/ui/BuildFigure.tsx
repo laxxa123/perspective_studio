@@ -2,7 +2,7 @@
 // arrows (tap an arrow again to turn it) make turns and mirror images
 // tell apart.
 import { ArrowUp, CircleDot, Eraser, Square, Trash2 } from 'lucide-react';
-import { clearAt, emptyFigure, toggleCell, toggleMark } from '../core/figure';
+import { clearAt, emptyFigure, GRID_SIZES, toggleCell, toggleMark } from '../core/figure';
 import { figureSvg } from '../core/sheet';
 import { useObjects, type FigureTool } from '../state/store';
 import { GridTap } from './GridTap';
@@ -30,7 +30,7 @@ export function BuildFigure() {
       </div>
       <section className="ob-strip">
         <div className="ob-seg" role="radiogroup" aria-label="Grid size">
-          {[6, 8].map((n) => (
+          {GRID_SIZES.map((n) => (
             <button key={n} role="radio" aria-checked={figure.n === n} className={figure.n === n ? 'on' : ''} onClick={() => figure.n !== n && st().edit({ figure: emptyFigure(n) })}>
               {n} × {n}
             </button>

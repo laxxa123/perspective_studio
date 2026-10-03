@@ -73,7 +73,7 @@ export interface ReasoningStep {
 
 export interface Question {
   schema: typeof QUESTION_SCHEMA;
-  /** CUBE-Q-000001…; null until committed (CUBE §32). */
+  /** CUBE-Q-1, CUBE-Q-2 … (older: CUBE-Q-000001); null until committed (CUBE §32). Shown with the version: CUBE-Q-1.1. */
   questionId: string | null;
   /** 1, 2, 3 … ; each commit after the first adds a version (CUBE §33). */
   version: number;

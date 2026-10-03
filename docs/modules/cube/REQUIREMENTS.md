@@ -1,6 +1,6 @@
-> **Document:** CUBE requirements · **Version:** v1.3 (0.22.0, 2026-10-03) · **Location:** `docs/modules/cube/REQUIREMENTS.md` · **Part of:** CREATIVE (`docs/CREATIVE.md`)
+> **Document:** CUBE requirements · **Version:** v1.4 (0.26.0, 2026-10-03) · **Location:** `docs/modules/cube/REQUIREMENTS.md` · **Part of:** CREATIVE (`docs/CREATIVE.md`)
 >
-> **Revisions:** v1.3 (0.22.0, 2026-10-03) — Phone layout: the board area takes the board's shape (no empty band), net status and Fit under the board, the properties clear of the phone's navigation bar (§62.11). · v1.2 (0.15.0, 2026-10-01) — Design-step rework after device testing (§62.10): 4 × 4 board, draw anywhere and trim to the faces, soft snap points, Fill tool, one Shape tool, image as a board-wide skin, New, 3D pop-up; full-width question cards; Question Bank details under each question, 10 a page; faces no longer move when artwork is dragged. · v1.1 (0.13.0, 2026-10-01) — Phase 1 built; §62 records what was built and the choices made where this specification leaves room. · v1.0 (2026-10-01) — Phase 1 Product & Engineering Specification, as written by the developer (§1–§61 below, unchanged).
+> **Revisions:** v1.4 (0.26.0, 2026-10-03) — Question ids are CUBE-Q-1, shown with the version as CUBE-Q-1.1 (CREATIVE.md §3.1; §62.12). · v1.3 (0.22.0, 2026-10-03) — Phone layout: the board area takes the board's shape (no empty band), net status and Fit under the board, the properties clear of the phone's navigation bar (§62.11). · v1.2 (0.15.0, 2026-10-01) — Design-step rework after device testing (§62.10): 4 × 4 board, draw anywhere and trim to the faces, soft snap points, Fill tool, one Shape tool, image as a board-wide skin, New, 3D pop-up; full-width question cards; Question Bank details under each question, 10 a page; faces no longer move when artwork is dragged. · v1.1 (0.13.0, 2026-10-01) — Phase 1 built; §62 records what was built and the choices made where this specification leaves room. · v1.0 (2026-10-01) — Phase 1 Product & Engineering Specification, as written by the developer (§1–§61 below, unchanged).
 
 # CUBE Module — Phase 1 Product & Engineering Specification
 
@@ -1971,3 +1971,13 @@ system buttons.
   the phone's navigation bar (safe-area inset + 16 px).
 - Wide screens (≥ 900 px) are unchanged: tools · board · properties side by
   side, the board filling its column.
+
+## 62.12 Question ids (v1.4, release 0.26.0)
+
+The developer asked for simpler ids, the same for every module
+(CREATIVE.md §3.1): new questions are **CUBE-Q-1, CUBE-Q-2 …** (no zero
+padding), and a version is shown as **CUBE-Q-1.1** (question 1, version 1)
+in the Question Bank, on the sheet, in messages and in export file names.
+Questions stored with the earlier form (CUBE-Q-000001) keep their stored id
+and are shown the same way; the id still never changes and is never reused
+(§32). This replaces the CUBE-Q-000001 examples above.

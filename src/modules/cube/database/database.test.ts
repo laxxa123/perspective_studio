@@ -44,20 +44,20 @@ for (const [name, make] of backends) {
       const repo = new QuestionRepository(t);
       const a = await repo.create(question(1), new Date('2026-10-01T10:00:00Z'));
       const b = await repo.create(question(2));
-      expect(a.questionId).toBe('CUBE-Q-000001');
-      expect(b.questionId).toBe('CUBE-Q-000002');
-      const v2 = await repo.update('CUBE-Q-000001', { ...a, title: 'Edited' });
+      expect(a.questionId).toBe('CUBE-Q-1');
+      expect(b.questionId).toBe('CUBE-Q-2');
+      const v2 = await repo.update('CUBE-Q-1', { ...a, title: 'Edited' });
       expect(v2.version).toBe(2);
-      expect(v2.questionId).toBe('CUBE-Q-000001');
-      expect((await repo.get('CUBE-Q-000001', 1))!.title).toBe('');
-      expect((await repo.get('CUBE-Q-000001'))!.title).toBe('Edited');
-      expect((await repo.versions('CUBE-Q-000001')).map((v) => v.version)).toEqual([1, 2]);
-      const copy = await repo.duplicate('CUBE-Q-000001');
-      expect(copy.questionId).toBe('CUBE-Q-000003');
+      expect(v2.questionId).toBe('CUBE-Q-1');
+      expect((await repo.get('CUBE-Q-1', 1))!.title).toBe('');
+      expect((await repo.get('CUBE-Q-1'))!.title).toBe('Edited');
+      expect((await repo.versions('CUBE-Q-1')).map((v) => v.version)).toEqual([1, 2]);
+      const copy = await repo.duplicate('CUBE-Q-1');
+      expect(copy.questionId).toBe('CUBE-Q-3');
       expect((await repo.list()).map((s) => [s.id, s.version])).toEqual([
-        ['CUBE-Q-000001', 2],
-        ['CUBE-Q-000002', 1],
-        ['CUBE-Q-000003', 1],
+        ['CUBE-Q-1', 2],
+        ['CUBE-Q-2', 1],
+        ['CUBE-Q-3', 1],
       ]);
     });
 

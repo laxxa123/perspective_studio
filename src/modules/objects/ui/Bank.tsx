@@ -1,6 +1,7 @@
 // Question Bank (OBJECTS §46, §47): every committed question, newest first;
 // search, filters, a compact card each; tap for the sheet, the metadata and
 // the versions; Edit (commits a new version), Duplicate, Variant, Export.
+import { questionRef } from '../../../shared/ids/questionId';
 import { useEffect, useMemo, useState } from 'react';
 import { Copy, Pencil, Search, Sparkles } from 'lucide-react';
 import { FAMILIES, RULES, type Family, type Kind, type Question } from '../core/questions';
@@ -65,12 +66,12 @@ export function Bank() {
         {shown.map((s) => (
           <li key={s.id}>
             <button className={`ob-row${open === s.id ? ' on' : ''}`} onClick={() => setOpen(open === s.id ? null : s.id)} aria-expanded={open === s.id}>
-              <b>{s.id}</b>
+              <b>{questionRef(s.id, s.version)}</b>
               <span>
                 {s.kind === 'blocks' ? '3D' : '2D'} · {s.label}
               </span>
               <span className="muted">
-                v{s.version} · {date(s.updatedAt)}
+                {date(s.updatedAt)}
               </span>
             </button>
             {open === s.id && <Detail summary={s} onChanged={() => setTick((t) => t + 1)} />}
@@ -104,12 +105,12 @@ function Detail({ summary, onChanged }: { summary: QuestionSummary; onChanged: (
   const latest = version === summary.version;
   const duplicate = async () => {
     const d = await (await storage()).questions.duplicate(summary.id);
-    st().showToast(`Duplicated as ${d.questionId}`);
+    st().showToast(`Duplicated as ${questionRef(d.questionId!, d.version)}`);
     onChanged();
   };
   return (
     <div className="ob-detail">
-      <img className="ob-sheet" src={svgUrl(questionSheet(q, { author: true }))} alt={`${summary.id} version ${version}`} />
+      <img className="ob-sheet" src={svgUrl(questionSheet(q, { author: true }))} alt={questionRef(summary.id, version)} />
       <dl className="ob-meta">
         <dt>Difficulty</dt>
         <dd>{q.profile.difficulty} / 5</dd>
@@ -127,7 +128,7 @@ function Detail({ summary, onChanged }: { summary: QuestionSummary; onChanged: (
       <div className="ob-chips" aria-label="Versions">
         {versions.map((v) => (
           <button key={v.version} className={v.version === version ? 'on' : ''} onClick={() => setVersion(v.version)}>
-            v{v.version} · {date(v.createdAt)}
+            .{v.version} · {date(v.createdAt)}
           </button>
         ))}
       </div>

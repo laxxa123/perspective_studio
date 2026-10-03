@@ -2,7 +2,7 @@
 // figure), the question being made, and where the author is. The question
 // engine stays in core/; this only holds and changes state, with undo.
 import { create } from 'zustand';
-import { STARTER, readBlocks, type Blocks, type Cell } from '../core/blocks';
+import { STARTER, readBlocks, readHoles, type Blocks, type Cell, type Hole } from '../core/blocks';
 import { readFigure, STARTER_FIGURE, type Figure } from '../core/figure';
 import { STARTER_FOLD, type FoldSpec } from '../core/fold';
 import { buildQuestion, defaultParams, kindOf, refresh, type Family, type Kind, type Params, type Question } from '../core/questions';
@@ -11,11 +11,12 @@ import { parseQuestion } from '../core/schema';
 
 export type Page = 'studio' | 'bank' | 'test' | 'analysis';
 export type Step = 'build' | 'question';
-export type BlockTool = 'add' | 'remove' | 'mark';
+export type BlockTool = 'add' | 'remove' | 'mark' | 'hole';
 export type FigureTool = 'fill' | 'dot' | 'arrow' | 'erase';
 
 interface Snapshot {
   blocks: Blocks;
+  holes: readonly Hole[];
   marked: Cell | null;
   figure: Figure;
   fold: FoldSpec;
@@ -26,6 +27,7 @@ export interface Draft {
   kind: Kind;
   step: Step;
   blocks: Blocks;
+  holes: readonly Hole[];
   marked: Cell | null;
   figure: Figure;
   fold: FoldSpec;
@@ -59,7 +61,7 @@ interface State extends Draft {
   newObject: () => void;
 }
 
-const snap = (s: State): Snapshot => ({ blocks: s.blocks, marked: s.marked, figure: s.figure, fold: s.fold, question: s.question });
+const snap = (s: State): Snapshot => ({ blocks: s.blocks, holes: s.holes, marked: s.marked, figure: s.figure, fold: s.fold, question: s.question });
 let toastTimer: ReturnType<typeof setTimeout> | undefined;
 
 export const useObjects = create<State>((set, get) => ({
@@ -67,6 +69,7 @@ export const useObjects = create<State>((set, get) => ({
   step: 'build',
   kind: 'blocks',
   blocks: STARTER,
+  holes: [],
   marked: null,
   figure: STARTER_FIGURE,
   fold: STARTER_FOLD,
@@ -107,7 +110,7 @@ export const useObjects = create<State>((set, get) => ({
   generate: (reseed = false) => {
     const s = get();
     const seed = reseed ? newSeed() : s.seed;
-    const q = buildQuestion(s.family, { blocks: s.blocks, marked: s.marked, figure: s.figure, fold: s.fold }, s.params, seed);
+    const q = buildQuestion(s.family, { blocks: s.blocks, holes: s.holes, marked: s.marked, figure: s.figure, fold: s.fold }, s.params, seed);
     // Editing a committed question keeps its id and version until it is committed again.
     const kept = s.editing ? { ...q, questionId: s.editing.id, version: s.editing.version } : q;
     get().edit({ question: kept });
@@ -117,7 +120,7 @@ export const useObjects = create<State>((set, get) => ({
   load: (d) => set({ ...d, past: [], future: [] }),
   newObject: () => {
     const s = get();
-    get().edit(s.kind === 'blocks' ? { blocks: STARTER, marked: null, question: null } : { figure: STARTER_FIGURE, fold: STARTER_FOLD, question: null });
+    get().edit(s.kind === 'blocks' ? { blocks: STARTER, holes: [], marked: null, question: null } : { figure: STARTER_FIGURE, fold: STARTER_FOLD, question: null });
     set({ editing: null, step: 'build', frame: s.frame + 1 });
   },
 }));
@@ -131,6 +134,7 @@ export function openInStudio(q: Question, as: 'edit' | 'variant') {
     step: 'question',
     kind,
     blocks: q.source.blocks.length ? q.source.blocks : STARTER,
+    holes: q.source.blocks.length ? q.source.holes : [],
     marked: q.source.marked,
     figure: q.source.figure,
     fold: q.source.fold,
@@ -152,6 +156,7 @@ export function readDraft(raw: unknown): Partial<Draft> {
   if (o.step === 'build' || o.step === 'question') out.step = o.step;
   const b = readBlocks(o.blocks);
   if (b) out.blocks = b;
+  out.holes = readHoles(o.holes);
   const f = readFigure(o.figure);
   if (f) out.figure = f;
   if (Array.isArray(o.marked) && o.marked.length === 3) out.marked = o.marked as unknown as Cell;
@@ -174,4 +179,4 @@ export function readDraft(raw: unknown): Partial<Draft> {
   return out;
 }
 
-export const draftOf = (s: State): Draft => ({ kind: s.kind, step: s.step, blocks: s.blocks, marked: s.marked, figure: s.figure, fold: s.fold, family: s.family, params: s.params, seed: s.seed, question: s.question, editing: s.editing });
+export const draftOf = (s: State): Draft => ({ kind: s.kind, step: s.step, blocks: s.blocks, holes: s.holes, marked: s.marked, figure: s.figure, fold: s.fold, family: s.family, params: s.params, seed: s.seed, question: s.question, editing: s.editing });

@@ -1,5 +1,6 @@
 // Repositories (CUBE §40): the only way the module reads or writes stored
 // questions, assets and drafts. React components never touch SQL.
+import { questionId, questionSeq } from '../../../shared/ids/questionId';
 import type { Question } from '../model/QuestionModel';
 import { parseQuestion } from '../model/QuestionSchema';
 import type { CubeTables } from './CubeDatabase';
@@ -18,7 +19,8 @@ export interface QuestionSummary {
   netShape: number;
 }
 
-export const formatId = (seq: number) => `CUBE-Q-${String(seq).padStart(6, '0')}`;
+/** CUBE-Q-1, CUBE-Q-2 … (CREATIVE.md §3.1); a version reads CUBE-Q-1.1. */
+export const formatId = (seq: number) => questionId('CUBE', seq);
 
 const summaryOf = (q: Question, id: string, updatedAt: string): QuestionSummary => ({
   id,
@@ -42,7 +44,7 @@ export class QuestionRepository {
     const at = now.toISOString();
     const stored: Question = { ...q, questionId: id, version: 1, createdAt: at };
     await this.t.insertVersion({ questionId: id, version: 1, json: JSON.stringify(stored), createdAt: at });
-    await this.t.putQuestion({ id, seq: Number(id.slice(7)), latestVersion: 1, type: stored.presentation.type, title: stored.title, createdAt: at, updatedAt: at, summary: JSON.stringify(summaryOf(stored, id, at)) });
+    await this.t.putQuestion({ id, seq: questionSeq(id), latestVersion: 1, type: stored.presentation.type, title: stored.title, createdAt: at, updatedAt: at, summary: JSON.stringify(summaryOf(stored, id, at)) });
     return stored;
   }
 

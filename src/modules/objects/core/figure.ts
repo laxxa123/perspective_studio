@@ -17,7 +17,8 @@ export interface Figure {
   marks: readonly Mark[];
 }
 
-export const GRID_SIZES = [6, 8] as const;
+/** The 2D grid sizes offered (OBJECTS §A.4, v1.4): 4 × 4 and 6 × 6. Older figures on 8 × 8 still read. */
+export const GRID_SIZES = [4, 6] as const;
 export const emptyFigure = (n = 6): Figure => ({ n, cells: [], marks: [] });
 
 /** A starter: an asymmetric shape with an arrow, so turns and mirror images differ. */
@@ -180,7 +181,7 @@ export function turnArrow(f: Figure, rng: Rng): Figure | null {
 export function readFigure(raw: unknown): Figure | null {
   if (!raw || typeof raw !== 'object') return null;
   const o = raw as Record<string, unknown>;
-  const n = o.n === 8 ? 8 : 6;
+  const n = o.n === 4 || o.n === 8 ? o.n : 6;
   const inside = (v: unknown) => Number.isInteger(v) && (v as number) >= 0 && (v as number) < n;
   const cells = (Array.isArray(o.cells) ? o.cells : []).filter((c): c is [number, number] => Array.isArray(c) && inside(c[0]) && inside(c[1])).map(([c, r]) => [c, r] as const);
   const marks = (Array.isArray(o.marks) ? o.marks : []).flatMap((m): Mark[] => {

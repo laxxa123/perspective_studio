@@ -24,3 +24,16 @@ describe('the app-wide note (CREATIVE.md §2.4)', () => {
     expect(readNotes({ text: 5, saved: [{ text: 'a', at: 'x' }, { text: 1 }, null, { text: 'b', at: 'y' }, { text: 'c', at: 'z' }, { text: 'd', at: 'w' }] })).toEqual({ text: '', saved: [{ text: 'a', at: 'x' }, { text: 'b', at: 'y' }, { text: 'c', at: 'z' }] });
   });
 });
+
+describe('question ids (CREATIVE.md §3.1)', () => {
+  it('reads CUBE-Q-1.1 style, also for old padded ids', async () => {
+    const { questionId, questionRef, questionSeq, shortId } = await import('./ids/questionId');
+    expect(questionId('CUBE', 1)).toBe('CUBE-Q-1');
+    expect(questionRef('CUBE-Q-1', 1)).toBe('CUBE-Q-1.1');
+    expect(questionRef('OBJECTS-Q-000012', 3)).toBe('OBJECTS-Q-12.3');
+    expect(shortId('CUBE-Q-000100')).toBe('CUBE-Q-100');
+    expect(questionSeq('CUBE-Q-000007')).toBe(7);
+    expect(questionSeq('CUBE-Q-42')).toBe(42);
+    expect(questionSeq('nope')).toBeNaN();
+  });
+});

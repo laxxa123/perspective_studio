@@ -3,6 +3,18 @@
 User-visible changes per release. Versions: `package.json` semver; each
 milestone release bumps the minor version, and CI appends `-build.<run>`.
 
+## 0.26.0 — Short question ids; holes in OBJECTS
+
+- **Question ids** are now short and the same in every module: CUBE-Q-1,
+  OBJECTS-Q-12; a version shows as **CUBE-Q-1.1** (question 1, version 1).
+  Older ids (CUBE-Q-000001) show the same way.
+- **OBJECTS · Hole tool** (drill icon): tap a face and a hole goes straight
+  through every block in that line; tap again to fill it. Blocks added
+  later are not drilled. Holes show in the drawings, views and cuts, turn
+  with the object, and count in every question ("the hole missing" and
+  "the hole in another direction" are new wrong answers).
+- **OBJECTS · 2D** grids and fold sheets: 4 × 4 or 6 × 6.
+
 ## 0.25.0 — Notes everywhere
 
 - **Notes** button on the home screen and in every module (PERSPECTIVE,

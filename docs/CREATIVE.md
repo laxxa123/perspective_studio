@@ -1,6 +1,6 @@
 # CREATIVE — main app document
 
-> **App version:** 0.25.0 · **Document version:** 1.15 (2026-10-03) · Owner: sole developer/user · Location: `docs/CREATIVE.md`
+> **App version:** 0.26.0 · **Document version:** 1.16 (2026-10-03) · Owner: sole developer/user · Location: `docs/CREATIVE.md`
 
 CREATIVE is the app; its tools are **modules** (plugins). This document holds
 what belongs to the app as a whole: the home screen, how modules plug in, the
@@ -9,7 +9,7 @@ functions modules will share, and what every new module's requirements must
 settle up front. Each module has its own requirements in
 `docs/modules/<id>/REQUIREMENTS.md`.
 
-**Revisions:** 1.15 (0.25.0, 2026-10-03) — Notes everywhere (§2.4): one app-wide note on the home screen and in every module, three saved notes; PUBLISH requirements v1.6. · 1.14 (0.24.0, 2026-10-03) — OBJECTS Phase 1a (requirements v1.3); module list and history updated. · 1.13 (0.23.0, 2026-10-03) — OBJECTS M0 on the home screen (requirements v1.2, ADR-0012); module list and history updated. · 1.12 (2026-10-03) — OBJECTS planned: requirements v1.1 (blocks and 2D figures first, isometric line drawings); CR-OD-5 decided. · 1.11 (0.22.0, 2026-10-03) — New launcher icon (a 2 × 2 × 2 cube); CUBE requirements v1.3 (phone layout); module list and history updated. · 1.10 (0.21.0, 2026-10-03) — SKETCH requirements v1.3 (cube-net grid, soft snap, hold actions), PUBLISH requirements v1.5; module list and history updated. · 1.9 (0.20.0, 2026-10-02) — PUBLISH requirements v1.4 (compact Style bar, gestures); module list and history updated. · 1.8 (0.19.0, 2026-10-02) — Drawing controls reworked in PUBLISH (requirements v1.3) and SKETCH (requirements v1.2); module list and history updated. · 1.7 (0.18.0, 2026-10-02) — PUBLISH requirements v1.2 (old posts converted on Edit, compact layout, notepad); module list and history updated. · 1.6 (0.17.0, 2026-10-02) — PUBLISH publishes to WordPress (PUBLISH requirements v1.1; ADR-0011: Application Password in the Android Keystore through `@aparajita/capacitor-secure-storage`, wrapped in `src/platform/secrets.ts`); module list and history updated. · 1.5 (0.16.0, 2026-10-01) — PUBLISH added (WP Studio rebuilt as a module, Phase 1: TILES; ADR-0010): CR-OD-4 decided; module list, code layout, data and history updated. · 1.4 (0.15.0, 2026-10-01) — CUBE design rework (CUBE requirements v1.2); module list and history updated. · 1.3 (0.14.0, 2026-10-01) — SKETCH Phase 1 built as an in-app module with its own WebGL2 raster engine (ADR-0009): CR-OD-3 decided; module list, code layout, data and history updated. · 1.2 (0.13.0, 2026-10-01) — CUBE Phase 1 built as an in-app module (ADR-0008): CR-OD-1 and CR-OD-2 decided; module list, code layout and history updated. · 1.1 (0.12.0, 2026-10-01) — the app is named **CREATIVE** and the first module **PERSPECTIVE** (was "Perspective Studio"); docs reorganised per module (`docs/modules/`); CUBE registered as the next module, its stack recorded and its integration decision opened (CR-OD-1); new-module requirements checklist (§7). · 1.0 (0.11.0, 2026-10-01) — home screen, module registry, PERSPECTIVE as the first module (ADR-0007).
+**Revisions:** 1.16 (0.26.0, 2026-10-03) — Question ids for all modules: `<MODULE>-Q-<n>`, a version `<MODULE>-Q-<n>.<v>` (§3.1); CUBE v1.4, OBJECTS v1.4 (holes, 2D 4 × 4 / 6 × 6). · 1.15 (0.25.0, 2026-10-03) — Notes everywhere (§2.4): one app-wide note on the home screen and in every module, three saved notes; PUBLISH requirements v1.6. · 1.14 (0.24.0, 2026-10-03) — OBJECTS Phase 1a (requirements v1.3); module list and history updated. · 1.13 (0.23.0, 2026-10-03) — OBJECTS M0 on the home screen (requirements v1.2, ADR-0012); module list and history updated. · 1.12 (2026-10-03) — OBJECTS planned: requirements v1.1 (blocks and 2D figures first, isometric line drawings); CR-OD-5 decided. · 1.11 (0.22.0, 2026-10-03) — New launcher icon (a 2 × 2 × 2 cube); CUBE requirements v1.3 (phone layout); module list and history updated. · 1.10 (0.21.0, 2026-10-03) — SKETCH requirements v1.3 (cube-net grid, soft snap, hold actions), PUBLISH requirements v1.5; module list and history updated. · 1.9 (0.20.0, 2026-10-02) — PUBLISH requirements v1.4 (compact Style bar, gestures); module list and history updated. · 1.8 (0.19.0, 2026-10-02) — Drawing controls reworked in PUBLISH (requirements v1.3) and SKETCH (requirements v1.2); module list and history updated. · 1.7 (0.18.0, 2026-10-02) — PUBLISH requirements v1.2 (old posts converted on Edit, compact layout, notepad); module list and history updated. · 1.6 (0.17.0, 2026-10-02) — PUBLISH publishes to WordPress (PUBLISH requirements v1.1; ADR-0011: Application Password in the Android Keystore through `@aparajita/capacitor-secure-storage`, wrapped in `src/platform/secrets.ts`); module list and history updated. · 1.5 (0.16.0, 2026-10-01) — PUBLISH added (WP Studio rebuilt as a module, Phase 1: TILES; ADR-0010): CR-OD-4 decided; module list, code layout, data and history updated. · 1.4 (0.15.0, 2026-10-01) — CUBE design rework (CUBE requirements v1.2); module list and history updated. · 1.3 (0.14.0, 2026-10-01) — SKETCH Phase 1 built as an in-app module with its own WebGL2 raster engine (ADR-0009): CR-OD-3 decided; module list, code layout, data and history updated. · 1.2 (0.13.0, 2026-10-01) — CUBE Phase 1 built as an in-app module (ADR-0008): CR-OD-1 and CR-OD-2 decided; module list, code layout and history updated. · 1.1 (0.12.0, 2026-10-01) — the app is named **CREATIVE** and the first module **PERSPECTIVE** (was "Perspective Studio"); docs reorganised per module (`docs/modules/`); CUBE registered as the next module, its stack recorded and its integration decision opened (CR-OD-1); new-module requirements checklist (§7). · 1.0 (0.11.0, 2026-10-01) — home screen, module registry, PERSPECTIVE as the first module (ADR-0007).
 
 ---
 
@@ -94,16 +94,29 @@ the current screen; the same note shows wherever it is opened.
   docs/modules/<id>/checklists/         its device checklists
   ```
 
+### 3.1 Question ids (all modules, 0.26.0)
+
+Every module that makes questions numbers them the same way:
+- **Permanent id** `<MODULE>-Q-<n>`: CUBE-Q-1, OBJECTS-Q-12. `n` counts up
+  from a stored counter and is never reused.
+- **A version** is written `<MODULE>-Q-<n>.<version>`: **CUBE-Q-1.1** is
+  question 1, version 1; editing and committing it gives CUBE-Q-1.2. Lists,
+  sheets, messages and export file names use this form.
+- Ids stored before 0.26.0 were zero-padded (CUBE-Q-000001); they are kept
+  as stored and shown the same way (CUBE-Q-1.1); search finds either form.
+- Code: `src/shared/ids/questionId.ts` (pure; any module, its core
+  included, may use it).
+
 ## 4. Module list
 
 | Module | Id | Status | Version | Stack | Requirements |
 | :-- | :-- | :-- | :-- | :-- | :-- |
 | Studio | `studio` | coming soon | — | — | — |
-| **Cube** | `cube` | **live (Phase 1: Studio, Question Bank)** | **0.22.0** | React · TypeScript · Konva · Three.js · SQLite (Capacitor) | `docs/modules/cube/REQUIREMENTS.md` (v1.3) |
+| **Cube** | `cube` | **live (Phase 1: Studio, Question Bank)** | **0.26.0** | React · TypeScript · Konva · Three.js · SQLite (Capacitor) | `docs/modules/cube/REQUIREMENTS.md` (v1.4) |
 | **Perspective** | `perspective` | **live** | **0.12.0** | React · TypeScript · Konva · Vite · Capacitor · IndexedDB | `docs/modules/perspective/REQUIREMENTS.md` (v1.9) |
 | **Publish** | `publish` | **live (Tiles · Publish · Posts · Settings)** | **0.25.0** | React · TypeScript · Konva · SKETCH brush engine · IndexedDB · WordPress REST · Keystore secure storage | `docs/modules/publish/REQUIREMENTS.md` (v1.6) |
 | **Sketch** | `sketch` | **live (Phase 1)** | **0.21.0** | React · TypeScript · custom WebGL2 tiled raster engine · Pointer Events · IndexedDB | `docs/modules/sketch/REQUIREMENTS.md` (v1.3) |
-| **Objects** | `objects` | **live (Phase 1a: Studio, Question Bank)** | **0.24.0** | React · TypeScript · Three.js (authoring view) · pure SVG renderer (question figures) · SQLite (Capacitor) | `docs/modules/objects/REQUIREMENTS.md` (v1.3) |
+| **Objects** | `objects` | **live (Phase 1a: Studio, Question Bank)** | **0.26.0** | React · TypeScript · Three.js (authoring view) · pure SVG renderer (question figures) · SQLite (Capacitor) | `docs/modules/objects/REQUIREMENTS.md` (v1.4) |
 | Sequence | `sequence` | coming soon | — | — | — |
 | Sensitivity | `sensitivity` | coming soon | — | — | — |
 | Toolbox | `toolbox` | coming soon | — | — | — |
@@ -122,6 +135,7 @@ the current screen; the same note shows wherever it is opened.
 
 | App | Date | Change |
 | :-- | :-- | :-- |
+| 0.26.0 | 2026-10-03 | Question ids CUBE-Q-1.1 style for all modules; OBJECTS holes through block lines; 2D grids 4 × 4 / 6 × 6. |
 | 0.25.0 | 2026-10-03 | Notes everywhere: the app-wide note with three saved notes on the home screen and in every module. |
 | 0.24.0 | 2026-10-03 | OBJECTS Phase 1a: 3D block and 2D figure questions (13 types) with exact answers and intentional wrong options; Question Bank with ids, versions, export. |
 | 0.23.0 | 2026-10-03 | OBJECTS M0: build block objects in a 3D view; isometric line drawings as questions will show them. |

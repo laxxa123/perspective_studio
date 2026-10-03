@@ -25,7 +25,7 @@ function nodeDriver(): SqlDriver {
   };
 }
 
-const q = (seed = 1) => buildQuestion('f-turn', { blocks: [], marked: null, figure: STARTER_FIGURE, fold: STARTER_FOLD }, { ...defaultParams(), ops: ['r90'] }, seed);
+const q = (seed = 1) => buildQuestion('f-turn', { blocks: [], holes: [], marked: null, figure: STARTER_FIGURE, fold: STARTER_FOLD }, { ...defaultParams(), ops: ['r90'] }, seed);
 
 const backends: [string, () => ObjectsTables][] = [
   ['SQLite', () => new SqliteTables(nodeDriver())],
@@ -40,8 +40,8 @@ for (const [name, make] of backends) {
       const repo = new QuestionRepository(t);
       const a = await repo.create(q(1), new Date('2026-10-03T10:00:00Z'));
       const b = await repo.create(q(2));
-      expect(a.questionId).toBe('OBJECTS-Q-000001');
-      expect(b.questionId).toBe('OBJECTS-Q-000002');
+      expect(a.questionId).toBe('OBJECTS-Q-1');
+      expect(b.questionId).toBe('OBJECTS-Q-2');
       const v2 = await repo.update(a.questionId!, { ...a, stem: 'Edited' });
       expect(v2.version).toBe(2);
       expect(v2.createdAt).toBe(a.createdAt);
@@ -50,13 +50,13 @@ for (const [name, make] of backends) {
       expect(await repo.versions(a.questionId!)).toHaveLength(2);
       await expect(t.insertVersion({ questionId: a.questionId!, version: 1, json: '{}', createdAt: '' })).rejects.toThrow();
       const dup = await repo.duplicate(a.questionId!);
-      expect(dup.questionId).toBe('OBJECTS-Q-000003');
+      expect(dup.questionId).toBe('OBJECTS-Q-3');
       const list = await repo.list();
-      expect(list.map((s) => s.id)).toEqual(['OBJECTS-Q-000001', 'OBJECTS-Q-000002', 'OBJECTS-Q-000003']);
+      expect(list.map((s) => s.id)).toEqual(['OBJECTS-Q-1', 'OBJECTS-Q-2', 'OBJECTS-Q-3']);
       expect(list[0].version).toBe(2);
-      expect(filterSummaries(list, { text: 'edited' }).map((s) => s.id)).toEqual(['OBJECTS-Q-000001', 'OBJECTS-Q-000003']);
+      expect(filterSummaries(list, { text: 'edited' }).map((s) => s.id)).toEqual(['OBJECTS-Q-1', 'OBJECTS-Q-3']);
       expect(filterSummaries(list, { kind: 'blocks' })).toHaveLength(0);
-      expect(filterSummaries(list, { family: 'f-turn', text: 'q-000002' })).toHaveLength(1);
+      expect(filterSummaries(list, { family: 'f-turn', text: 'q-2.1' })).toHaveLength(1);
       expect(await repo.get('OBJECTS-Q-999999')).toBeNull();
       await expect(repo.update('OBJECTS-Q-999999', a)).rejects.toThrow();
       await expect(repo.duplicate('OBJECTS-Q-999999')).rejects.toThrow();

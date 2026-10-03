@@ -109,7 +109,7 @@ export function Params({ family }: { family: Family }) {
       };
       return (
         <>
-          <Seg label="Sheet" value={fold.n} options={[[4, '4 × 4'], [6, '6 × 6'], [8, '8 × 8']]} onPick={(n) => setFold({ n, folds: [], holes: [] })} />
+          <Seg label="Sheet" value={fold.n} options={[[4, '4 × 4'], [6, '6 × 6']]} onPick={(n) => setFold({ n, folds: [], holes: [] })} />
           <div className="ob-param">
             <span>Folds</span>
             <div className="ob-seg">

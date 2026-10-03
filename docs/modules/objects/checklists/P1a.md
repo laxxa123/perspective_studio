@@ -22,3 +22,11 @@
 ### Device
 - [ ] Nothing sits behind the phone's navigation bar; Android back closes a dialog, then Question → Build → home.
 - [ ] Turning the 3D view stays smooth with 30 blocks; options appear without a noticeable wait.
+
+### 0.26.0 — holes, 2D sizes, ids
+- [ ] Build · 3D · Hole (drill icon): tap a face — the whole line of blocks behind it shows a dark disc on both ends; the drawing shows the hole on its visible face.
+- [ ] Tap the same line again: the hole is filled. Add a block at the end of a drilled line: it has no hole. Remove a drilled block: its hole goes.
+- [ ] ⟳ X / Y / Z turn the holes with the object.
+- [ ] Questions with a hole: Same object offers "the hole missing" / "in another direction"; View and Cut show a circle where the hole is seen; a hole out of sight is reported.
+- [ ] 2D: grid sizes 4 × 4 and 6 × 6; fold sheet 4 × 4 and 6 × 6.
+- [ ] Commit shows OBJECTS-Q-1.1; the Bank lists it so; CUBE's Bank shows CUBE-Q-1.1 (also for questions saved before).

@@ -1,6 +1,6 @@
-> **Document:** OBJECTS requirements · **Version:** v1.3 (0.24.0, 2026-10-03) · **Location:** `docs/modules/objects/REQUIREMENTS.md` · **Part of:** CREATIVE (`docs/CREATIVE.md`)
+> **Document:** OBJECTS requirements · **Version:** v1.4 (0.26.0, 2026-10-03) · **Location:** `docs/modules/objects/REQUIREMENTS.md` · **Part of:** CREATIVE (`docs/CREATIVE.md`)
 >
-> **Revisions:** v1.3 (0.24.0, 2026-10-03) — Phase 1a built (M1–M5): exact block and 2D cores, thirteen question types with intentional distractors, validation, Question Bank with permanent ids and versions, export (§A.13). · v1.2 (0.23.0, 2026-10-03) — M0 built: block viewport, isometric renderer, the module on the home screen (§A.12). · v1.1 (2026-10-03) — Design review decisions (Part A): blocks first (general solids in 1b, construction in 1c); 2D figures and their transformations in OBJECTS; question figures are isometric line drawings; exact correctness and option sameness; one gesture per meaning; difficulty and Question DNA merged; what an option is; milestones re-cut. · v1.0 (2026-10-03) — Phase 1 Product & Engineering Specification, as written by the developer (sections 0–93 below, unchanged except for "v1.1" notes).
+> **Revisions:** v1.4 (0.26.0, 2026-10-03) — Holes through blocks (§A.14); 2D grids and fold sheets 4 × 4 / 6 × 6; ids OBJECTS-Q-1, shown OBJECTS-Q-1.1 (CREATIVE.md §3.1). · v1.3 (0.24.0, 2026-10-03) — Phase 1a built (M1–M5): exact block and 2D cores, thirteen question types with intentional distractors, validation, Question Bank with permanent ids and versions, export (§A.13). · v1.2 (0.23.0, 2026-10-03) — M0 built: block viewport, isometric renderer, the module on the home screen (§A.12). · v1.1 (2026-10-03) — Design review decisions (Part A): blocks first (general solids in 1b, construction in 1c); 2D figures and their transformations in OBJECTS; question figures are isometric line drawings; exact correctness and option sameness; one gesture per meaning; difficulty and Question DNA merged; what an option is; milestones re-cut. · v1.0 (2026-10-03) — Phase 1 Product & Engineering Specification, as written by the developer (sections 0–93 below, unchanged except for "v1.1" notes).
 
 # OBJECTS Module --- Phase 1 Product & Engineering Specification
 
@@ -14,7 +14,7 @@
 > **Primary user:** Educator / mentor / question designer\
 > **Authoring domain:** 2D figures, block objects and (later) general 3D
 > objects for visualisation and spatial-reasoning question authoring\
-> **Document version:** v1.3\
+> **Document version:** v1.4\
 > **Date:** 2026-10-03
 
 ------------------------------------------------------------------------
@@ -357,6 +357,36 @@ Not in 1a (kept for later, as §A.2): RELATE questions, dashed hidden
 edges, free 2D line segments, general solids (1b) and construction (1c).
 
 Device checklist: `docs/modules/objects/checklists/P1a.md`.
+
+## A.14 Holes, 2D sizes, ids (v1.4, release 0.26.0)
+
+**Hole tool** (drill icon in Build · 3D): tap any face of a block — a round
+hole is drilled straight through **every block in the line perpendicular
+to that face** (the whole row or column behind it, across gaps). Tapping a
+face of a drilled line again fills that line. A block **added later** on
+that line is **not** drilled (holes belong to the blocks drilled, not to
+the line); removing a block removes its hole; holes turn with ⟳ X / Y / Z.
+- Model: `holes: { c: cell, axis }[]` beside the blocks (source and every
+  block option; pieces carry their own). Questions committed before holes
+  read with none.
+- Drawings: a dark ellipse on every drawn face the hole opens onto; the 3D
+  view shows a dark disc on both faces. Views show a circle in a square
+  when the front block in that line of sight is drilled along it; a cut
+  shows a circle where a hole crosses the cut.
+- Exactness: sameness, turns, mirror images, views, cuts and Pieces
+  include holes (a hole in another direction or a missing hole is a
+  different object). Every drilled line must show its hole on a visible
+  face of the drawing, or the question says "A hole cannot be seen in the
+  drawing; turn the object" (Count ignores holes).
+- New wrong answers: **the hole missing** (D06), **the hole in another
+  direction** (D08), **the hole not shown** in a view or cut (D06); all
+  other wrong answers carry the holes with their blocks.
+
+**2D sizes:** figures and fold-and-punch sheets are **4 × 4 or 6 × 6**
+(8 × 8 is no longer offered; older 8 × 8 figures still open).
+
+**Ids:** OBJECTS-Q-1, OBJECTS-Q-2 …; a version reads **OBJECTS-Q-1.1**
+(CREATIVE.md §3.1). This replaces the OBJECTS-Q-###### form above.
 
 ------------------------------------------------------------------------
 
@@ -3662,6 +3692,10 @@ underneath is doing the hard work**.
 ------------------------------------------------------------------------
 
 # 93. Changelog
+
+## v1.4 --- 2026-10-03
+
+Holes, 2D 4 × 4 / 6 × 6, short ids (§A.14).
 
 ## v1.3 --- 2026-10-03
 

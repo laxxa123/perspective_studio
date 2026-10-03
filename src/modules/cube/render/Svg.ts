@@ -1,5 +1,6 @@
 // SVG rendering of the CubeModel (pure strings, no DOM): face textures for the
 // 3D cube, question figures (corner views, nets), and export (CUBE §47).
+import { questionRef } from '../../../shared/ids/questionId';
 import type { ArtworkElement, CubeModel, FaceId, NetCell } from '../model/CubeModel';
 import type { Figure } from '../model/QuestionModel';
 import type { V3 } from '../geometry/CubeGeometry';
@@ -118,7 +119,7 @@ export function questionSheetSvg(
   const parts: string[] = [];
   let y = 40;
   parts.push(`<rect width="${W}" height="100%" fill="#ffffff"/>`);
-  parts.push(`<text x="40" y="${y}" font-size="22" font-family="system-ui, sans-serif" fill="#212529">${esc(q.questionId ? `${q.questionId} · v${q.version}` : 'Draft question')}</text>`);
+  parts.push(`<text x="40" y="${y}" font-size="22" font-family="system-ui, sans-serif" fill="#212529">${esc(q.questionId ? questionRef(q.questionId, q.version) : 'Draft question')}</text>`);
   y += 36;
   parts.push(`<text x="40" y="${y}" font-size="24" font-weight="600" font-family="system-ui, sans-serif" fill="#212529">${esc(q.presentation.prompt)}</text>`);
   y += 24;

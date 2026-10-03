@@ -25,7 +25,7 @@ const CHIRAL: Blocks = [
   [1, 1, 1],
   [0, 1, 1],
 ];
-const src = (over: Partial<Source> = {}): Source => ({ blocks: OBJ, marked: [2, 1, 2], figure: STARTER_FIGURE, fold: STARTER_FOLD, ...over });
+const src = (over: Partial<Source> = {}): Source => ({ blocks: OBJ, holes: [], marked: [2, 1, 2], figure: STARTER_FIGURE, fold: STARTER_FOLD, ...over });
 const params = (over: Partial<Params> = {}): Params => ({ ...defaultParams(), ...over });
 
 const SETUPS: [Family, Partial<Params>][] = [
@@ -117,9 +117,9 @@ describe('question engine (OBJECTS §A.5)', () => {
 
   it('draws the sheet with the stem, five numbered options and, for the author, the answer', () => {
     const q = buildQuestion('reconstruct', src(), params(), 4);
-    const sheet = questionSheet({ ...q, questionId: 'OBJECTS-Q-000001', version: 2 }, { author: true });
+    const sheet = questionSheet({ ...q, questionId: 'OBJECTS-Q-1', version: 2 }, { author: true });
     expect(sheet).toMatch(/^<svg /);
-    expect(sheet).toContain('OBJECTS-Q-000001 · v2');
+    expect(sheet).toContain('OBJECTS-Q-1.2');
     expect(sheet).toContain('✓');
     expect(sheet).toContain('Front');
     expect(questionSheet(q)).not.toContain('✓');

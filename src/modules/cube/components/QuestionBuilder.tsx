@@ -1,5 +1,6 @@
 // Question builder (CUBE §24–§31): choose the type, generate five options,
 // override anything, set difficulty, validate, commit to the bank.
+import { questionRef } from '../../../shared/ids/questionId';
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowDown, ArrowUp, Check, FlipHorizontal2, Pencil, RefreshCw, RotateCw, Sparkles } from 'lucide-react';
 import { FACE_IDS, type CubeModel, type FaceId, type Turns } from '../model/CubeModel';
@@ -190,7 +191,7 @@ export function QuestionBuilder({ model }: { model: CubeModel }) {
               try {
                 const stored = await commit(q, editing);
                 st().set({ question: stored, editing: { questionId: stored.questionId!, version: stored.version } });
-                st().showToast(`Committed ${stored.questionId} v${stored.version} to the Question Bank.`);
+                st().showToast(`Committed ${questionRef(stored.questionId!, stored.version)} to the Question Bank.`);
               } catch (e) {
                 st().showToast(e instanceof Error ? e.message : String(e));
               } finally {
@@ -198,7 +199,7 @@ export function QuestionBuilder({ model }: { model: CubeModel }) {
               }
             }}
           >
-            {editing ? `Commit as ${editing.questionId} v${editing.version + 1}` : 'Commit to Question Bank'}
+            {editing ? `Commit as ${questionRef(editing.questionId, editing.version + 1)}` : 'Commit to Question Bank'}
           </button>
           {editing && (
             <button className="seg" onClick={() => st().set({ editing: null, question: { ...q, questionId: null, version: 1 } })}>

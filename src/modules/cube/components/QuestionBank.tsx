@@ -1,6 +1,7 @@
 // Question Bank → Cube (CUBE §37, §38, §47; v1.2): search, filter, ten
 // questions a page; a question opens its details right under it — preview,
 // edit (as a new version), duplicate, variant, metadata, versions, export.
+import { questionRef } from '../../../shared/ids/questionId';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, Copy, Download, FileJson, Pencil, Shuffle } from 'lucide-react';
 import { DIFFICULTY_DIMENSIONS, type Question } from '../model/QuestionModel';
@@ -52,7 +53,7 @@ export function QuestionBank() {
   const distractorTypes = useMemo(() => [...new Set((list ?? []).flatMap((s) => s.distractors))].sort(), [list]);
   const shown = (list ?? [])
     .filter((s) => type === 'all' || s.type === type)
-    .filter((s) => !text || `${s.id} ${s.title}`.toLowerCase().includes(text.toLowerCase()))
+    .filter((s) => !text || `${s.id} ${questionRef(s.id, s.version)} ${s.title}`.toLowerCase().includes(text.toLowerCase()))
     .filter((s) => skill === 'any' || (s.difficulty as Record<string, number>)[skill] >= minLevel)
     .filter((s) => distractor === 'any' || s.distractors.includes(distractor))
     .filter((s) => !patternOnly || s.patterns > 0)
@@ -77,12 +78,12 @@ export function QuestionBank() {
     st().set({ question: q, editing: { questionId: q.questionId!, version: q.version }, assets: { ...st().assets, ...assets }, page: 'studio', step: 'question' });
   };
 
-  const exportJson = (q: Question) => shareFile(`${q.questionId}-v${q.version}.json`, new Blob([JSON.stringify(q, null, 2)], { type: 'application/json' })).catch(fail);
+  const exportJson = (q: Question) => shareFile(`${questionRef(q.questionId!, q.version)}.json`, new Blob([JSON.stringify(q, null, 2)], { type: 'application/json' })).catch(fail);
   const exportPng = async (q: Question, assets: Record<string, string>) => {
     try {
       const svg = questionSheetSvg(q, assets);
       const { w, h } = svgSize(svg);
-      await shareFile(`${q.questionId}-v${q.version}.png`, await svgToPng(svg, w, h));
+      await shareFile(`${questionRef(q.questionId!, q.version)}.png`, await svgToPng(svg, w, h));
     } catch (e) {
       fail(e);
     }
@@ -130,7 +131,7 @@ export function QuestionBank() {
         {visible.map((s) => (
           <li key={s.id}>
             <button className={openId === s.id ? 'bank-item active' : 'bank-item'} aria-expanded={openId === s.id} onClick={() => toggle(s.id)}>
-              <strong>{s.id}</strong>
+              <strong>{questionRef(s.id, s.version)}</strong>
               <span>{s.title || (s.type === 'net_to_cube' ? 'Net → Cube' : 'Cube → Net')}</span>
               <span className="muted small">
                 v{s.version} · {DATE(s.updatedAt)}
@@ -140,7 +141,7 @@ export function QuestionBank() {
               <section className="bank-detail">
                   <header className="props-row">
                     <strong>
-                      {detail.q.questionId} · v{detail.q.version}
+                      {questionRef(detail.q.questionId!, detail.q.version)}
                     </strong>
                     <button className="seg" onClick={() => edit(detail.q, detail.assets)}>
                       <Pencil size={16} /> Edit
@@ -151,7 +152,7 @@ export function QuestionBank() {
                         await refresh();
                         setPage(0);
                 setOpenId(c.questionId);
-                        st().showToast(`Duplicated as ${c.questionId}.`);
+                        st().showToast(`Duplicated as ${questionRef(c.questionId!, c.version)}.`);
                       } catch (e) {
                         fail(e);
                       }

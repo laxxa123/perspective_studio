@@ -1,6 +1,7 @@
 // OBJECTS services (OBJECTS §49): what the UI calls. Picks the storage
 // backend (SQLite on Android, IndexedDB in a browser), saves drafts, commits
 // questions and exports.
+import { questionRef } from '../../../shared/ids/questionId';
 import { Capacitor } from '@capacitor/core';
 import { shareFile } from '../../../platform/files';
 import type { Question } from '../core/questions';
@@ -53,7 +54,7 @@ function svgToPng(svg: string, scale = 2): Promise<Blob> {
 
 /** Export (OBJECTS §58): the canonical JSON, the sheet as SVG or PNG. */
 export async function exportQuestion(q: Question, as: 'json' | 'svg' | 'png', author = false) {
-  const name = q.questionId ? `${q.questionId}-v${q.version}` : 'objects-question';
+  const name = q.questionId ? questionRef(q.questionId, q.version) : 'objects-question';
   if (as === 'json') return shareFile(`${name}.json`, new Blob([JSON.stringify(q, null, 2)], { type: 'application/json' }));
   const sheet = questionSheet(q, { author });
   if (as === 'svg') return shareFile(`${name}.svg`, new Blob([sheet], { type: 'image/svg+xml' }));

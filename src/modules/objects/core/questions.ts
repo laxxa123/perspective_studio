@@ -2,12 +2,12 @@
 // types, the exact correct answer, intentional distractors, validation,
 // profile and explanation. Every answer is data drawn by the renderer; the
 // correct option is computed, never guessed. Pure.
-import { bounds, connected, has, key, type Axis, type Blocks, type Cell } from './blocks';
+import { bounds, connected, has, keepHoles, key, type Axis, type Blocks, type Cell, type Hole as BlockHole } from './blocks';
 import { applyOp, applyOps, figureKey, nudgeFigure, OP_TEXT, REFLECTIONS, sameFigure, sameShape, turnArrow, TURNS, type Figure, type Op } from './figure';
 import { canPunch, foldProblem, holesKey, shiftHoles, unfold, wrongMirror, type FoldSpec, type Hole } from './fold';
-import { drawingKey, hiddenCount, visibleBlocks } from './iso';
+import { drawingKey, hiddenCount, holesShown, visibleBlocks } from './iso';
 import { rng, type Rng } from './random';
-import { addOne, apply, canonical, encode, isChiral, mirror, mirrorGrid, moveOne, normalise, removeOne, ROTATIONS, sameCells, sameGrid, sameObject, section, SIDES, split, transform, turnBy, turnGrid, turnMatrix, view, assembles, gridKey, layers, type Grid, type Mat, type Side } from './space';
+import { addOne, apply, canonical, encode, isChiral, mirrorGrid, mirrorWith, moveOne, moveWith, normaliseWith, removeOne, ROTATIONS, sameCells, sameGrid, sameObject, section, SIDES, split, transform, turnGrid, turnMatrix, turnWith, view, withoutHoles, assembles, gridKey, layers, type Grid, type Mat, type Side } from './space';
 
 export const QUESTION_SCHEMA = 'creative.objects.question.v1';
 export const OPTION_COUNT = 5;
@@ -35,12 +35,12 @@ export const kindOf = (f: Family): Kind => FAMILIES.find((x) => x.id === f)!.kin
 
 /** What an option (or a stem figure) is: data, drawn by the renderer (OBJECTS §A.9). */
 export type Item =
-  | { kind: 'blocks'; blocks: Blocks; tint?: readonly Cell[] }
+  | { kind: 'blocks'; blocks: Blocks; tint?: readonly Cell[]; holes?: readonly BlockHole[] }
   | { kind: 'grid'; grid: Grid; label?: string }
   | { kind: 'figure'; figure: Figure }
   | { kind: 'holes'; n: number; holes: readonly Hole[] }
   | { kind: 'number'; value: number }
-  | { kind: 'pair'; a: Blocks; b: Blocks }
+  | { kind: 'pair'; a: Blocks; b: Blocks; ha?: readonly BlockHole[]; hb?: readonly BlockHole[] }
   | { kind: 'folds'; spec: FoldSpec };
 
 /** Distractor classes (OBJECTS §35). */
@@ -68,6 +68,8 @@ export interface Option {
 
 export interface Source {
   blocks: Blocks;
+  /** Holes through blocks (OBJECTS §A.14). */
+  holes: readonly BlockHole[];
   /** The marked block (Track). */
   marked: Cell | null;
   figure: Figure;
@@ -160,24 +162,27 @@ export function stemText(family: Family, p: Params): string {
 // ----- the stem and the correct answer -----
 
 /** Transforms an object and its marked block together, back at the origin. */
-function moveWithMark(b: Blocks, mark: Cell | null, m: Mat): { blocks: Blocks; mark: Cell | null } {
+function moveWithMark(b: Blocks, holes: readonly BlockHole[], mark: Cell | null, m: Mat): { blocks: Blocks; holes: BlockHole[]; mark: Cell | null } {
   const t = transform(b, m);
   const box = bounds(t)!;
   const back = (c: Cell): Cell => [c[0] - box.min[0], c[1] - box.min[1], c[2] - box.min[2]];
-  return { blocks: normalise(t), mark: mark ? back(apply(m, mark)) : null };
+  return { ...moveWith(b, holes, m), mark: mark ? back(apply(m, mark)) : null };
 }
+
+const H = (s: Source) => s.holes ?? [];
+const holesOf = (i: Item) => (i.kind === 'blocks' ? (i.holes ?? []) : []);
 
 export function stemItems(family: Family, s: Source, p: Params): Item[] {
   switch (family) {
     case 'reconstruct':
-      return (['front', 'top', 'right'] as Side[]).map((side) => ({ kind: 'grid', grid: view(s.blocks, side), label: side[0].toUpperCase() + side.slice(1) }));
+      return (['front', 'top', 'right'] as Side[]).map((side) => ({ kind: 'grid', grid: view(s.blocks, side, H(s)), label: side[0].toUpperCase() + side.slice(1) }));
     case 'section': {
-      const n = normalise(s.blocks);
+      const n = normaliseWith(s.blocks, H(s));
       const i = p.axis === 'x' ? 0 : p.axis === 'y' ? 1 : 2;
-      return [{ kind: 'blocks', blocks: n, tint: n.filter((c) => c[i] === p.layer) }];
+      return [{ kind: 'blocks', blocks: n.blocks, holes: n.holes, tint: n.blocks.filter((c) => c[i] === p.layer) }];
     }
     case 'track':
-      return [{ kind: 'blocks', blocks: s.blocks, tint: s.marked ? [s.marked] : [] }];
+      return [{ kind: 'blocks', blocks: s.blocks, holes: H(s), tint: s.marked ? [s.marked] : [] }];
     case 'f-turn':
     case 'f-reflect':
     case 'f-same':
@@ -186,24 +191,26 @@ export function stemItems(family: Family, s: Source, p: Params): Item[] {
     case 'fold':
       return [{ kind: 'folds', spec: s.fold }];
     default:
-      return [{ kind: 'blocks', blocks: s.blocks }];
+      return [{ kind: 'blocks', blocks: s.blocks, holes: H(s) }];
   }
 }
 
 /** The correct answer for `turn`, `view`, `count`, `section`, `track`, 2D and `fold` (others are any matching item). */
 export function expected(family: Family, s: Source, p: Params): Item | null {
   switch (family) {
-    case 'turn':
-      return { kind: 'blocks', blocks: turnBy(s.blocks, p.axis, p.quarters) };
+    case 'turn': {
+      const t = turnWith(s.blocks, H(s), p.axis, p.quarters);
+      return { kind: 'blocks', blocks: t.blocks, holes: t.holes };
+    }
     case 'view':
-      return { kind: 'grid', grid: view(s.blocks, p.side) };
+      return { kind: 'grid', grid: view(s.blocks, p.side, H(s)) };
     case 'count':
       return { kind: 'number', value: p.count === 'all' ? s.blocks.length : hiddenCount(s.blocks) };
     case 'section':
-      return { kind: 'grid', grid: section(s.blocks, p.axis, p.layer) };
+      return { kind: 'grid', grid: section(s.blocks, p.axis, p.layer, H(s)) };
     case 'track': {
-      const t = moveWithMark(s.blocks, s.marked, turnMatrix(p.axis, p.quarters));
-      return { kind: 'blocks', blocks: t.blocks, tint: t.mark ? [t.mark] : [] };
+      const t = moveWithMark(s.blocks, H(s), s.marked, turnMatrix(p.axis, p.quarters));
+      return { kind: 'blocks', blocks: t.blocks, holes: t.holes, tint: t.mark ? [t.mark] : [] };
     }
     case 'f-turn':
     case 'f-reflect':
@@ -217,7 +224,7 @@ export function expected(family: Family, s: Source, p: Params): Item | null {
 }
 
 /** "Draws the same" for block options (shading included). */
-const drawKey = (i: Item) => (i.kind === 'blocks' ? drawingKey(i.blocks) + tintKey(i) : '');
+const drawKey = (i: Item) => (i.kind === 'blocks' ? drawingKey(i.blocks, holesOf(i)) + tintKey(i) : '');
 
 const tintKey = (i: Item) => (i.kind === 'blocks' && i.tint?.length ? `#${i.tint.map(key).join('|')}` : '');
 
@@ -226,17 +233,17 @@ export function isCorrect(family: Family, s: Source, p: Params, item: Item): boo
   const e = expected(family, s, p);
   switch (family) {
     case 'same':
-      return item.kind === 'blocks' && sameObject(item.blocks, s.blocks);
+      return item.kind === 'blocks' && sameObject(item.blocks, s.blocks, false, holesOf(item), H(s));
     case 'reconstruct':
-      return item.kind === 'blocks' && (['front', 'top', 'right'] as Side[]).every((side) => sameGrid(view(item.blocks, side), view(s.blocks, side)));
+      return item.kind === 'blocks' && (['front', 'top', 'right'] as Side[]).every((side) => sameGrid(view(item.blocks, side, holesOf(item)), view(s.blocks, side, H(s))));
     case 'assemble':
-      return item.kind === 'pair' && assembles(s.blocks, item.a, item.b);
+      return item.kind === 'pair' && assembles(s.blocks, item.a, item.b, H(s), item.ha ?? [], item.hb ?? []);
     case 'f-same':
       return item.kind === 'figure' && sameShape(item.figure, s.figure);
     case 'turn':
-      return item.kind === 'blocks' && e?.kind === 'blocks' && sameCells(item.blocks, e.blocks);
+      return item.kind === 'blocks' && e?.kind === 'blocks' && sameCells(item.blocks, e.blocks, holesOf(item), holesOf(e));
     case 'track':
-      return item.kind === 'blocks' && e?.kind === 'blocks' && sameCells(item.blocks, e.blocks) && tintKey(item) === tintKey(e);
+      return item.kind === 'blocks' && e?.kind === 'blocks' && sameCells(item.blocks, e.blocks, holesOf(item), holesOf(e)) && tintKey(item) === tintKey(e);
     case 'view':
     case 'section':
       return item.kind === 'grid' && e?.kind === 'grid' && sameGrid(item.grid, e.grid);
@@ -255,7 +262,7 @@ export function isCorrect(family: Family, s: Source, p: Params, item: Item): boo
 export function itemKey(family: Family, i: Item): string {
   switch (i.kind) {
     case 'blocks':
-      return family === 'same' ? `c:${canonical(i.blocks)}` : `e:${encode(i.blocks)}${tintKey(i)}`;
+      return family === 'same' ? `c:${canonical(i.blocks, false, holesOf(i))}` : `e:${encode(i.blocks, holesOf(i))}${tintKey(i)}`;
     case 'grid':
       return `g:${gridKey(i.grid)}`;
     case 'figure': {
@@ -269,7 +276,7 @@ export function itemKey(family: Family, i: Item): string {
     case 'number':
       return `n:${i.value}`;
     case 'pair':
-      return `p:${[canonical(i.a), canonical(i.b)].sort().join('+')}`;
+      return `p:${[canonical(i.a, false, i.ha ?? []), canonical(i.b, false, i.hb ?? [])].sort().join('+')}`;
     case 'folds':
       return 'folds';
   }
@@ -286,23 +293,29 @@ function shiftFig(f: Figure): Figure {
 
 /** Whether every block of an option's drawing can be seen (no hidden-block ambiguity, OBJECTS §A.6). */
 function drawable(i: Item): boolean {
-  if (i.kind === 'blocks') return hiddenCount(i.blocks) === 0 && (i.tint ?? []).every((t) => visibleBlocks(i.blocks).has(key(t)));
-  if (i.kind === 'pair') return hiddenCount(i.a) === 0 && hiddenCount(i.b) === 0;
+  if (i.kind === 'blocks') return hiddenCount(i.blocks) === 0 && (i.tint ?? []).every((t) => visibleBlocks(i.blocks).has(key(t))) && holesShown(i.blocks, holesOf(i));
+  if (i.kind === 'pair') return hiddenCount(i.a) === 0 && hiddenCount(i.b) === 0 && holesShown(i.a, i.ha ?? []) && holesShown(i.b, i.hb ?? []);
   return true;
 }
 
 // ----- distractors -----
 
-const randomTurn = (b: Blocks, r: Rng, avoid: string[] = []): Blocks | null => {
+type Solid = { blocks: Blocks; holes: readonly BlockHole[] };
+
+/** The object turned to a random orientation in which every block and hole shows (and that draws unlike `avoid`). */
+const randomTurnH = (b: Blocks, holes: readonly BlockHole[], r: Rng, avoid: string[] = []): Solid | null => {
   for (const m of r.shuffle(ROTATIONS)) {
-    const t = normalise(transform(b, m));
-    if (hiddenCount(t) === 0 && !avoid.includes(drawingKey(t))) return t;
+    const t = moveWith(b, holes, m);
+    if (hiddenCount(t.blocks) === 0 && holesShown(t.blocks, t.holes) && !avoid.includes(drawingKey(t.blocks, t.holes))) return t;
   }
   return null;
 };
 
 const opt = (item: Item | null, rule: string, note: string): Option | null => (item ? { item, rule, note } : null);
-const blocksOpt = (b: Blocks | null, rule: string, note: string) => opt(b ? { kind: 'blocks', blocks: normalise(b) } : null, rule, note);
+const solidOpt = (x: Solid | null, rule: string, note: string) => opt(x ? { kind: 'blocks', ...normaliseWith(x.blocks, x.holes) } : null, rule, note);
+
+/** The same blocks with every hole turned to another axis (a hole in the wrong direction). */
+const otherAxis = (holes: readonly BlockHole[], shift: 1 | 2): BlockHole[] => holes.map((h) => ({ c: h.c, axis: (['x', 'y', 'z'] as const)[((['x', 'y', 'z'].indexOf(h.axis) + shift) % 3) as 0 | 1 | 2] }));
 
 function changeCell(g: Grid, r: Rng): Grid | null {
   if (!g.w || !g.h) return null;
@@ -320,41 +333,54 @@ function changeCell(g: Grid, r: Rng): Grid | null {
 function pool(family: Family, s: Source, p: Params, r: Rng): (Option | null)[] {
   const b = s.blocks;
   const out: (Option | null)[] = [];
-  const stemKey = drawingKey(normalise(b));
+  const h = H(s);
+  const stemKey = drawingKey(normaliseWith(b, h).blocks, normaliseWith(b, h).holes);
+  // A changed object keeps the holes of the blocks still there.
+  const kept = (x: Blocks | null): Solid | null => (x ? { blocks: x, holes: keepHoles(x, h) } : null);
+  const turnedAny = (x: Solid | null) => (x ? randomTurnH(x.blocks, x.holes, r, [stemKey]) : null);
   switch (family) {
     case 'same': {
-      if (isChiral(b)) out.push(blocksOpt(randomTurn(mirror(b), r, [stemKey]), 'D03', 'Mirror image of the object'));
-      for (let i = 0; i < 6; i++) {
-        const m = moveOne(b, r);
-        out.push(blocksOpt(m && randomTurn(m, r, [stemKey]), 'D04', 'One block moved'));
+      if (isChiral(b, h)) out.push(solidOpt(turnedAny(mirrorWith(b, h)), 'D03', 'Mirror image of the object'));
+      if (h.length) {
+        out.push(solidOpt(turnedAny({ blocks: b, holes: [] }), 'D06', 'The hole missing'));
+        out.push(solidOpt(turnedAny({ blocks: b, holes: otherAxis(h, 1) }), 'D08', 'The hole in another direction'));
+        out.push(solidOpt(turnedAny({ blocks: b, holes: otherAxis(h, 2) }), 'D08', 'The hole in another direction'));
       }
-      out.push(blocksOpt(randomTurn(addOne(b, r) ?? b, r, [stemKey]), 'D07', 'One block added'));
-      out.push(blocksOpt(randomTurn(removeOne(b, r) ?? b, r, [stemKey]), 'D06', 'One block missing'));
+      for (let i = 0; i < 6; i++) out.push(solidOpt(turnedAny(kept(moveOne(b, r))), 'D04', 'One block moved'));
+      out.push(solidOpt(turnedAny(kept(addOne(b, r) ?? b)), 'D07', 'One block added'));
+      out.push(solidOpt(turnedAny(kept(removeOne(b, r) ?? b)), 'D06', 'One block missing'));
       break;
     }
     case 'turn': {
       const q = p.quarters;
-      for (const a of (['x', 'y', 'z'] as Axis[]).filter((x) => x !== p.axis)) out.push(blocksOpt(turnBy(b, a, q), 'D01', `Turned about the ${a === 'y' ? 'upright' : a === 'x' ? 'left–right' : 'front–back'} axis instead`));
-      if (q !== 2) out.push(blocksOpt(turnBy(b, p.axis, 4 - q), 'D01', 'Turned the other way'));
-      if (q !== 2) out.push(blocksOpt(turnBy(b, p.axis, 2), 'D01', 'Turned 180° instead of 90°'));
-      out.push(blocksOpt(mirror(turnBy(b, p.axis, q)), 'D03', 'Mirror image of the result'));
-      for (let i = 0; i < 10; i++) out.push(blocksOpt(moveOne(turnBy(b, p.axis, q), r), 'D04', 'One block moved'));
+      const right = turnWith(b, h, p.axis, q);
+      for (const a of (['x', 'y', 'z'] as Axis[]).filter((x) => x !== p.axis)) out.push(solidOpt(turnWith(b, h, a, q), 'D01', `Turned about the ${a === 'y' ? 'upright' : a === 'x' ? 'left–right' : 'front–back'} axis instead`));
+      if (q !== 2) out.push(solidOpt(turnWith(b, h, p.axis, 4 - q), 'D01', 'Turned the other way'));
+      if (q !== 2) out.push(solidOpt(turnWith(b, h, p.axis, 2), 'D01', 'Turned 180° instead of 90°'));
+      out.push(solidOpt(mirrorWith(right.blocks, right.holes), 'D03', 'Mirror image of the result'));
+      if (h.length) out.push(solidOpt({ blocks: right.blocks, holes: otherAxis(right.holes, 1) }, 'D08', 'The hole in the wrong direction'));
+      for (let i = 0; i < 10; i++) {
+        const m = moveOne(right.blocks, r);
+        out.push(solidOpt(m && { blocks: m, holes: keepHoles(m, right.holes) }, 'D04', 'One block moved'));
+      }
       break;
     }
     case 'view': {
-      const right = view(b, p.side);
-      for (const side of SIDES.filter((x) => x !== p.side)) out.push(opt({ kind: 'grid', grid: view(b, side) }, 'D02', `The view from the ${side}`));
+      const right = view(b, p.side, h);
+      if (right.holes?.length) out.push(opt({ kind: 'grid', grid: withoutHoles(right) }, 'D06', 'The hole not shown'));
+      for (const side of SIDES.filter((x) => x !== p.side)) out.push(opt({ kind: 'grid', grid: view(b, side, h) }, 'D02', `The view from the ${side}`));
       out.push(opt({ kind: 'grid', grid: mirrorGrid(right) }, 'D03', 'The view, mirrored'));
       if (right.w === right.h) out.push(opt({ kind: 'grid', grid: turnGrid(right) }, 'D01', 'The view, turned'));
       for (let i = 0; i < 3; i++) out.push(opt(changeCell(right, r) && { kind: 'grid', grid: changeCell(right, r)! }, 'D10', 'One square wrong'));
       break;
     }
     case 'reconstruct': {
-      out.push(blocksOpt(isChiral(b) ? mirror(b) : null, 'D03', 'Mirror image of the object'));
+      out.push(solidOpt(isChiral(b, h) ? mirrorWith(b, h) : null, 'D03', 'Mirror image of the object'));
+      if (h.length) out.push(solidOpt({ blocks: b, holes: otherAxis(h, 1) }, 'D08', 'The hole in another direction'));
       for (let i = 0; i < 8; i++) {
-        const m = moveOne(b, r);
-        const twoOfThree = m && (['front', 'top', 'right'] as Side[]).filter((side) => sameGrid(view(m, side), view(b, side))).length === 2;
-        out.push(blocksOpt(m, twoOfThree ? 'D10' : 'D04', twoOfThree ? 'Matches two of the three views' : 'One block moved'));
+        const m = kept(moveOne(b, r));
+        const twoOfThree = m && (['front', 'top', 'right'] as Side[]).filter((side) => sameGrid(view(m.blocks, side, m.holes), view(b, side, h))).length === 2;
+        out.push(solidOpt(m, twoOfThree ? 'D10' : 'D04', twoOfThree ? 'Matches two of the three views' : 'One block moved'));
       }
       break;
     }
@@ -365,46 +391,57 @@ function pool(family: Family, s: Source, p: Params, r: Rng): (Option | null)[] {
       break;
     }
     case 'section': {
-      const right = section(b, p.axis, p.layer);
-      for (const k of [p.layer - 1, p.layer + 1, p.layer + 2]) if (k >= 0 && k < layers(b, p.axis)) out.push(opt({ kind: 'grid', grid: section(b, p.axis, k) }, 'D11', 'Another layer'));
+      const right = section(b, p.axis, p.layer, h);
+      if (right.holes?.length) out.push(opt({ kind: 'grid', grid: withoutHoles(right) }, 'D06', 'The hole not shown'));
+      for (const k of [p.layer - 1, p.layer + 1, p.layer + 2]) if (k >= 0 && k < layers(b, p.axis)) out.push(opt({ kind: 'grid', grid: section(b, p.axis, k, h) }, 'D11', 'Another layer'));
       out.push(opt({ kind: 'grid', grid: mirrorGrid(right) }, 'D03', 'The cut, mirrored'));
       if (right.w === right.h) out.push(opt({ kind: 'grid', grid: turnGrid(right) }, 'D01', 'The cut, turned'));
       const side: Side = p.axis === 'x' ? 'right' : p.axis === 'y' ? 'top' : 'front';
-      out.push(opt({ kind: 'grid', grid: view(b, side) }, 'D10', 'The whole view instead of the cut'));
+      out.push(opt({ kind: 'grid', grid: view(b, side, h) }, 'D10', 'The whole view instead of the cut'));
       for (let i = 0; i < 6; i++) out.push(opt(changeCell(right, r) && { kind: 'grid', grid: changeCell(right, r)! }, 'D11', 'One square wrong'));
       break;
     }
     case 'track': {
       const e = expected(family, s, p);
       if (e?.kind !== 'blocks') break;
-      for (const c of r.shuffle(e.blocks).slice(0, 8)) out.push(opt({ kind: 'blocks', blocks: e.blocks, tint: [c] }, 'D08', 'The shaded block in the wrong place'));
+      for (const c of r.shuffle(e.blocks).slice(0, 8)) out.push(opt({ kind: 'blocks', blocks: e.blocks, holes: e.holes, tint: [c] }, 'D08', 'The shaded block in the wrong place'));
       for (const [a, q] of [
         [p.axis, 4 - p.quarters],
         [p.axis === 'y' ? 'x' : 'y', p.quarters],
       ] as [Axis, number][]) {
-        const t = moveWithMark(b, s.marked, turnMatrix(a, q));
-        out.push(opt({ kind: 'blocks', blocks: t.blocks, tint: t.mark ? [t.mark] : [] }, 'D01', 'Turned the wrong way'));
+        const t = moveWithMark(b, h, s.marked, turnMatrix(a, q));
+        out.push(opt({ kind: 'blocks', blocks: t.blocks, holes: t.holes, tint: t.mark ? [t.mark] : [] }, 'D01', 'Turned the wrong way'));
       }
       break;
     }
     case 'assemble': {
       const parts = split(b, r);
       if (!parts) break;
-      const [a, c] = parts;
-      if (isChiral(c)) out.push(opt({ kind: 'pair', a: randomTurn(a, r) ?? a, b: randomTurn(mirror(c), r) ?? mirror(c) }, 'D03', 'One piece is a mirror image'));
-      if (isChiral(a)) out.push(opt({ kind: 'pair', a: randomTurn(mirror(a), r) ?? mirror(a), b: randomTurn(c, r) ?? c }, 'D03', 'One piece is a mirror image'));
+      // Pieces keep the holes of their blocks.
+      const [a, c] = parts.map((x) => ({ blocks: x, holes: keepHoles(x, h) }));
+      const pair = (x: Solid | null, y: Solid | null, rule: string, note: string) => {
+        if (!x || !y) return;
+        const tx = randomTurnH(x.blocks, x.holes, r) ?? normaliseWith(x.blocks, x.holes);
+        const ty = randomTurnH(y.blocks, y.holes, r) ?? normaliseWith(y.blocks, y.holes);
+        out.push(opt({ kind: 'pair', a: tx.blocks, ha: tx.holes, b: ty.blocks, hb: ty.holes }, rule, note));
+      };
+      if (isChiral(c.blocks, c.holes)) pair(a, mirrorWith(c.blocks, c.holes), 'D03', 'One piece is a mirror image');
+      if (isChiral(a.blocks, a.holes)) pair(mirrorWith(a.blocks, a.holes), c, 'D03', 'One piece is a mirror image');
+      if (h.length) pair({ blocks: a.blocks, holes: otherAxis(a.holes, 1) }, { blocks: c.blocks, holes: otherAxis(c.holes, 1) }, 'D08', 'A hole in the wrong direction');
       for (let i = 0; i < 10; i++) {
-        const m = moveOne(i % 2 ? a : c, r);
-        if (m) out.push(opt({ kind: 'pair', a: randomTurn(i % 2 ? m : a, r) ?? a, b: randomTurn(i % 2 ? c : m, r) ?? c }, 'D04', 'One piece has a block moved'));
+        const x = i % 2 ? a : c;
+        const m = moveOne(x.blocks, r);
+        const moved = m && { blocks: m, holes: keepHoles(m, x.holes) };
+        pair(i % 2 ? moved : a, i % 2 ? c : moved, 'D04', 'One piece has a block moved');
       }
       for (const [x, y] of [
         [a, c],
         [c, a],
       ]) {
-        const big = addOne(y, r);
-        if (big) out.push(opt({ kind: 'pair', a: randomTurn(x, r) ?? x, b: randomTurn(big, r) ?? big }, 'D07', 'One piece is a block too big'));
-        const small = removeOne(y, r);
-        if (small) out.push(opt({ kind: 'pair', a: randomTurn(x, r) ?? x, b: randomTurn(small, r) ?? small }, 'D06', 'One piece is a block too small'));
+        const big = addOne(y.blocks, r);
+        pair(x, big && { blocks: big, holes: y.holes }, 'D07', 'One piece is a block too big');
+        const small = removeOne(y.blocks, r);
+        pair(x, small && { blocks: small, holes: keepHoles(small, y.holes) }, 'D06', 'One piece is a block too small');
       }
       break;
     }
@@ -451,18 +488,21 @@ function pool(family: Family, s: Source, p: Params, r: Rng): (Option | null)[] {
 
 /** The correct option (shown turned or placed so it is not simply the stem again). */
 function correctOption(family: Family, s: Source, p: Params, r: Rng): Option | null {
-  const stemKey = drawingKey(normalise(s.blocks));
+  const h = H(s);
+  const stem = normaliseWith(s.blocks, h);
+  const stemKey = drawingKey(stem.blocks, stem.holes);
   switch (family) {
     case 'same': {
-      const t = randomTurn(s.blocks, r, [stemKey]);
-      return t && { item: { kind: 'blocks', blocks: t }, rule: 'correct', note: 'The same object, turned' };
+      const t = randomTurnH(s.blocks, h, r, [stemKey]);
+      return t && { item: { kind: 'blocks', ...t }, rule: 'correct', note: 'The same object, turned' };
     }
     case 'reconstruct':
-      return { item: { kind: 'blocks', blocks: normalise(s.blocks) }, rule: 'correct', note: 'The object' };
+      return { item: { kind: 'blocks', ...stem }, rule: 'correct', note: 'The object' };
     case 'assemble': {
       const parts = split(s.blocks, r);
       if (!parts) return null;
-      return { item: { kind: 'pair', a: randomTurn(parts[0], r) ?? parts[0], b: randomTurn(parts[1], r) ?? parts[1] }, rule: 'correct', note: 'These two pieces make the object' };
+      const [a, b] = parts.map((x) => randomTurnH(x, keepHoles(x, h), r) ?? normaliseWith(x, keepHoles(x, h)));
+      return { item: { kind: 'pair', a: a.blocks, ha: a.holes, b: b.blocks, hb: b.holes }, rule: 'correct', note: 'These two pieces make the object' };
     }
     case 'f-same':
       return { item: { kind: 'figure', figure: applyOp(s.figure, r.pick(TURNS)) }, rule: 'correct', note: 'The same figure, turned' };
@@ -482,6 +522,7 @@ export function sourceIssues(family: Family, s: Source, p: Params): string[] {
     if (s.blocks.length < 2) out.push('Build an object of at least two blocks.');
     else if (!connected(s.blocks)) out.push('The object is not in one piece.');
     if (['same', 'turn', 'reconstruct', 'track'].includes(family) && hiddenCount(s.blocks) > 0) out.push('Some blocks are hidden in the drawing; this question needs every block visible.');
+    if (family !== 'count' && !holesShown(s.blocks, H(s))) out.push('A hole cannot be seen in the drawing; turn the object (⟳) so it opens on a visible side.');
     if (family === 'count' && s.blocks.some((c) => c[1] > 0 && !has(s.blocks, [c[0], c[1] - 1, c[2]]))) out.push('A block has nothing under it; counting needs every block resting on another or the floor.');
     if (family === 'count' && p.count === 'hidden' && hiddenCount(s.blocks) === 0) out.push('No block is hidden in this object.');
     if (family === 'track' && (!s.marked || !has(s.blocks, s.marked))) out.push('Mark a block (Build → Mark).');

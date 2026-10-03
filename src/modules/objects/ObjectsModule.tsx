@@ -1,6 +1,7 @@
 // The OBJECTS module (OBJECTS §14, §15, §71, §72): Studio (1 · Build an
 // object or a 2D figure, 2 · Question) · Question Bank · Test · Analysis.
 // The Studio draft is saved as you work and comes back when you return.
+import { questionRef } from '../../shared/ids/questionId';
 import { useEffect, useRef } from 'react';
 import { ArrowLeft, Check, FilePlus2, Loader2, Redo2, Undo2 } from 'lucide-react';
 import { onPause } from '../../platform/lifecycle';
@@ -65,7 +66,7 @@ export default function ObjectsModule({ onExit }: { onExit: () => void }) {
   // Autosave 0.5 s after a change, and when the app goes to the background.
   useEffect(() => {
     const unsub = useObjects.subscribe((s, p) => {
-      if (s.blocks === p.blocks && s.marked === p.marked && s.figure === p.figure && s.fold === p.fold && s.question === p.question && s.family === p.family && s.params === p.params && s.kind === p.kind && s.step === p.step && s.editing === p.editing) return;
+      if (s.blocks === p.blocks && s.holes === p.holes && s.marked === p.marked && s.figure === p.figure && s.fold === p.fold && s.question === p.question && s.family === p.family && s.params === p.params && s.kind === p.kind && s.step === p.step && s.editing === p.editing) return;
       clearTimeout(timer.current);
       timer.current = setTimeout(() => void saveDraft(), 500);
     });
@@ -144,7 +145,7 @@ export default function ObjectsModule({ onExit }: { onExit: () => void }) {
               </button>
             </span>
           </div>
-          {editing && <div className="ob-editing">Editing {editing.id} · v{editing.version} — commit saves v{editing.version + 1}</div>}
+          {editing && <div className="ob-editing">Editing {questionRef(editing.id, editing.version)} — commit saves {questionRef(editing.id, editing.version + 1)}</div>}
           {step === 'build' ? kind === 'blocks' ? <BuildBlocks /> : <BuildFigure /> : <QuestionStep />}
         </>
       )}

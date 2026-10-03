@@ -56,7 +56,7 @@ const code = z.enum(['D01', 'D02', 'D03', 'D04', 'D05', 'D06', 'D07', 'D08', 'D0
 
 export const questionSchema = z.object({
   schema: z.literal('creative.cube.question.v1'),
-  questionId: z.string().regex(/^CUBE-Q-\d{6}$/).nullable(),
+  questionId: z.string().regex(/^CUBE-Q-\d+$/).nullable(),
   version: z.number().int().min(1),
   createdAt: z.string(),
   title: z.string(),

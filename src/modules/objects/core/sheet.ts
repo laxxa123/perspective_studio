@@ -1,6 +1,7 @@
 // Drawings of question items and the whole question sheet (OBJECTS §A.6,
 // §57, §58): one pure renderer for the Studio, the preview, the Question
 // Bank thumbnails and every export. Line style: black on white, no shading.
+import { questionRef } from '../../../shared/ids/questionId';
 import { key } from './blocks';
 import type { Figure } from './figure';
 import { regions, type FoldSpec, type Hole } from './fold';
@@ -40,7 +41,7 @@ function squares(cols: number, rows: number, size: number, filled: (c: number, r
 /** A view / cut: covered squares outlined, light fill. */
 export function gridSvg(g: Grid, size = 120): string {
   const on = new Set(g.cells.map((c) => c.join(',')));
-  return svg(size, size, squares(g.w, g.h, size, (c, r) => (on.has(`${c},${r}`) ? '#e9ecef' : null)));
+  return svg(size, size, squares(g.w, g.h, size, (c, r) => (on.has(`${c},${r}`) ? '#e9ecef' : null)) + holeMarks(g.holes ?? [], g.w, g.h, size, '#495057'));
 }
 
 /** A 2D figure: filled squares dark, marks white on dark or dark on white. */
@@ -111,7 +112,7 @@ export function pairSvg(a: Item & { kind: 'pair' }, size = 120): string {
   return svg(
     size,
     size,
-    `<rect width="${size}" height="${size}" fill="#fff"/>${place(isoSvg(a.a, { size: 120, stroke: 1.6 }), 0, (size - half) / 2, half, half)}<text x="${size / 2}" y="${size / 2}" text-anchor="middle" dominant-baseline="central" font-family="system-ui, sans-serif" font-size="${r2(size * 0.14)}" fill="${INK}">+</text>${place(isoSvg(a.b, { size: 120, stroke: 1.6 }), size - half, (size - half) / 2, half, half)}`,
+    `<rect width="${size}" height="${size}" fill="#fff"/>${place(isoSvg(a.a, { size: 120, stroke: 1.6, holes: a.ha ?? [] }), 0, (size - half) / 2, half, half)}<text x="${size / 2}" y="${size / 2}" text-anchor="middle" dominant-baseline="central" font-family="system-ui, sans-serif" font-size="${r2(size * 0.14)}" fill="${INK}">+</text>${place(isoSvg(a.b, { size: 120, stroke: 1.6, holes: a.hb ?? [] }), size - half, (size - half) / 2, half, half)}`,
   );
 }
 
@@ -119,7 +120,7 @@ export function pairSvg(a: Item & { kind: 'pair' }, size = 120): string {
 export function itemSvg(i: Item, size = 120): string {
   switch (i.kind) {
     case 'blocks':
-      return isoSvg(i.blocks, { size, stroke: size < 90 ? 1.1 : 1.5, fills: new Map((i.tint ?? []).map((c) => [key(c), TINT])) });
+      return isoSvg(i.blocks, { size, stroke: size < 90 ? 1.1 : 1.5, fills: new Map((i.tint ?? []).map((c) => [key(c), TINT])), holes: i.holes ?? [] });
     case 'grid':
       return gridSvg(i.grid, size);
     case 'figure':
@@ -157,7 +158,7 @@ export function questionSheet(q: Question, o: { author?: boolean } = {}): string
   let y = pad;
   let body = '';
   if (q.questionId) {
-    body += `<text x="${pad}" y="${y + 12}" font-family="system-ui, sans-serif" font-size="12" fill="#868e96">${esc(q.questionId)} · v${q.version}</text>`;
+    body += `<text x="${pad}" y="${y + 12}" font-family="system-ui, sans-serif" font-size="12" fill="#868e96">${esc(questionRef(q.questionId, q.version))}</text>`;
     y += 22;
   }
   for (const l of lines) {
@@ -203,9 +204,9 @@ export function foldedSvg(spec: FoldSpec, size = 240): string {
   return svg(size, size, squares(last.w, last.h, size, (c, r) => (last.tri && c < r ? '#dee2e6' : '#fff')) + holeMarks(spec.holes, last.w, last.h, size));
 }
 
-function holeMarks(holes: readonly Hole[], cols: number, rows: number, size: number): string {
+function holeMarks(holes: readonly (readonly [number, number])[], cols: number, rows: number, size: number, fill = INK): string {
   const cell = (size * 0.84) / Math.max(cols, rows, 1);
   const ox = (size - cols * cell) / 2;
   const oy = (size - rows * cell) / 2;
-  return holes.map(([c, r]) => `<circle cx="${r2(ox + (c + 0.5) * cell)}" cy="${r2(oy + (r + 0.5) * cell)}" r="${r2(cell * 0.28)}" fill="${INK}"/>`).join('');
+  return holes.map(([c, r]) => `<circle cx="${r2(ox + (c + 0.5) * cell)}" cy="${r2(oy + (r + 0.5) * cell)}" r="${r2(cell * 0.28)}" fill="${fill}" stroke="${INK}" stroke-width="1"/>`).join('');
 }
