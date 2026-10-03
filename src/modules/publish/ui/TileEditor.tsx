@@ -2,7 +2,7 @@
 // bar adds things (Media · Text · Draw · Spiral) or opens Layers / Background;
 // selecting an element swaps in its few actions. Autosaved.
 import { useEffect, useState } from 'react';
-import { Brush, ChevronLeft, Copy, Crop, ImagePlus, Layers, Loader2, NotebookPen, Palette, Pencil, Redo2, Shell, SlidersHorizontal, Trash2, Type, Undo2 } from 'lucide-react';
+import { Brush, ChevronLeft, Copy, Crop, ImagePlus, Layers, Loader2, Palette, Pencil, Redo2, Shell, SlidersHorizontal, Trash2, Type, Undo2 } from 'lucide-react';
 import { addElement, duplicateElement, removeElement, spiralFor, textFor } from '../core/tile';
 import type { TileElement } from '../core/types';
 import { fittedTextHeight } from '../render/draw';
@@ -15,7 +15,7 @@ import { MediaSheet } from './MediaSheet';
 import { TextOverlay } from './TextOverlay';
 import { TrimScreen } from './TrimScreen';
 import { PaintScreen } from './PaintScreen';
-import { Notepad } from './Notepad';
+import { NoteButton } from '../../../shared/NoteButton';
 
 const st = usePublishStore.getState;
 
@@ -28,7 +28,6 @@ export function TileEditor() {
   const canRedo = usePublishStore((s) => s.future.length > 0);
   const saving = usePublishStore((s) => s.saving);
   const [naming, setNaming] = useState<string | null>(null);
-  const [notes, setNotes] = useState(false);
   const sel = tile.elements.find((e) => e.id === selected) ?? null;
 
   // Autosave shortly after every change.
@@ -60,9 +59,16 @@ export function TileEditor() {
             {saving && <Loader2 size={12} className="spin" />}
           </button>
         )}
-        <button className={`pb-icon sm${notes ? ' on' : ''}`} aria-label="Notepad" aria-pressed={notes} onClick={() => setNotes(!notes)}>
-          <NotebookPen size={18} />
-        </button>
+        <NoteButton
+          className="pb-icon sm"
+          size={18}
+          onPlace={(t) => {
+            const e = textFor(t);
+            const placed = { ...e, h: fittedTextHeight(e) };
+            st().apply(addElement(st().tile!, placed));
+            st().set({ selected: e.id, sheet: 'none' });
+          }}
+        />
         <button className="pb-icon sm" aria-label="Undo" disabled={!canUndo} onClick={() => st().undo()}>
           <Undo2 size={20} />
         </button>
@@ -72,17 +78,6 @@ export function TileEditor() {
       </header>
 
       <TileCanvas tile={tile} />
-      {notes && (
-        <Notepad
-          onClose={() => setNotes(false)}
-          onPlace={(t) => {
-            const e = textFor(t);
-            const placed = { ...e, h: fittedTextHeight(e) };
-            st().apply(addElement(st().tile!, placed));
-            st().set({ selected: e.id, sheet: 'none' });
-          }}
-        />
-      )}
 
       {sheet !== 'none' && sheet !== 'style' && <div className="pb-scrim" onPointerDown={() => st().set({ sheet: 'none' })} />}
       {sheet === 'media' && <MediaSheet />}

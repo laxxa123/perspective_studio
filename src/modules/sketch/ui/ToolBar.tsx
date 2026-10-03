@@ -9,6 +9,7 @@ import { gridPreset } from '../core/presets';
 import { firstTimes, useHold } from '../../../platform/hold';
 import { engineRef, saveNow } from './session';
 import { PresetIcon } from './PresetIcon';
+import { NoteButton } from '../../../shared/NoteButton';
 
 const st = useSketchStore.getState;
 
@@ -82,6 +83,7 @@ export function ToolBar() {
             </button>
           </div>
         )}
+        <NoteButton className="sk-fab sk-note" />
         <button className={`sk-fab${panel === 'more' ? ' on' : ''}`} onClick={() => toggle('more')} aria-label="More">
           <Ellipsis size={22} />
         </button>

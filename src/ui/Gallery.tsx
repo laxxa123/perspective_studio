@@ -1,5 +1,6 @@
 // Gallery (§10.8, DOC-02): the Perspective module's first screen (back → suite home); scene thumbnails, new scene (2pt / 3pt), import,
 // backup all; per scene: rename, duplicate, export, delete.
+import { NoteButton } from '../shared/NoteButton';
 import { useCallback, useEffect, useState } from 'react';
 import { ArrowLeft, Download, FileUp, MoreVertical, Plus, Settings as SettingsIcon, Archive } from 'lucide-react';
 import { newId } from '../core/document/ids';
@@ -118,6 +119,7 @@ export function Gallery() {
         <button className="icon" title="Backup all" aria-label="Backup all" onClick={backupAll}>
           <Archive size={20} />
         </button>
+        <NoteButton className="icon" />
         <button className="icon" title="Settings" aria-label="Settings" onClick={() => ui().set({ screen: 'settings', back: 'gallery' })}>
           <SettingsIcon size={20} />
         </button>

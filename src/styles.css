@@ -306,6 +306,8 @@ button.size { width: 30px; min-width: 30px; min-height: 30px; }
 .suite-head .eyebrow { margin: 0 0 6px; font-size: 12px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--muted); }
 .suite-head h1 { margin: 0; font-size: clamp(32px, 9.5vw, 48px); font-weight: 300; letter-spacing: -0.02em; line-height: 1.1; }
 .suite-head .tagline { margin: 10px 0 0; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
+.suite-note { position: absolute; top: 0; right: 34px; width: 40px; min-width: 40px; padding: 0; border: 0; background: transparent; box-shadow: none; color: var(--muted); }
+.suite-note.on { color: var(--accent); }
 .suite-menu { position: absolute; top: 0; right: -6px; width: 40px; min-width: 40px; padding: 0; border: 0; background: transparent; box-shadow: none; }
 .menu.suite-more { position: absolute; top: 40px; right: 0; z-index: 20; min-width: 180px; }
 .menu.suite-more .about { padding: 8px 12px; font-size: 12px; }

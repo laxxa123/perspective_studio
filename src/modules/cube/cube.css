@@ -111,3 +111,5 @@ button.stamp.active { border-color: var(--accent); background: var(--accent-soft
   .cube-props { max-height: none; overflow: auto; align-self: start; }
   .bank { max-width: 1000px; margin: 0 auto; width: 100%; box-sizing: border-box; }
 }
+.cube-note { order: 2; }
+.cube-note.on { color: var(--accent); }

@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Home, LayoutGrid, MoreVertical, Settings as SettingsIcon } from 'lucide-react';
 import { useUiStore } from '../state/uiStore';
 import { MODULES, type SuiteModule } from './modules';
+import { NoteButton } from '../shared/NoteButton';
 
 const soon = (what: string) => useUiStore.getState().showToast(`${what} — coming soon.`);
 
@@ -23,6 +24,7 @@ export function SuiteHome() {
   return (
     <div className="suite" onClick={() => setMenu(false)}>
       <header className="suite-head">
+        <NoteButton className="suite-note" size={20} />
         <button className="suite-menu" aria-label="Menu" onClick={(e) => { e.stopPropagation(); setMenu(!menu); }}>
           <MoreVertical size={22} />
         </button>

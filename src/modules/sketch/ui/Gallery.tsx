@@ -1,5 +1,6 @@
 // Sketch gallery (SKETCH §21): newest first; open, rename, duplicate,
 // share PNG, delete (a second tap confirms — no dialog).
+import { NoteButton } from '../../../shared/NoteButton';
 import { useEffect, useState } from 'react';
 import { ArrowLeft, Copy, Ellipsis, Plus, Settings, Share2, Trash2 } from 'lucide-react';
 import { projectStore, type ProjectSummary } from '../storage/ProjectStore';
@@ -66,6 +67,7 @@ export function Gallery({ onExit }: { onExit: () => void }) {
           <ArrowLeft size={22} />
         </button>
         <h1>Sketch</h1>
+        <NoteButton className="sk-icon" size={22} />
         <button className="sk-icon" onClick={() => st().set({ page: 'settings', back: 'gallery' })} aria-label="Settings">
           <Settings size={22} />
         </button>

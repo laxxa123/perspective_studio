@@ -287,12 +287,6 @@ a.pb-icon { display: inline-flex; align-items: center; justify-content: center; 
 .pb-swatch.sm { width: 26px; height: 26px; border-width: 2px; }
 
 /* Notepad */
-.pb-notepad { position: absolute; right: 8px; top: calc(max(4px, env(safe-area-inset-top)) + 42px); z-index: 12; width: min(300px, calc(100% - 16px)); display: flex; flex-direction: column; border-radius: 12px; background: var(--surface); box-shadow: 0 6px 22px rgba(0, 0, 0, 0.22); overflow: hidden; }
-.pb-notepad textarea { height: 150px; resize: vertical; border: 0; padding: 10px 12px; font-size: 13px; line-height: 1.4; background: transparent; color: var(--ink); outline: none; }
-.pb-notepad-bar { display: flex; align-items: center; gap: 2px; padding: 2px 4px; border-top: 1px solid var(--line); }
-.pb-notepad-bar button { width: 32px; height: 30px; padding: 0; border: 0; border-radius: 8px; background: transparent; color: var(--muted); }
-.pb-notepad-bar button:disabled { opacity: 0.35; }
-.pb-notepad-bar button.undo { width: auto; padding: 0 8px; font-size: 12px; color: var(--accent); }
 .pb-hue { display: block; box-sizing: border-box; max-width: 100%; }
 .pb-snack.over-bar { bottom: calc(max(6px, env(safe-area-inset-bottom)) + 66px); }
 
@@ -374,3 +368,4 @@ a.pb-icon { display: inline-flex; align-items: center; justify-content: center; 
 .pb-draw-label { background: none; border: 0; padding: 0; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); min-width: 58px; text-decoration: underline dotted; text-underline-offset: 3px; -webkit-touch-callout: none; user-select: none; }
 .pb-draw-bar button.hold { position: relative; -webkit-touch-callout: none; user-select: none; }
 .pb-draw-bar button.hold::after { content: ''; position: absolute; right: 9px; bottom: 7px; border: 3px solid transparent; border-right-color: currentColor; border-bottom-color: currentColor; opacity: 0.45; }
+.pb-note { margin-left: auto; }

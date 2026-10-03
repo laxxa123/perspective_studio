@@ -1,5 +1,6 @@
 // The editor (§10.2): full-bleed canvas, top bar, bottom toolbar with a
 // contextual mini bar, inspector sheet, layers / display panels.
+import { NoteButton } from '../shared/NoteButton';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft,
@@ -264,6 +265,7 @@ export function Editor({ theme }: { theme: Theme }) {
         <button className={panel === 'display' ? 'icon on wide-only' : 'icon wide-only'} aria-label="Display" onClick={() => ui().set({ panel: panel === 'display' ? 'none' : 'display' })}>
           <SunMoon size={20} />
         </button>
+        <NoteButton className="icon" />
         <button className="icon" aria-label="More" onClick={() => setMenuOpen(!menuOpen)}>
           <MoreVertical size={20} />
         </button>

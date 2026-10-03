@@ -1,5 +1,8 @@
 // The PUBLISH module (CREATIVE.md §3, PUBLISH §3): TILES · PUBLISH · POSTS ·
 // SETTINGS.
+import { publishStore } from './storage/PublishStore';
+import { NoteButton } from '../../shared/NoteButton';
+import { loadNotes, storeNotes } from '../../shared/notes';
 import { useEffect } from 'react';
 import { ArrowLeft, LayoutGrid, LoaderCircle, Newspaper, Send, Settings } from 'lucide-react';
 import '@fontsource-variable/roboto/wght.css';
@@ -30,6 +33,17 @@ export default function PublishModule({ onExit }: { onExit: () => void }) {
   const editing = usePublishStore((s) => s.tile !== null);
   const busy = usePublishStore((s) => s.busy);
   const snack = usePublishStore((s) => s.snack);
+
+  // The notepad became the app-wide note (CREATIVE.md §2.4): an old PUBLISH note moves there once.
+  useEffect(() => {
+    void publishStore().then(async (s) => {
+      const old = await s.setting('notepad', '');
+      if (!old) return;
+      const n = loadNotes();
+      if (!n.text.trim()) storeNotes({ ...n, text: old });
+      await s.setSetting('notepad', '');
+    });
+  }, []);
 
   useEffect(() => {
     publishBack.current = () => {
@@ -64,6 +78,7 @@ export default function PublishModule({ onExit }: { onExit: () => void }) {
               <ArrowLeft size={18} />
             </button>
             <h1>Publish</h1>
+            <NoteButton className="pb-icon sm pb-note" size={18} />
           </header>
           <main className="pb-main">
             {tab === 'tiles' && <TilesTab />}

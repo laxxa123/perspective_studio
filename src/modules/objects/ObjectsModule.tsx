@@ -12,6 +12,7 @@ import { Bank } from './ui/Bank';
 import { BuildBlocks } from './ui/BuildBlocks';
 import { BuildFigure } from './ui/BuildFigure';
 import { QuestionStep } from './ui/QuestionStep';
+import { NoteButton } from '../../shared/NoteButton';
 import './objects.css';
 
 const st = useObjects.getState;
@@ -102,6 +103,7 @@ export default function ObjectsModule({ onExit }: { onExit: () => void }) {
           {status === 'saving' ? <Loader2 size={13} className="spin" /> : status === 'saved' ? <Check size={13} /> : null}
           {status === 'saving' ? 'Saving…' : status === 'saved' ? 'Saved' : ''}
         </span>
+        <NoteButton className="icon ob-note" size={18} />
       </header>
       <nav className="ob-pages" aria-label="OBJECTS">
         {PAGES.map(([p, l]) => (

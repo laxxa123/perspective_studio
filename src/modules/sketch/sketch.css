@@ -17,6 +17,9 @@
 .sk-top { position: absolute; top: max(10px, env(safe-area-inset-top)); left: 10px; right: 10px; display: flex; align-items: flex-start; gap: 8px; pointer-events: none; }
 .sk-top > * { pointer-events: auto; }
 .sk-top .sk-fab:last-child { margin-left: auto; }
+.sk-top .sk-note { margin-left: auto; }
+.sk-top .sk-note + .sk-fab { margin-left: 0; }
+.sk-fab.sk-note.on { color: var(--accent); }
 .sk-fab { width: 42px; height: 42px; padding: 0; border-radius: 50%; border: 0; background: var(--bar); box-shadow: var(--shadow); }
 .sk-fab.on { color: var(--accent); }
 .sk-chip { margin: 0 auto; display: flex; align-items: center; gap: 8px; padding: 4px 4px 4px 12px; border-radius: 21px; background: var(--bar); box-shadow: var(--shadow); font-size: 12px; max-width: calc(100% - 110px); }

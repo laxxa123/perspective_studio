@@ -8,6 +8,7 @@ import { onPause } from '../../platform/lifecycle';
 import { CubeStudio } from './components/CubeStudio';
 import { QuestionBank } from './components/QuestionBank';
 import { AnalysisPlaceholder, TestPlaceholder } from './components/Placeholders';
+import { NoteButton } from '../../shared/NoteButton';
 import './cube.css';
 
 const PAGES: [Page, string][] = [
@@ -99,6 +100,7 @@ export default function CubeModule({ onExit }: { onExit: () => void }) {
             </button>
           ))}
         </nav>
+        <NoteButton className="icon cube-note" />
         <span className="save-status" aria-live="polite">
           {status === 'saving' ? <><Loader2 size={14} className="spin" /> Saving…</> : status === 'saved' ? <><Check size={14} /> Saved</> : null}
         </span>

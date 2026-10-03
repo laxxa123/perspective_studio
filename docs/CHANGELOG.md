@@ -3,6 +3,15 @@
 User-visible changes per release. Versions: `package.json` semver; each
 milestone release bumps the minor version, and CI appends `-build.<run>`.
 
+## 0.25.0 — Notes everywhere
+
+- **Notes** button on the home screen and in every module (PERSPECTIVE,
+  CUBE, SKETCH, PUBLISH, OBJECTS): one note that follows you, saved as you
+  type. Copy, Clear (with Undo), **Save** — up to three saved notes ① ② ③,
+  newest first; a fourth drops the oldest. Tap a number to open that note,
+  hold to remove it. PUBLISH's tile notepad is now this note (Place still
+  puts text on the tile).
+
 ## 0.24.0 — OBJECTS: questions from blocks and 2D figures
 
 - **Build** a block object (with a marked block for tracking) or a 2D

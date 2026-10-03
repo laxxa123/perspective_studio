@@ -1,6 +1,7 @@
-> **Document:** PUBLISH requirements · **Version:** v1.5 (0.21.0, 2026-10-03) · **Location:** `docs/modules/publish/REQUIREMENTS.md` · **Part of:** CREATIVE (`docs/CREATIVE.md`)
+> **Document:** PUBLISH requirements · **Version:** v1.6 (0.25.0, 2026-10-03) · **Location:** `docs/modules/publish/REQUIREMENTS.md` · **Part of:** CREATIVE (`docs/CREATIVE.md`)
 >
-> **Revisions:** v1.5 (0.21.0, 2026-10-03) — Draw: hold the eraser to clear the drawing; tap "Colour" for the default colours (black, white, #cccccc, red), as in SKETCH (§6.5).
+> **Revisions:** v1.6 (0.25.0, 2026-10-03) — The notepad is the app-wide note (CREATIVE.md §2.4): also in the PUBLISH top bar, Save and three saved notes; an old PUBLISH note moves there once (§6.7).
+> v1.5 (0.21.0, 2026-10-03) — Draw: hold the eraser to clear the drawing; tap "Colour" for the default colours (black, white, #cccccc, red), as in SKETCH (§6.5).
 > v1.4 (0.20.0, 2026-10-02) — Style is a compact bar (chips + one control) that keeps the tile in view; the developer's value set (2 fonts, 3 weights, 5 text sizes, spiral size 25–100, coils 1–5 …); two-finger pinch / twist and the spiral's centre knob; half-height action bar (§6.1).
 > v1.3 (0.19.0, 2026-10-02) — Draw rebuilt on SKETCH's layout (one floating bar, brush sheet with names, opacity strip, five recent colours, palette with eyedropper, one-tap eraser, grid, show tile); controls no longer hide while drawing; Done returns at once (§6.5).
 > v1.2 (0.18.0, 2026-10-02) — Old posts converted on Edit (WP Studio posts faithfully, ordinary posts as a story; red / yellow dots); compact chrome (tiny title bar; Publish tab with the name and Publish on top, categories and help at the bottom); search and scroll through all posts and pictures; delete / discard / move with Undo; denser Tiles; editor edge to edge, FP star, colour picker, notepad (§6, §8, §9, §11, §14).
@@ -284,9 +285,12 @@ colours used. Dragging previews live; letting go is one undo step.
 
 ### 6.7 Notepad
 
-A tiny notepad (top bar) floats over the tile: one shared note for quick
-notes while working, saved as you type. Copy (the selection or all), Place
-(puts the selection or all on the tile as text), Clear (with Undo), close.
+The notepad is CREATIVE's app-wide note (CREATIVE.md §2.4, v1.6): the
+Notes button in the tile editor's top bar and in PUBLISH's title bar opens
+the same note as everywhere else — Copy, Clear (Undo), Save (three saved
+notes, FIFO), ① ② ③ — and, in the tile editor, **Place** (the selection or
+all on the tile as text). A note kept by an earlier PUBLISH
+(`settings.notepad`) moves to the app-wide note once, if that is empty.
 
 ## 7. Storage
 
