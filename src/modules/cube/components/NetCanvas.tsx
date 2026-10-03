@@ -180,8 +180,8 @@ export function NetCanvas({ model, assets }: Props) {
   const board = boardSize(cells);
   const fit = useMemo(() => {
     const m = 0.2;
-    const s = Math.min(size.w / (board.cols + 2 * m), (size.h - 44) / (board.rows + 2 * m));
-    return { x: (size.w - board.cols * s) / 2, y: (size.h - 44 - board.rows * s) / 2, s };
+    const s = Math.min(size.w / (board.cols + 2 * m), size.h / (board.rows + 2 * m));
+    return { x: (size.w - board.cols * s) / 2, y: (size.h - board.rows * s) / 2, s };
   }, [size.w, size.h, board.cols, board.rows]);
   const v = view ?? fit;
 
@@ -418,90 +418,95 @@ export function NetCanvas({ model, assets }: Props) {
   })();
 
   return (
-    <div className="net-canvas" ref={box}>
-      <Stage
-        ref={stageRef}
-        width={size.w}
-        height={size.h}
-        onPointerDown={onDown}
-        onPointerMove={onMouseMove}
-        onPointerUp={onUp}
-        onPointerCancel={onUp}
-        onTouchMove={onTouchMove}
-        onTouchEnd={() => (gesture.current = null)}
-        onWheel={onWheel}
-      >
-        <Layer>
-          <Rect name="bg" x={0} y={0} width={size.w} height={size.h} fill="transparent" />
-          <Group x={v.x} y={v.y} scaleX={v.s} scaleY={v.s}>
-            {/* The 4 × 4 board: a hairline grid. */}
-            <Rect name="board" x={0} y={0} width={board.cols} height={board.rows} fill="transparent" />
-            <Shape
-              listening={false}
-              stroke="#ced4da"
-              strokeWidth={1}
-              strokeScaleEnabled={false}
-              sceneFunc={(ctx, shape) => {
-                ctx.beginPath();
-                for (let x = 0; x <= board.cols; x++) {
-                  ctx.moveTo(x, 0);
-                  ctx.lineTo(x, board.rows);
-                }
-                for (let y = 0; y <= board.rows; y++) {
-                  ctx.moveTo(0, y);
-                  ctx.lineTo(board.cols, y);
-                }
-                ctx.strokeShape(shape);
-              }}
-            />
-            {cells.map(faceGroup)}
-            {/* Soft snap points inside each face. */}
-            {SNAP_TOOLS.has(tool) && !skin && (
+    <div className="net-canvas" style={{ '--net-ar': `${board.cols + 0.4} / ${board.rows + 0.4}` } as React.CSSProperties}>
+      <div className="net-stage" ref={box}>
+        <Stage
+          ref={stageRef}
+          width={size.w}
+          height={size.h}
+          onPointerDown={onDown}
+          onPointerMove={onMouseMove}
+          onPointerUp={onUp}
+          onPointerCancel={onUp}
+          onTouchMove={onTouchMove}
+          onTouchEnd={() => (gesture.current = null)}
+          onWheel={onWheel}
+        >
+          <Layer>
+            <Rect name="bg" x={0} y={0} width={size.w} height={size.h} fill="transparent" />
+            <Group x={v.x} y={v.y} scaleX={v.s} scaleY={v.s}>
+              {/* The 4 × 4 board: a hairline grid. */}
+              <Rect name="board" x={0} y={0} width={board.cols} height={board.rows} fill="transparent" />
               <Shape
                 listening={false}
-                fill="#adb5bd"
+                stroke="#ced4da"
+                strokeWidth={1}
+                strokeScaleEnabled={false}
                 sceneFunc={(ctx, shape) => {
                   ctx.beginPath();
-                  for (const c of cells) {
-                    const m = faceToNet(c);
-                    for (const sx of SNAP_STEPS) {
-                      for (const sy of SNAP_STEPS) {
-                        const p = applyAffine(m, { x: sx, y: sy });
-                        ctx.moveTo(p.x + 0.014, p.y);
-                        ctx.arc(p.x, p.y, 0.014, 0, Math.PI * 2);
-                      }
-                    }
+                  for (let x = 0; x <= board.cols; x++) {
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, board.rows);
                   }
-                  ctx.fillShape(shape);
+                  for (let y = 0; y <= board.rows; y++) {
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(board.cols, y);
+                  }
+                  ctx.strokeShape(shape);
                 }}
               />
-            )}
-            {skin && <SkinNode skin={skin} src={assets[skin.assetId]} cells={cells} trRef={skinTr} />}
-            {preview}
-            {draft?.tool === 'pen' && draft.points.length > 1 && (
-              <Line points={draft.points.flatMap((p) => [p.x, p.y])} stroke={style.stroke} strokeWidth={style.width} lineCap="round" lineJoin="round" listening={false} />
-            )}
-          </Group>
-          <Transformer
-            ref={trRef}
-            rotationSnaps={[0, 45, 90, 135, 180, 225, 270, 315]}
-            rotationSnapTolerance={6}
-            anchorSize={16}
-            padding={8}
-            borderStroke={ACCENT}
-            anchorStroke={ACCENT}
-            ignoreStroke
-            boundBoxFunc={(o, n) => (Math.abs(n.width) < 8 || Math.abs(n.height) < 8 ? o : n)}
-          />
-          <Transformer ref={skinTr} keepRatio rotationSnaps={[0, 90, 180, 270]} rotationSnapTolerance={6} anchorSize={20} borderStroke={ACCENT} anchorStroke={ACCENT} />
-        </Layer>
-      </Stage>
-      <div className={validation.valid ? 'net-status ok' : 'net-status bad'}>
-        {validation.valid ? '✓ Valid cube net' : `⚠ Net cannot form a cube — ${validation.issues[0].message}`}
+              {cells.map(faceGroup)}
+              {/* Soft snap points inside each face. */}
+              {SNAP_TOOLS.has(tool) && !skin && (
+                <Shape
+                  listening={false}
+                  fill="#adb5bd"
+                  sceneFunc={(ctx, shape) => {
+                    ctx.beginPath();
+                    for (const c of cells) {
+                      const m = faceToNet(c);
+                      for (const sx of SNAP_STEPS) {
+                        for (const sy of SNAP_STEPS) {
+                          const p = applyAffine(m, { x: sx, y: sy });
+                          ctx.moveTo(p.x + 0.014, p.y);
+                          ctx.arc(p.x, p.y, 0.014, 0, Math.PI * 2);
+                        }
+                      }
+                    }
+                    ctx.fillShape(shape);
+                  }}
+                />
+              )}
+              {skin && <SkinNode skin={skin} src={assets[skin.assetId]} cells={cells} trRef={skinTr} />}
+              {preview}
+              {draft?.tool === 'pen' && draft.points.length > 1 && (
+                <Line points={draft.points.flatMap((p) => [p.x, p.y])} stroke={style.stroke} strokeWidth={style.width} lineCap="round" lineJoin="round" listening={false} />
+              )}
+            </Group>
+            <Transformer
+              ref={trRef}
+              rotationSnaps={[0, 45, 90, 135, 180, 225, 270, 315]}
+              rotationSnapTolerance={6}
+              anchorSize={16}
+              padding={8}
+              borderStroke={ACCENT}
+              anchorStroke={ACCENT}
+              ignoreStroke
+              boundBoxFunc={(o, n) => (Math.abs(n.width) < 8 || Math.abs(n.height) < 8 ? o : n)}
+            />
+            <Transformer ref={skinTr} keepRatio rotationSnaps={[0, 90, 180, 270]} rotationSnapTolerance={6} anchorSize={20} borderStroke={ACCENT} anchorStroke={ACCENT} />
+          </Layer>
+        </Stage>
       </div>
-      <button className="seg net-fit" onClick={() => setView(null)}>
-        Fit
-      </button>
+      {/* Status and Fit sit under the board, not over it. */}
+      <div className="net-foot">
+        <div className={validation.valid ? 'net-status ok' : 'net-status bad'}>
+          {validation.valid ? '✓ Valid cube net' : `⚠ Net cannot form a cube — ${validation.issues[0].message}`}
+        </div>
+        <button className="seg net-fit" onClick={() => setView(null)}>
+          Fit
+        </button>
+      </div>
     </div>
   );
 }

@@ -16,18 +16,24 @@
 .studio-grid {
   flex: 1; min-height: 0; display: grid; gap: 8px; padding: 0 8px 8px;
   grid-template-columns: 1fr;
-  grid-template-rows: auto 60vh auto;
+  grid-template-rows: auto auto auto;
   grid-template-areas: 'tools' 'net' 'props';
+  /* Clear of the phone's own navigation bar. */
+  padding-bottom: max(24px, calc(env(safe-area-inset-bottom) + 16px));
 }
 .cube-tools { grid-area: tools; display: flex; flex-wrap: wrap; gap: 2px; padding: 4px; background: var(--bar); border-radius: 12px; box-shadow: var(--shadow); }
 .tool-btn { flex-direction: column; gap: 1px; min-width: 0; flex: 1 0 calc(100% / 7 - 4px); min-height: 46px; padding: 2px 2px; font-size: 10px; border: 0; background: transparent; }
 .tool-btn.active { background: var(--accent); color: #fff; }
 .tool-sep { display: none; width: 1px; background: var(--line); margin: 4px 2px; }
-.net-canvas { grid-area: net; position: relative; background: var(--surface); border-radius: 14px; box-shadow: var(--shadow); overflow: hidden; touch-action: none; min-height: 260px; }
-.net-status { position: absolute; left: 10px; bottom: 8px; font-size: 12px; padding: 4px 10px; border-radius: 12px; background: var(--bar); box-shadow: var(--shadow); pointer-events: none; max-width: calc(100% - 90px); }
+.net-canvas { grid-area: net; display: flex; flex-direction: column; background: var(--surface); border-radius: 14px; box-shadow: var(--shadow); overflow: hidden; }
+/* On a phone the board area takes the board's shape (no empty band below it). */
+.net-stage { position: relative; width: 100%; aspect-ratio: var(--net-ar, 1); max-height: 64vh; touch-action: none; overflow: hidden; }
+.net-stage > div { position: absolute; inset: 0; }
+.net-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 2px 8px 8px; }
+.net-status { font-size: 12px; padding: 4px 10px; border-radius: 12px; background: var(--bar); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .net-status.ok { color: #2f9e44; }
-.net-status.bad { color: var(--danger); }
-.net-fit { position: absolute; right: 8px; bottom: 6px; }
+.net-status.bad { color: var(--danger); white-space: normal; }
+.net-fit { flex: 0 0 auto; }
 .cube3d { grid-area: cube; position: relative; background: radial-gradient(circle at 50% 40%, var(--surface), var(--canvas)); border-radius: 14px; box-shadow: var(--shadow); overflow: hidden; min-height: 200px; touch-action: none; }
 .cube3d canvas { width: 100%; height: 100%; display: block; touch-action: none; }
 .cube3d-views { position: absolute; left: 6px; right: 6px; bottom: 6px; display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; }
@@ -99,6 +105,8 @@ button.stamp.active { border-color: var(--accent); background: var(--accent-soft
   }
   .cube-tools { flex-direction: column; flex-wrap: nowrap; overflow-y: auto; }
   .tool-btn { flex: 0 0 auto; }
+  .studio-grid { padding-bottom: 8px; }
+  .net-stage { flex: 1; min-height: 260px; aspect-ratio: auto; max-height: none; }
   .tool-sep { display: block; width: auto; height: 1px; margin: 2px 4px; }
   .cube-props { max-height: none; overflow: auto; align-self: start; }
   .bank { max-width: 1000px; margin: 0 auto; width: 100%; box-sizing: border-box; }

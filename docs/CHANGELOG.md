@@ -3,6 +3,14 @@
 User-visible changes per release. Versions: `package.json` semver; each
 milestone release bumps the minor version, and CI appends `-build.<run>`.
 
+## 0.22.0 — New icon; CUBE fits the phone
+
+- **New app icon:** a 2 × 2 × 2 cube with one blue side.
+- **CUBE Design:** the board area is now just the board (no empty band
+  below it); "Valid cube net" and Fit sit under the board; the properties
+  ("Start from …") move up and keep clear of the phone's navigation
+  buttons.
+
 ## 0.21.0 — SKETCH: cube grid, soft snap, quicker controls
 
 - **Cube grid:** an unfolded cube (faces A–F) on a 4 × 4 square, with a dot
