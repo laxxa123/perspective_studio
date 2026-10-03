@@ -81,7 +81,7 @@ export function drawingKey(b: Blocks, holes: readonly Hole[] = []): string {
   if (!box) return '';
   const back = (c: Cell): Cell => [c[0] - box.min[0], c[1] - box.min[1], c[2] - box.min[2]];
   return isoFaces(b.map(back), holes.map((h) => ({ c: back(h.c), axis: h.axis })))
-    .map((f) => f.pts.map(([x, y]) => `${Math.round(x * 1000)},${Math.round(y * 1000)}`).join(' ') + (f.hole ? 'o' : ''))
+    .map((f) => f.pts.map(([x, y]) => `${Math.round(x * 1000)},${Math.round(y * 1000)}`).join(' ') + (f.hole ? (f.far?.length && f.blind ? 'b' : 'o') : ''))
     .sort()
     .join('|');
 }
@@ -106,6 +106,41 @@ export interface IsoFace {
   block: string;
   /** The face opens onto a hole: its outline (projected circle), screen points. */
   hole?: [number, number][];
+  /** The far end of the hole as seen through it (the far circle inside the near one); empty when the tunnel is too long to see through. */
+  far?: [number, number][];
+  /** The hole ends on a block further in (no light at the far end). */
+  blind?: boolean;
+  /** The lit part of the tunnel wall (the rest, by the near rim, is in shadow). */
+  lit?: [number, number][];
+}
+
+type P = [number, number];
+const cross = (o: P, a: P, b: P) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+const area = (ps: P[]) => ps.reduce((s, p, i) => s + cross([0, 0], p, ps[(i + 1) % ps.length]), 0);
+
+/** The part of `subject` inside the convex polygon `clip` (Sutherland–Hodgman). */
+export function clipConvex(subject: P[], clip: P[]): P[] {
+  const sign = Math.sign(area(clip)) || 1;
+  let out = subject;
+  for (let i = 0; i < clip.length && out.length; i++) {
+    const a = clip[i];
+    const b = clip[(i + 1) % clip.length];
+    const side = (p: P) => cross(a, b, p) * sign;
+    const meet = (p: P, q: P): P => {
+      const t = side(p) / (side(p) - side(q));
+      return [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t];
+    };
+    const input = out;
+    out = [];
+    input.forEach((q, j) => {
+      const p = input[(j + input.length - 1) % input.length];
+      if (side(q) >= 0) {
+        if (side(p) < 0) out.push(meet(p, q));
+        out.push(q);
+      } else if (side(p) >= 0) out.push(meet(p, q));
+    });
+  }
+  return out.length >= 3 && Math.abs(area(out)) > 1e-6 ? out : [];
 }
 
 /** The visible faces, far to near (painter's order: nearer faces cover farther ones). */
@@ -125,7 +160,8 @@ export function isoFaces(b: Blocks, holes: readonly Hole[] = []): IsoFace[] {
       // Depth of the face centre along the view direction.
       const m: V = [c[0] + 0.5 + f.n[0] * 0.5, c[1] + 0.5 + f.n[1] * 0.5, c[2] + 0.5 + f.n[2] * 0.5];
       const face: IsoFace = { pts, depth: dot(m, BACK), block: key(c) };
-      if (holed.has(`${key(c)}:${axisOf(f.n)}`)) {
+      const axis = axisOf(f.n);
+      if (holed.has(`${key(c)}:${axis}`)) {
         // The two directions across the face, and a circle in them.
         const across = ([0, 1, 2] as const).filter((i) => !f.n[i]);
         face.hole = Array.from({ length: 28 }, (_, t): [number, number] => {
@@ -135,6 +171,28 @@ export function isoFaces(b: Blocks, holes: readonly Hole[] = []): IsoFace[] {
           p[across[1]] += HOLE_R * Math.sin(a);
           return [dot(p, RIGHT), -dot(p, UP)];
         });
+        // How deep the tunnel runs: through drilled blocks until it leaves the object (see-through) or meets a solid block (blind).
+        let depth = 1;
+        let at: Cell = [c[0] - f.n[0], c[1] - f.n[1], c[2] - f.n[2]];
+        while (has(b, at) && holed.has(`${key(at)}:${axis}`)) {
+          depth++;
+          at = [at[0] - f.n[0], at[1] - f.n[1], at[2] - f.n[2]];
+        }
+        face.blind = has(b, at);
+        const back: V = [-f.n[0] * depth, -f.n[1] * depth, -f.n[2] * depth];
+        const dx = dot(back, RIGHT);
+        const dy = -dot(back, UP);
+        face.far = clipConvex(
+          face.hole.map(([x, y]): P => [x + dx, y + dy]),
+          face.hole,
+        );
+        // The wall goes into shadow toward the near rim (the side the tunnel runs away to).
+        const l = Math.hypot(dx, dy) || 1;
+        const s = HOLE_R * 0.35;
+        face.lit = clipConvex(
+          face.hole.map(([x, y]): P => [x - (dx / l) * s, y - (dy / l) * s]),
+          face.hole,
+        );
       }
       out.push(face);
     }
@@ -171,8 +229,13 @@ export function isoSvg(b: Blocks, o: IsoOptions = {}): string {
       const d = `M${f.pts.map(([x, y]) => `${r(x * k + ox)} ${r(y * k + oy)}`).join('L')}Z`;
       const fill = o.fills?.get(f.block);
       const face = fill ? `<path d="${d}" fill="${fill}"/>` : `<path d="${d}"/>`;
-      const hole = f.hole ? `<path d="M${f.hole.map(([x, y]) => `${r(x * k + ox)} ${r(y * k + oy)}`).join('L')}Z" fill="#495057" stroke-width="${r(stroke * 0.8)}"/>` : '';
-      return face + hole;
+      if (!f.hole) return face;
+      // A cutout: the tunnel wall (light, shadowed by the near rim) and, where it can be seen, the far opening — white light, or grey where a block closes it.
+      const ring = (ps: [number, number][]) => `M${ps.map(([x, y]) => `${r(x * k + ox)} ${r(y * k + oy)}`).join('L')}Z`;
+      const near = ring(f.hole);
+      const lit = f.lit?.length ? `<path d="${ring(f.lit)}" fill="#e9ecef" stroke="none"/>` : '';
+      const far = f.far?.length ? `<path d="${ring(f.far)}" fill="${f.blind ? '#adb5bd' : '#fff'}" stroke-width="${r(stroke * 0.5)}"/>` : '';
+      return `${face}<path d="${near}" fill="#868e96" stroke="none"/>${lit}${far}<path d="${near}" fill="none" stroke-width="${r(stroke * 0.8)}"/>`;
     })
     .join('');
   return `${head}<rect width="${size}" height="${size}" fill="#fff"/><g fill="#fff" stroke="#111" stroke-width="${stroke}" stroke-linejoin="round">${body}</g></svg>`;

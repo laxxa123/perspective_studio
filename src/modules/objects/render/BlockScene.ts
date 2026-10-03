@@ -9,6 +9,33 @@ export type Hit = { kind: 'block'; cell: Cell; normal: Cell } | { kind: 'floor';
 const BLOCK = 0xf1f3f5;
 const EDGE = 0x212529;
 const FLOOR = MAX_EXTENT + 4;
+const HOLE_R = 0.27;
+const AXES = ['x', 'y', 'z'] as const;
+
+/** A unit block with a round tunnel through it along `axis` (OBJECTS §A.14): a see-through cutout. */
+function tunnel(axis: Hole['axis']): THREE.BufferGeometry {
+  const sq = new THREE.Shape();
+  sq.moveTo(-0.5, -0.5);
+  sq.lineTo(0.5, -0.5);
+  sq.lineTo(0.5, 0.5);
+  sq.lineTo(-0.5, 0.5);
+  sq.closePath();
+  const ring = new THREE.Path();
+  ring.absarc(0, 0, HOLE_R, 0, Math.PI * 2, true);
+  sq.holes.push(ring);
+  const g = new THREE.ExtrudeGeometry(sq, { depth: 1, bevelEnabled: false, curveSegments: 28 });
+  g.translate(0, 0, -0.5);
+  if (axis === 'x') g.rotateY(Math.PI / 2);
+  else if (axis === 'y') g.rotateX(-Math.PI / 2);
+  return g;
+}
+
+/** A unit normal along one axis. */
+function along(i: number, sign: number): Cell {
+  const n = [0, 0, 0];
+  n[i] = sign;
+  return n as unknown as Cell;
+}
 
 export class BlockScene {
   private renderer: THREE.WebGLRenderer;
@@ -20,8 +47,12 @@ export class BlockScene {
   private edgeGeo = new THREE.EdgesGeometry(this.boxGeo);
   private boxMat = new THREE.MeshLambertMaterial({ color: BLOCK, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
   private edgeMat = new THREE.LineBasicMaterial({ color: EDGE });
-  private holeGeo = new THREE.CircleGeometry(0.27, 28);
-  private holeMat = new THREE.MeshBasicMaterial({ color: 0x495057, side: THREE.DoubleSide });
+  private tunnelGeo = AXES.map(tunnel);
+  // Facets of the round wall are under 30° apart: only the rims draw as lines.
+  private tunnelEdge = this.tunnelGeo.map((g) => new THREE.EdgesGeometry(g, 30));
+  /** A second hole in the same block (across the first): a disc on its faces. */
+  private holeGeo = new THREE.CircleGeometry(HOLE_R, 28);
+  private holeMat = new THREE.MeshBasicMaterial({ color: 0xadb5bd, side: THREE.DoubleSide });
   private markMat = new THREE.MeshLambertMaterial({ color: 0x74c0fc, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
   /** Orbit: angles (radians) and distance around a target. */
   private theta = Math.PI / 4;
@@ -69,25 +100,27 @@ export class BlockScene {
     for (const o of [...this.group.children]) this.group.remove(o);
     const mk = marked ? key(marked) : '';
     for (const c of b) {
-      const m = new THREE.Mesh(this.boxGeo, key(c) === mk ? this.markMat : this.boxMat);
+      const mine = holes.filter((h) => key(h.c) === key(c));
+      // The first hole is a real tunnel you can see through.
+      const t = mine.length ? AXES.indexOf(mine[0].axis) : -1;
+      const m = new THREE.Mesh(t < 0 ? this.boxGeo : this.tunnelGeo[t], key(c) === mk ? this.markMat : this.boxMat);
       m.position.set(c[0] + 0.5, c[1] + 0.5, c[2] + 0.5);
       m.userData.cell = c;
-      m.add(new THREE.LineSegments(this.edgeGeo, this.edgeMat));
-      // A hole: a dark disc on both faces it opens onto.
-      for (const h of holes)
-        if (key(h.c) === key(c))
-          for (const side of [1, -1]) {
-            const d = new THREE.Mesh(this.holeGeo, this.holeMat);
-            if (h.axis === 'x') {
-              d.rotation.y = Math.PI / 2;
-              d.position.x = 0.503 * side;
-            } else if (h.axis === 'y') {
-              d.rotation.x = Math.PI / 2;
-              d.position.y = 0.503 * side;
-            } else d.position.z = 0.503 * side;
-            d.raycast = () => undefined;
-            m.add(d);
-          }
+      m.userData.axis = t;
+      m.add(new THREE.LineSegments(t < 0 ? this.edgeGeo : this.tunnelEdge[t], this.edgeMat));
+      for (const h of mine.slice(1))
+        for (const side of [1, -1]) {
+          const d = new THREE.Mesh(this.holeGeo, this.holeMat);
+          if (h.axis === 'x') {
+            d.rotation.y = Math.PI / 2;
+            d.position.x = 0.503 * side;
+          } else if (h.axis === 'y') {
+            d.rotation.x = Math.PI / 2;
+            d.position.y = 0.503 * side;
+          } else d.position.z = 0.503 * side;
+          d.raycast = () => undefined;
+          m.add(d);
+        }
       this.group.add(m);
     }
     this.dirty = true;
@@ -144,7 +177,18 @@ export class BlockScene {
     if (!first) return null;
     if (first.object === this.floor) return { kind: 'floor', cell: [Math.floor(first.point.x), 0, Math.floor(first.point.z)] };
     const n = first.face!.normal;
-    return { kind: 'block', cell: first.object.userData.cell as Cell, normal: [Math.round(n.x), Math.round(n.y), Math.round(n.z)] };
+    const cell = first.object.userData.cell as Cell;
+    const t = first.object.userData.axis as number;
+    if (t >= 0) {
+      // Inside a tunnel: the wall stands for the face it was seen through.
+      const p = first.point.clone().sub(first.object.position).toArray();
+      const off = Math.hypot(...p.filter((_, i) => i !== t));
+      if (Math.abs(n.getComponent(t)) < 0.5 && off < HOLE_R + 0.02) return { kind: 'block', cell, normal: along(t, ray.ray.direction.getComponent(t) > 0 ? -1 : 1) };
+    }
+    // The largest component: the face's own direction.
+    const a = [n.x, n.y, n.z].map(Math.abs);
+    const i = a.indexOf(Math.max(...a));
+    return { kind: 'block', cell, normal: along(i, Math.sign(n.getComponent(i))) };
   }
 
   private place() {
@@ -161,6 +205,7 @@ export class BlockScene {
     this.boxMat.dispose();
     this.markMat.dispose();
     this.holeGeo.dispose();
+    for (const g of [...this.tunnelGeo, ...this.tunnelEdge]) g.dispose();
     this.holeMat.dispose();
     this.edgeMat.dispose();
     this.renderer.dispose();

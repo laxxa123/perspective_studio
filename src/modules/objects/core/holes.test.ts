@@ -2,9 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { add, drill, keepHoles, readHoles, turnAllWith, type Blocks, type Hole } from './blocks';
 import { STARTER_FIGURE } from './figure';
 import { STARTER_FOLD } from './fold';
-import { drawingKey, holesShown, isoSvg } from './iso';
+import { clipConvex, drawingKey, holesShown, isoFaces, isoSvg } from './iso';
 import { buildQuestion, defaultParams, validate, type Family, type Params, type Source } from './questions';
-import { assembles, canonical, isChiral, sameCells, sameObject, section, turnWith, view, withoutHoles } from './space';
+import { assembles, canonical, gridKey, isChiral, mirrorGrid, sameCells, sameObject, section, turnGrid, turnWith, view, withoutHoles } from './space';
+import { gridSvg } from './sheet';
 
 const OBJ: Blocks = [
   [0, 0, 0],
@@ -59,8 +60,40 @@ describe('the Hole tool (OBJECTS §A.14)', () => {
     expect(holesShown(OBJ, HOLES)).toBe(true);
     // A hole along z in the back block of a row is covered.
     expect(holesShown([[0, 0, 0], [0, 0, 1]], [{ c: [0, 0, 0], axis: 'z' }])).toBe(false);
-    expect(isoSvg(OBJ, { holes: HOLES })).toContain('#495057');
     expect(drawingKey(OBJ, HOLES)).not.toBe(drawingKey(OBJ));
+  });
+  it('is a see-through cutout: light through it, or a closed grey bottom when a block blocks it', () => {
+    // A column of two, drilled down through both: see-through from the top.
+    const col: Blocks = [[0, 0, 0], [0, 1, 0]];
+    const both: Hole[] = [{ c: [0, 0, 0], axis: 'y' }, { c: [0, 1, 0], axis: 'y' }];
+    expect(view(col, 'top', both).holes).toEqual([[0, 0]]);
+    expect(view(col, 'top', both).blind).toBeUndefined();
+    // Only the top block drilled: the hole stops on the block below.
+    const one: Hole[] = [{ c: [0, 1, 0], axis: 'y' }];
+    const v = view(col, 'top', one);
+    expect(v.blind).toEqual([[0, 0]]);
+    expect(gridKey(v)).not.toBe(gridKey(view(col, 'top', both)));
+    expect(withoutHoles(v).blind).toBeUndefined();
+    expect(turnGrid(v).blind).toEqual([[0, 0]]);
+    expect(mirrorGrid(v).blind).toEqual([[0, 0]]);
+    expect(gridSvg(view(col, 'top', both))).toContain('fill="#fff" stroke');
+    expect(gridSvg(v)).toContain('#adb5bd');
+    // The drawing: an open tunnel (lit wall, shadow by the near rim); never a dark spot.
+    const svg = isoSvg(col, { holes: both });
+    expect(svg).not.toContain('#495057');
+    expect(svg).toContain('#e9ecef');
+    const face = isoFaces(col, both).find((f) => f.hole)!;
+    expect(face.blind).toBe(false);
+    expect(face.lit!.length).toBeGreaterThan(2);
+    expect(isoFaces(col, one).find((f) => f.hole)!.blind).toBe(true);
+    // At the drawing's angle a block-deep tunnel is too long to see light through.
+    expect(face.far).toEqual([]);
+  });
+  it('clips one convex outline to another', () => {
+    const sq = (x: number): [number, number][] => [[x, 0], [x + 2, 0], [x + 2, 2], [x, 2]];
+    const c = clipConvex(sq(1), sq(0));
+    expect(c.length).toBe(4);
+    expect(clipConvex(sq(5), sq(0))).toEqual([]);
   });
   it('pieces must carry their holes to assemble', () => {
     const a: Blocks = OBJ.slice(0, 4);

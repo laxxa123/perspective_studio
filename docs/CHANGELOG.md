@@ -3,6 +3,13 @@
 User-visible changes per release. Versions: `package.json` semver; each
 milestone release bumps the minor version, and CI appends `-build.<run>`.
 
+## 0.27.0 — OBJECTS: holes you can see through
+
+- **Holes are cutouts**, not black spots: the 3D view has a real tunnel
+  you can look through; the drawings show the rim and the inner wall;
+  views and cuts show a white opening where you see through and a grey
+  one where a block further back closes the hole.
+
 ## 0.26.0 — Short question ids; holes in OBJECTS
 
 - **Question ids** are now short and the same in every module: CUBE-Q-1,

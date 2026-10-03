@@ -1,6 +1,6 @@
-> **Document:** OBJECTS requirements · **Version:** v1.4 (0.26.0, 2026-10-03) · **Location:** `docs/modules/objects/REQUIREMENTS.md` · **Part of:** CREATIVE (`docs/CREATIVE.md`)
+> **Document:** OBJECTS requirements · **Version:** v1.5 (0.27.0, 2026-10-03) · **Location:** `docs/modules/objects/REQUIREMENTS.md` · **Part of:** CREATIVE (`docs/CREATIVE.md`)
 >
-> **Revisions:** v1.4 (0.26.0, 2026-10-03) — Holes through blocks (§A.14); 2D grids and fold sheets 4 × 4 / 6 × 6; ids OBJECTS-Q-1, shown OBJECTS-Q-1.1 (CREATIVE.md §3.1). · v1.3 (0.24.0, 2026-10-03) — Phase 1a built (M1–M5): exact block and 2D cores, thirteen question types with intentional distractors, validation, Question Bank with permanent ids and versions, export (§A.13). · v1.2 (0.23.0, 2026-10-03) — M0 built: block viewport, isometric renderer, the module on the home screen (§A.12). · v1.1 (2026-10-03) — Design review decisions (Part A): blocks first (general solids in 1b, construction in 1c); 2D figures and their transformations in OBJECTS; question figures are isometric line drawings; exact correctness and option sameness; one gesture per meaning; difficulty and Question DNA merged; what an option is; milestones re-cut. · v1.0 (2026-10-03) — Phase 1 Product & Engineering Specification, as written by the developer (sections 0–93 below, unchanged except for "v1.1" notes).
+> **Revisions:** v1.5 (0.27.0, 2026-10-03) — Holes are see-through cutouts in the 3D view, the drawings, views and cuts (§A.15). · v1.4 (0.26.0, 2026-10-03) — Holes through blocks (§A.14); 2D grids and fold sheets 4 × 4 / 6 × 6; ids OBJECTS-Q-1, shown OBJECTS-Q-1.1 (CREATIVE.md §3.1). · v1.3 (0.24.0, 2026-10-03) — Phase 1a built (M1–M5): exact block and 2D cores, thirteen question types with intentional distractors, validation, Question Bank with permanent ids and versions, export (§A.13). · v1.2 (0.23.0, 2026-10-03) — M0 built: block viewport, isometric renderer, the module on the home screen (§A.12). · v1.1 (2026-10-03) — Design review decisions (Part A): blocks first (general solids in 1b, construction in 1c); 2D figures and their transformations in OBJECTS; question figures are isometric line drawings; exact correctness and option sameness; one gesture per meaning; difficulty and Question DNA merged; what an option is; milestones re-cut. · v1.0 (2026-10-03) — Phase 1 Product & Engineering Specification, as written by the developer (sections 0–93 below, unchanged except for "v1.1" notes).
 
 # OBJECTS Module --- Phase 1 Product & Engineering Specification
 
@@ -14,7 +14,7 @@
 > **Primary user:** Educator / mentor / question designer\
 > **Authoring domain:** 2D figures, block objects and (later) general 3D
 > objects for visualisation and spatial-reasoning question authoring\
-> **Document version:** v1.4\
+> **Document version:** v1.5\
 > **Date:** 2026-10-03
 
 ------------------------------------------------------------------------
@@ -387,6 +387,25 @@ the line); removing a block removes its hole; holes turn with ⟳ X / Y / Z.
 
 **Ids:** OBJECTS-Q-1, OBJECTS-Q-2 …; a version reads **OBJECTS-Q-1.1**
 (CREATIVE.md §3.1). This replaces the OBJECTS-Q-###### form above.
+
+## A.15 Holes are cutouts (v1.5, release 0.27.0)
+
+A hole is drawn as what it is — an opening — never as a dark spot
+(replaces the "dark ellipse / dark disc" lines of §A.14):
+- **3D view:** a drilled block is modelled with a real round tunnel
+  (radius 0.27 of an edge); turning the object lets you look through it.
+  Tapping inside the tunnel acts on the face it was seen through. A second
+  hole across the same block shows as a light disc on its faces.
+- **Drawings (isometric):** the near rim, the tunnel wall inside it (light,
+  in shadow by the near rim), and the far opening wherever it can be seen
+  through the near one — white when the tunnel comes out the other side,
+  grey when a block further in closes it. At the drawing's angle a tunnel a
+  block long or longer shows wall only (as it would on paper).
+- **Views:** a hole is a white circle (see-through) when every block on
+  that line of sight is drilled along it; a grey circle when the front
+  block is drilled but a block behind it is not (the hole is closed).
+  These are different answers. **Cuts:** a hole crossing the cut is white.
+- Grid model: `blind?: [col, row][]` (the closed ones among `holes`).
 
 ------------------------------------------------------------------------
 

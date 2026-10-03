@@ -115,8 +115,10 @@ export interface Grid {
   w: number;
   h: number;
   cells: readonly (readonly [number, number])[];
-  /** Squares showing a hole (a circle in the drawing). */
+  /** Squares showing a hole (a circle in the drawing): a see-through cutout. */
   holes?: readonly (readonly [number, number])[];
+  /** Of those, the holes that end on a block further back (seen as a closed, grey bottom). */
+  blind?: readonly (readonly [number, number])[];
 }
 
 /** Where a cell lands in the view from a side (the viewer's right and down). */
@@ -147,9 +149,13 @@ const sort2 = (xs: Iterable<readonly [number, number]>) => {
   return [...seen.values()].sort((a, b) => a[1] - b[1] || a[0] - b[0]);
 };
 
-function gridOf(cells: Iterable<readonly [number, number]>, w: number, h: number, holes: Iterable<readonly [number, number]> = []): Grid {
+function gridOf(cells: Iterable<readonly [number, number]>, w: number, h: number, holes: Iterable<readonly [number, number]> = [], blind: Iterable<readonly [number, number]> = []): Grid {
   const hs = sort2(holes);
-  return hs.length ? { w, h, cells: sort2(cells), holes: hs } : { w, h, cells: sort2(cells) };
+  const bs = sort2(blind);
+  const g: Grid = { w, h, cells: sort2(cells) };
+  if (hs.length) g.holes = hs;
+  if (bs.length) g.blind = bs;
+  return g;
 }
 
 /** The axis and direction a side is seen along: which block is in front. */
@@ -163,19 +169,24 @@ export function view(b: Blocks, side: Side, holes: readonly Hole[] = []): Grid {
   const [W, H, D] = [box.max[0] + 1, box.max[1] + 1, box.max[2] + 1];
   const [w, h] = viewSize(side, W, H, D);
   const [i, dir] = SEEN[side];
+  const axis: Axis = i === 0 ? 'x' : i === 1 ? 'y' : 'z';
+  const drilled = new Set(hn.filter((x) => x.axis === axis).map((x) => key(x.c)));
+  // Per square: the front block, and whether every block on that line is drilled (see-through).
   const front = new Map<string, Cell>();
+  const open = new Map<string, boolean>();
   for (const c of n) {
     const k = project(c, side, W, H, D).join(',');
     const f = front.get(k);
     if (!f || c[i] * dir > f[i] * dir) front.set(k, c);
+    open.set(k, (open.get(k) ?? true) && drilled.has(key(c)));
   }
-  const axis: Axis = i === 0 ? 'x' : i === 1 ? 'y' : 'z';
-  const seen = [...front.values()].filter((c) => hn.some((x) => x.axis === axis && key(x.c) === key(c)));
+  const seen = [...front.entries()].filter(([, c]) => drilled.has(key(c)));
   return gridOf(
     n.map((c) => project(c, side, W, H, D)),
     w,
     h,
-    seen.map((c) => project(c, side, W, H, D)),
+    seen.map(([, c]) => project(c, side, W, H, D)),
+    seen.filter(([k]) => !open.get(k)).map(([, c]) => project(c, side, W, H, D)),
   );
 }
 
@@ -203,13 +214,16 @@ export const layers = (b: Blocks, axis: Axis) => {
   return box ? box.max[axis === 'x' ? 0 : axis === 'y' ? 1 : 2] + 1 : 0;
 };
 
-export const gridKey = (g: Grid) => `${g.w}x${g.h}:${g.cells.map((c) => c.join(',')).join(';')}${g.holes?.length ? `#${g.holes.map((c) => c.join(',')).join(';')}` : ''}`;
+const cellsText = (cs: readonly (readonly [number, number])[]) => cs.map((c) => c.join(',')).join(';');
+export const gridKey = (g: Grid) => `${g.w}x${g.h}:${cellsText(g.cells)}${g.holes?.length ? `#${cellsText(g.holes)}` : ''}${g.blind?.length ? `!${cellsText(g.blind)}` : ''}`;
 /** The grid without its holes (a common slip: the hole forgotten). */
 export const withoutHoles = (g: Grid): Grid => ({ w: g.w, h: g.h, cells: g.cells });
 export const sameGrid = (a: Grid, b: Grid) => gridKey(a) === gridKey(b);
-export const mirrorGrid = (g: Grid): Grid => gridOf(g.cells.map(([c, r]) => [g.w - 1 - c, r] as [number, number]), g.w, g.h, (g.holes ?? []).map(([c, r]) => [g.w - 1 - c, r] as [number, number]));
+const flip = (g: Grid) => ([c, r]: readonly [number, number]): [number, number] => [g.w - 1 - c, r];
+const quarter = (g: Grid) => ([c, r]: readonly [number, number]): [number, number] => [g.h - 1 - r, c];
+export const mirrorGrid = (g: Grid): Grid => gridOf(g.cells.map(flip(g)), g.w, g.h, (g.holes ?? []).map(flip(g)), (g.blind ?? []).map(flip(g)));
 /** Quarter turn clockwise. */
-export const turnGrid = (g: Grid): Grid => gridOf(g.cells.map(([c, r]) => [g.h - 1 - r, c] as [number, number]), g.h, g.w, (g.holes ?? []).map(([c, r]) => [g.h - 1 - r, c] as [number, number]));
+export const turnGrid = (g: Grid): Grid => gridOf(g.cells.map(quarter(g)), g.h, g.w, (g.holes ?? []).map(quarter(g)), (g.blind ?? []).map(quarter(g)));
 
 // ----- small changes (distractors, OBJECTS §A.5) -----
 

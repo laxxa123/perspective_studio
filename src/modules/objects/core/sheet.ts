@@ -41,7 +41,12 @@ function squares(cols: number, rows: number, size: number, filled: (c: number, r
 /** A view / cut: covered squares outlined, light fill. */
 export function gridSvg(g: Grid, size = 120): string {
   const on = new Set(g.cells.map((c) => c.join(',')));
-  return svg(size, size, squares(g.w, g.h, size, (c, r) => (on.has(`${c},${r}`) ? '#e9ecef' : null)) + holeMarks(g.holes ?? [], g.w, g.h, size, '#495057'));
+  // Holes are cutouts: white where you see through, grey where a block further back closes them.
+  const blind = new Set((g.blind ?? []).map((c) => c.join(',')));
+  const holes = g.holes ?? [];
+  const through = holeMarks(holes.filter((c) => !blind.has(c.join(','))), g.w, g.h, size, '#fff');
+  const closed = holeMarks(holes.filter((c) => blind.has(c.join(','))), g.w, g.h, size, '#adb5bd');
+  return svg(size, size, squares(g.w, g.h, size, (c, r) => (on.has(`${c},${r}`) ? '#e9ecef' : null)) + through + closed);
 }
 
 /** A 2D figure: filled squares dark, marks white on dark or dark on white. */
