@@ -3,6 +3,23 @@
 User-visible changes per release. Versions: `package.json` semver; each
 milestone release bumps the minor version, and CI appends `-build.<run>`.
 
+## 0.24.0 — OBJECTS: questions from blocks and 2D figures
+
+- **Build** a block object (with a marked block for tracking) or a 2D
+  figure (squares, dots, arrows); undo / redo; your work is saved as you go.
+- **Question**: pick what to test — 3D: same object, turn, view, from
+  views, count, cut, track, pieces; 2D: turn, mirror, same figure, two
+  steps, fold & punch. Five options appear at once: the correct one is
+  worked out exactly, the wrong ones are typical mistakes (mirror image,
+  wrong turn, wrong side, a block moved …), each labelled. Reorder,
+  replace or edit any option, change the wording and difficulty; the
+  check says "✓ Ready to commit" or what needs attention.
+- **Question Bank**: permanent ids (OBJECTS-Q-000001 …), every edit a new
+  version, search and filters, preview (student / author), duplicate,
+  variant, export as PNG, SVG or JSON.
+- Every figure is an isometric line drawing (or a grid), the same in the
+  Studio, the Bank and exports.
+
 ## 0.23.0 — OBJECTS (first look)
 
 - **New module OBJECTS** on the home screen, for making visualisation and

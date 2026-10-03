@@ -2,7 +2,7 @@
 // object; it owns no state — the block list comes from the module and taps
 // come back as cells. One finger turns the camera, two fingers pan and zoom.
 import * as THREE from 'three';
-import { MAX_EXTENT, type Blocks, type Cell } from '../core/blocks';
+import { key, MAX_EXTENT, type Blocks, type Cell } from '../core/blocks';
 
 export type Hit = { kind: 'block'; cell: Cell; normal: Cell } | { kind: 'floor'; cell: Cell };
 
@@ -20,6 +20,7 @@ export class BlockScene {
   private edgeGeo = new THREE.EdgesGeometry(this.boxGeo);
   private boxMat = new THREE.MeshLambertMaterial({ color: BLOCK, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
   private edgeMat = new THREE.LineBasicMaterial({ color: EDGE });
+  private markMat = new THREE.MeshLambertMaterial({ color: 0x74c0fc, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
   /** Orbit: angles (radians) and distance around a target. */
   private theta = Math.PI / 4;
   private phi = 1.0;
@@ -61,11 +62,12 @@ export class BlockScene {
     this.dirty = true;
   }
 
-  /** Shows the blocks (rebuilt each time: at most 30). */
-  setBlocks(b: Blocks) {
+  /** Shows the blocks (rebuilt each time: at most 30); a marked block is tinted. */
+  setBlocks(b: Blocks, marked: Cell | null = null) {
     for (const o of [...this.group.children]) this.group.remove(o);
+    const mk = marked ? key(marked) : '';
     for (const c of b) {
-      const m = new THREE.Mesh(this.boxGeo, this.boxMat);
+      const m = new THREE.Mesh(this.boxGeo, key(c) === mk ? this.markMat : this.boxMat);
       m.position.set(c[0] + 0.5, c[1] + 0.5, c[2] + 0.5);
       m.userData.cell = c;
       m.add(new THREE.LineSegments(this.edgeGeo, this.edgeMat));
@@ -140,6 +142,7 @@ export class BlockScene {
     this.boxGeo.dispose();
     this.edgeGeo.dispose();
     this.boxMat.dispose();
+    this.markMat.dispose();
     this.edgeMat.dispose();
     this.renderer.dispose();
   }

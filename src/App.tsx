@@ -12,7 +12,7 @@ import { useTheme } from './ui/useTheme';
 import { loadCubeModule } from './modules/cube';
 import { loadSketchModule, sketchBack } from './modules/sketch';
 import { loadPublishModule, publishBack } from './modules/publish';
-import { loadObjectsModule } from './modules/objects';
+import { loadObjectsModule, objectsBack } from './modules/objects';
 
 const CubeModule = lazy(loadCubeModule);
 const SketchModule = lazy(loadSketchModule);
@@ -44,7 +44,11 @@ export function App() {
           ui.set({ screen: ui.back });
           return true;
         }
-        if (ui.screen === 'cube' || ui.screen === 'objects') {
+        if (ui.screen === 'objects') {
+          if (!objectsBack.current?.()) ui.set({ screen: 'home' });
+          return true;
+        }
+        if (ui.screen === 'cube') {
           ui.set({ screen: 'home' });
           return true;
         }

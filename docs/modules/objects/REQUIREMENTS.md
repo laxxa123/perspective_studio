@@ -1,6 +1,6 @@
-> **Document:** OBJECTS requirements · **Version:** v1.2 (0.23.0, 2026-10-03) · **Location:** `docs/modules/objects/REQUIREMENTS.md` · **Part of:** CREATIVE (`docs/CREATIVE.md`)
+> **Document:** OBJECTS requirements · **Version:** v1.3 (0.24.0, 2026-10-03) · **Location:** `docs/modules/objects/REQUIREMENTS.md` · **Part of:** CREATIVE (`docs/CREATIVE.md`)
 >
-> **Revisions:** v1.2 (0.23.0, 2026-10-03) — M0 built: block viewport, isometric renderer, the module on the home screen (§A.12). · v1.1 (2026-10-03) — Design review decisions (Part A): blocks first (general solids in 1b, construction in 1c); 2D figures and their transformations in OBJECTS; question figures are isometric line drawings; exact correctness and option sameness; one gesture per meaning; difficulty and Question DNA merged; what an option is; milestones re-cut. · v1.0 (2026-10-03) — Phase 1 Product & Engineering Specification, as written by the developer (sections 0–93 below, unchanged except for "v1.1" notes).
+> **Revisions:** v1.3 (0.24.0, 2026-10-03) — Phase 1a built (M1–M5): exact block and 2D cores, thirteen question types with intentional distractors, validation, Question Bank with permanent ids and versions, export (§A.13). · v1.2 (0.23.0, 2026-10-03) — M0 built: block viewport, isometric renderer, the module on the home screen (§A.12). · v1.1 (2026-10-03) — Design review decisions (Part A): blocks first (general solids in 1b, construction in 1c); 2D figures and their transformations in OBJECTS; question figures are isometric line drawings; exact correctness and option sameness; one gesture per meaning; difficulty and Question DNA merged; what an option is; milestones re-cut. · v1.0 (2026-10-03) — Phase 1 Product & Engineering Specification, as written by the developer (sections 0–93 below, unchanged except for "v1.1" notes).
 
 # OBJECTS Module --- Phase 1 Product & Engineering Specification
 
@@ -14,7 +14,7 @@
 > **Primary user:** Educator / mentor / question designer\
 > **Authoring domain:** 2D figures, block objects and (later) general 3D
 > objects for visualisation and spatial-reasoning question authoring\
-> **Document version:** v1.2\
+> **Document version:** v1.3\
 > **Date:** 2026-10-03
 
 ------------------------------------------------------------------------
@@ -276,6 +276,87 @@ What the M0 device spike contains (ADR-0012):
   drawing faces and bounds).
 
 Device checklist: `docs/modules/objects/checklists/M0.md`.
+
+## A.13 Phase 1a built (v1.3, release 0.24.0)
+
+**Studio · 1 · Build** — 3D / 2D switch; undo / redo (every build and
+question change), New object; the draft is saved as you work
+(`objects_drafts`, 0.5 s after a change and when the app goes to the
+background) and comes back on return.
+- *3D blocks*: as M0, plus **Mark** (tint one block for Track; it turns
+  with the object). The status says how many blocks the drawing hides.
+  Starter object: seven blocks, all visible.
+- *2D figure*: 6 × 6 or 8 × 8 grid; **Fill** squares, **Dots**, **Arrows**
+  (tap again to turn), **Erase**, Clear. (Free line segments of §A.4 are
+  left for later; dots and arrows give the asymmetry turns and mirror
+  images need.)
+
+**Studio · 2 · Question** — type chips for the object kind, the type's
+settings, the editable wording, the stem figure(s), five options, the
+difficulty (computed, the author may set 1–5), the check, and **New
+options / Preview / Commit** (when editing: **Commit vN+1** and **Save as
+new question**). Each option: number, ✓ on the correct one, its rule, and
+↑ ↓ (reorder), ↻ (another wrong option of the same kind), ✎ (edit it in
+the same editor: blocks, squares, holes or a number). The correct option
+is always computed (OB-D4); there is no "set correct" switch.
+
+| Type (3D) | Settings | Correct | Wrong answers (rule) |
+| :-- | :-- | :-- | :-- |
+| Same object | — | the object turned (24 turns, not the stem's own drawing) | mirror image (D03, when it differs), one block moved (D04), added (D07), missing (D06) |
+| Turn | axis (upright / left–right / front–back), 90° / 180° / 90° back | exact turned cells | other axis, other direction, 180° (D01); mirror (D03); one block moved (D04) |
+| View | side (6) | covered squares from that side | other sides (D02), mirrored (D03), turned (D01), one square wrong (D10) |
+| From views | — (stem: front, top, right) | any object with those three views | matches two views only (D10), one block moved (D04), mirror (D03) |
+| Count | all / hidden blocks | the count | only the visible ones (D06), ±1, ±2, +3 (D06 / D07) |
+| Cut | level / front–back / left–right, layer | the cut squares (layer shaded in the stem) | other layers (D11), mirrored (D03), turned (D01), whole view (D10), one square wrong (D11) |
+| Track | axis, turn (the marked block) | turned object, mark carried | mark on another block (D08), turned the wrong way (D01) |
+| Pieces | — | two pieces (each shown turned) that fill the object | one piece mirrored (D03), a block moved (D04), a block too big / small (D07 / D06) |
+
+| Type (2D) | Settings | Correct | Wrong answers |
+| :-- | :-- | :-- | :-- |
+| Turn | 90° ↻, 180°, 90° ↺ | exact | other turns (D01), reflections (D03), arrow wrong (D12), one square moved (D04) |
+| Mirror | │ — ╲ ╱ line | exact | other lines (D03), turns (D01), arrow wrong (D12), one square moved (D04) |
+| Same figure | — | the figure turned (anywhere on the grid) | mirror images (D03), arrow wrong (D12), one square moved (D04) |
+| Two steps | first, then (any of the 7) | both steps in order | other order (D01), one step only (D06), wrong line (D03), arrow wrong (D12) |
+| Fold & punch | sheet 4 / 6 / 8; folds (½ across, ½ down, diagonal last); tap the folded sheet to punch | every fold opened, holes mirrored | one fold not opened, only the punched holes (D06), wrong line (D03), moved (D04), a hole missing / extra (D06 / D07) |
+
+**Rules the engine enforces** (so a question has exactly one answer and
+every option can be read): the object is one piece; for Same object,
+Turn, From views and Track every block is visible in the drawing (also
+after the chosen turn); Count needs every block resting on another or on
+the floor; Pieces needs at least four blocks; folds must be possible and
+holes inside the folded sheet. Validation (§64) also checks exactly five
+options, exactly one correct, no two options the same answer or the same
+drawing (shading included), no option with hidden blocks, and a wording.
+"⚠ Question needs attention" lists the reasons.
+
+**Question record** (`creative.objects.question.v1`, checked when read):
+source (blocks, marked block, figure, fold), type and settings, wording,
+five options (each the item as data, its rule and a note), the correct
+index, the seed (same input + seed → the same question), the profile
+(size, hidden blocks, steps, mirror distractor, difficulty and whether
+the author set it — §A.8) and the explanation.
+
+**Question Bank** — SQLite `objects` on Android (IndexedDB in a browser):
+`objects_questions`, `objects_question_versions`, `objects_drafts`,
+`objects_meta` (schema version 1, the id counter). Ids
+`OBJECTS-Q-000001`… are never reused; an edit commits a new version and
+the earlier ones stay. The list (newest first) has search (id, type,
+wording) and filters (3D / 2D, type); a row opens the author sheet, the
+profile, the versions (tap one to see it) and **Edit** (latest version),
+**Duplicate** (new id), **Variant** (the same object and settings with
+new options, opened in Studio to review), **PNG / SVG / JSON**.
+
+**Preview / export** — the sheet from the committed asset: Student (no
+answer) or Author (✓, rules, explanation); PNG, SVG and the canonical JSON
+through the share sheet.
+
+**Test** and **Analysis** show their Phase 2 / Phase 3 placeholders.
+Android back: a dialog → Question → Build → other pages → home.
+
+Not in 1a (kept for later, as §A.2): RELATE questions, dashed hidden
+edges, free 2D line segments, general solids (1b) and construction (1c).
+
+Device checklist: `docs/modules/objects/checklists/P1a.md`.
 
 ------------------------------------------------------------------------
 
@@ -3581,6 +3662,10 @@ underneath is doing the hard work**.
 ------------------------------------------------------------------------
 
 # 93. Changelog
+
+## v1.3 --- 2026-10-03
+
+Phase 1a built (§A.13).
 
 ## v1.2 --- 2026-10-03
 

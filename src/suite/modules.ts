@@ -26,7 +26,7 @@ export interface SuiteModule {
 export const MODULES: SuiteModule[] = [
   { id: 'studio', title: 'Studio', art: studio, version: null, entry: null },
   { id: 'cube', title: 'Cube', art: cube, version: '0.22.0', entry: 'cube' },
-  { id: 'objects', title: 'Objects', art: objects, version: '0.23.0', entry: 'objects' },
+  { id: 'objects', title: 'Objects', art: objects, version: '0.24.0', entry: 'objects' },
   { id: 'perspective', title: 'Perspective', art: perspective, version: '0.12.0', entry: 'perspective' },
   { id: 'publish', title: 'Publish', art: publish, version: '0.21.0', entry: 'publish' },
   { id: 'sketch', title: 'Sketch', art: sketch, version: '0.21.0', entry: 'sketch' },

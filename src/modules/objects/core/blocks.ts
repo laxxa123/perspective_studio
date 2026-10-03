@@ -96,12 +96,14 @@ export function turnAll(b: Blocks, axis: Axis): Blocks {
   return t.map((c) => [c[0] + cx, c[1] - after.min[1], c[2] + cz] as Cell);
 }
 
-/** A small starter object: an L of four blocks with one on top. */
+/** A starter object: every block visible in the drawing, so every question type can use it. */
 export const STARTER: Blocks = [
   [0, 0, 0],
-  [1, 0, 0],
-  [2, 0, 0],
   [0, 0, 1],
+  [0, 0, 2],
+  [1, 0, 2],
+  [2, 0, 2],
+  [2, 1, 2],
   [0, 1, 0],
 ];
 

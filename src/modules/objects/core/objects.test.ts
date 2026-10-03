@@ -16,15 +16,15 @@ describe('blocks (OBJECTS §A.3)', () => {
     const full = Array.from({ length: MAX_BLOCKS }, (_, i): Cell => [i % 6, Math.floor(i / 6), 0]);
     expect(cannotAdd(full, [0, 0, 1])).toBe('full');
     expect(add(STARTER, [0, 0, 0])).toBe(STARTER);
-    expect(add(STARTER, [3, 0, 0])).toHaveLength(6);
-    expect(remove(STARTER, [0, 1, 0])).toHaveLength(4);
+    expect(add(STARTER, [3, 0, 2])).toHaveLength(8);
+    expect(remove(STARTER, [0, 1, 0])).toHaveLength(6);
   });
 
   it('knows when an object is one piece', () => {
     expect(connected(STARTER)).toBe(true);
     expect(connected([])).toBe(true);
     expect(connected([[0, 0, 0], [2, 0, 0]])).toBe(false);
-    expect(connected(remove(STARTER, [1, 0, 0]))).toBe(false);
+    expect(connected(remove(STARTER, [0, 0, 1]))).toBe(false);
   });
 
   it('turns a quarter about each axis; four turns are the identity', () => {

@@ -1,81 +1,95 @@
-// The OBJECTS module, M0 (OBJECTS §A.10): build a block object in a live 3D
-// viewport and see it as the isometric line drawing every question will use.
-// The block list is the only state; it is kept on the device as you work.
-import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, Box, Eraser, Focus, Redo2, RotateCw, Trash2, Undo2 } from 'lucide-react';
-import { add, cannotAdd, connected, readBlocks, remove, STARTER, turnAll, MAX_BLOCKS, MAX_EXTENT, type Axis, type Blocks, type Cell } from './core/blocks';
-import { isoSvg } from './core/iso';
-import type { Hit } from './render/BlockScene';
-import { Viewport } from './ui/Viewport';
+// The OBJECTS module (OBJECTS §14, §15, §71, §72): Studio (1 · Build an
+// object or a 2D figure, 2 · Question) · Question Bank · Test · Analysis.
+// The Studio draft is saved as you work and comes back when you return.
+import { useEffect, useRef } from 'react';
+import { ArrowLeft, Check, FilePlus2, Loader2, Redo2, Undo2 } from 'lucide-react';
+import { onPause } from '../../platform/lifecycle';
+import { readBlocks } from './core/blocks';
+import { objectsBack, objectsModal } from './index';
+import { storage } from './services/service';
+import { draftOf, readDraft, useObjects, type Page } from './state/store';
+import { Bank } from './ui/Bank';
+import { BuildBlocks } from './ui/BuildBlocks';
+import { BuildFigure } from './ui/BuildFigure';
+import { QuestionStep } from './ui/QuestionStep';
 import './objects.css';
 
-type Tool = 'add' | 'remove';
-const KEY = 'creative.objects.draft.v0';
-const REFUSED = {
-  occupied: '',
-  full: `At most ${MAX_BLOCKS} blocks`,
-  'too-big': `At most ${MAX_EXTENT} blocks in each direction`,
-  'below-floor': '',
-  detached: 'Add next to a block',
-} as const;
+const st = useObjects.getState;
+const PAGES: [Page, string][] = [
+  ['studio', 'Studio'],
+  ['bank', 'Question Bank'],
+  ['test', 'Test'],
+  ['analysis', 'Analysis'],
+];
+const M0_KEY = 'creative.objects.draft.v0';
 
-function loadDraft(): Blocks {
+async function saveDraft() {
+  const s = st();
+  s.set({ saveStatus: 'saving' });
   try {
-    return readBlocks(JSON.parse(localStorage.getItem(KEY) ?? 'null')) ?? STARTER;
+    await (await storage()).drafts.save(JSON.stringify(draftOf(st())));
+    st().set({ saveStatus: 'saved' });
   } catch {
-    return STARTER;
+    st().set({ saveStatus: 'idle' });
   }
 }
 
-const svgUrl = (svg: string) => `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
-
 export default function ObjectsModule({ onExit }: { onExit: () => void }) {
-  const [hist, setHist] = useState<{ past: Blocks[]; now: Blocks; future: Blocks[] }>(() => ({ past: [], now: loadDraft(), future: [] }));
-  const [tool, setTool] = useState<Tool>('add');
-  const [frameKey, setFrameKey] = useState(0);
-  const [toast, setToast] = useState<string | null>(null);
-  const blocks = hist.now;
+  const page = useObjects((s) => s.page);
+  const step = useObjects((s) => s.step);
+  const kind = useObjects((s) => s.kind);
+  const status = useObjects((s) => s.saveStatus);
+  const toast = useObjects((s) => s.toast);
+  const canUndo = useObjects((s) => s.past.length > 0);
+  const canRedo = useObjects((s) => s.future.length > 0);
+  const editing = useObjects((s) => s.editing);
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
+  // Open: the saved draft (or the M0 object kept on the device).
   useEffect(() => {
-    try {
-      localStorage.setItem(KEY, JSON.stringify(blocks));
-    } catch {
-      // Storage blocked: the object stays for this session.
-    }
-  }, [blocks]);
+    void storage()
+      .then((s) => s.drafts.load())
+      .then((raw) => {
+        if (raw) return st().load(readDraft(JSON.parse(raw)));
+        try {
+          const b = readBlocks(JSON.parse(localStorage.getItem(M0_KEY) ?? 'null'));
+          if (b) st().load({ blocks: b });
+        } catch {
+          // Nothing kept.
+        }
+      })
+      .catch((e) => st().showToast(`Storage: ${e instanceof Error ? e.message : String(e)}`));
+  }, []);
+
+  // Autosave 0.5 s after a change, and when the app goes to the background.
   useEffect(() => {
-    if (!toast) return;
-    const t = setTimeout(() => setToast(null), 2000);
-    return () => clearTimeout(t);
-  }, [toast]);
+    const unsub = useObjects.subscribe((s, p) => {
+      if (s.blocks === p.blocks && s.marked === p.marked && s.figure === p.figure && s.fold === p.fold && s.question === p.question && s.family === p.family && s.params === p.params && s.kind === p.kind && s.step === p.step && s.editing === p.editing) return;
+      clearTimeout(timer.current);
+      timer.current = setTimeout(() => void saveDraft(), 500);
+    });
+    const off = onPause(() => void saveDraft());
+    return () => {
+      unsub();
+      off();
+      clearTimeout(timer.current);
+      void saveDraft();
+    };
+  }, []);
 
-  const commit = (next: Blocks) => setHist((h) => (next === h.now ? h : { past: [...h.past, h.now].slice(-100), now: next, future: [] }));
-  const undo = () => setHist((h) => (h.past.length ? { past: h.past.slice(0, -1), now: h.past[h.past.length - 1], future: [h.now, ...h.future] } : h));
-  const redo = () => setHist((h) => (h.future.length ? { past: [...h.past, h.now], now: h.future[0], future: h.future.slice(1) } : h));
-
-  const onTap = (hit: Hit | null) => {
-    if (!hit) return;
-    if (tool === 'remove') {
-      if (hit.kind === 'block') commit(remove(blocks, hit.cell));
-      return;
-    }
-    const c: Cell = hit.kind === 'floor' ? hit.cell : [hit.cell[0] + hit.normal[0], hit.cell[1] + hit.normal[1], hit.cell[2] + hit.normal[2]];
-    const why = cannotAdd(blocks, c);
-    if (why) {
-      if (REFUSED[why]) setToast(REFUSED[why]);
-      return;
-    }
-    commit(add(blocks, c));
-  };
-  const turn = (a: Axis) => {
-    commit(turnAll(blocks, a));
-    setFrameKey((k) => k + 1);
-  };
-
-  const svg = useMemo(() => isoSvg(blocks, { size: 240 }), [blocks]);
-  const small = useMemo(() => isoSvg(blocks, { size: 96, stroke: 1.2 }), [blocks]);
-  const tiny = useMemo(() => isoSvg(blocks, { size: 64, stroke: 1 }), [blocks]);
-  const onePiece = connected(blocks);
+  // Android back: Question → Build → other pages → Studio → home.
+  useEffect(() => {
+    objectsBack.current = () => {
+      const s = st();
+      if (objectsModal.current) return (objectsModal.current(), true);
+      if (s.page === 'studio' && s.step === 'question') return (s.set({ step: 'build' }), true);
+      if (s.page !== 'studio') return (s.set({ page: 'studio' }), true);
+      return false;
+    };
+    return () => {
+      objectsBack.current = null;
+    };
+  }, []);
 
   return (
     <div className="ob-module">
@@ -84,50 +98,67 @@ export default function ObjectsModule({ onExit }: { onExit: () => void }) {
           <ArrowLeft size={20} />
         </button>
         <h1>OBJECTS</h1>
-        <span className="ob-badge">M0 · blocks</span>
+        <span className="ob-status" aria-live="polite">
+          {status === 'saving' ? <Loader2 size={13} className="spin" /> : status === 'saved' ? <Check size={13} /> : null}
+          {status === 'saving' ? 'Saving…' : status === 'saved' ? 'Saved' : ''}
+        </span>
       </header>
-
-      <Viewport blocks={blocks} onTap={onTap} frameKey={frameKey} />
-
-      <section className="ob-drawings" aria-label="Isometric drawing">
-        <img src={svgUrl(svg)} width={120} height={120} alt="Isometric drawing (question size)" />
-        <img src={svgUrl(small)} width={96} height={96} alt="Option size" />
-        <img src={svgUrl(tiny)} width={64} height={64} alt="Small size" />
-        <p className={onePiece ? 'ok' : 'bad'}>
-          {blocks.length} block{blocks.length === 1 ? '' : 's'}
-          <br />
-          {blocks.length === 0 ? 'Tap the floor to add' : onePiece ? '✓ One piece' : '⚠ Not in one piece'}
-        </p>
-      </section>
-
-      <nav className="ob-bar" aria-label="Build">
-        <button className={tool === 'add' ? 'on' : ''} aria-label="Add blocks" aria-pressed={tool === 'add'} onClick={() => setTool('add')}>
-          <Box size={18} />
-        </button>
-        <button className={tool === 'remove' ? 'on' : ''} aria-label="Remove blocks" aria-pressed={tool === 'remove'} onClick={() => setTool('remove')}>
-          <Eraser size={18} />
-        </button>
-        <span className="ob-sep" />
-        {(['x', 'y', 'z'] as Axis[]).map((a) => (
-          <button key={a} aria-label={`Turn a quarter about ${a.toUpperCase()}`} onClick={() => turn(a)} disabled={!blocks.length}>
-            <RotateCw size={18} />
-            <span>{a.toUpperCase()}</span>
+      <nav className="ob-pages" aria-label="OBJECTS">
+        {PAGES.map(([p, l]) => (
+          <button key={p} className={page === p ? 'on' : ''} aria-current={page === p ? 'page' : undefined} onClick={() => st().set({ page: p })}>
+            {l}
           </button>
         ))}
-        <span className="ob-sep" />
-        <button aria-label="Undo" onClick={undo} disabled={!hist.past.length}>
-          <Undo2 size={18} />
-        </button>
-        <button aria-label="Redo" onClick={redo} disabled={!hist.future.length}>
-          <Redo2 size={18} />
-        </button>
-        <button aria-label="Fit the view" onClick={() => setFrameKey((k) => k + 1)}>
-          <Focus size={18} />
-        </button>
-        <button aria-label="Clear" onClick={() => (commit([]), setToast('Cleared · Undo brings it back'))} disabled={!blocks.length}>
-          <Trash2 size={18} />
-        </button>
       </nav>
+
+      {page === 'studio' && (
+        <>
+          <div className="ob-steps">
+            <button className={step === 'build' ? 'on' : ''} onClick={() => st().set({ step: 'build' })}>
+              1 · Build
+            </button>
+            <button className={step === 'question' ? 'on' : ''} onClick={() => st().set({ step: 'question' })}>
+              2 · Question
+            </button>
+            {step === 'build' && (
+              <div className="ob-seg" role="radiogroup" aria-label="Object kind">
+                <button role="radio" aria-checked={kind === 'blocks'} className={kind === 'blocks' ? 'on' : ''} onClick={() => st().set({ kind: 'blocks', family: 'same' })}>
+                  3D
+                </button>
+                <button role="radio" aria-checked={kind === 'figure'} className={kind === 'figure' ? 'on' : ''} onClick={() => st().set({ kind: 'figure', family: 'f-turn' })}>
+                  2D
+                </button>
+              </div>
+            )}
+            <span className="ob-tools">
+              <button className="icon" aria-label="Undo" disabled={!canUndo} onClick={() => st().undo()}>
+                <Undo2 size={18} />
+              </button>
+              <button className="icon" aria-label="Redo" disabled={!canRedo} onClick={() => st().redo()}>
+                <Redo2 size={18} />
+              </button>
+              <button className="icon" aria-label="New object" onClick={() => st().newObject()}>
+                <FilePlus2 size={18} />
+              </button>
+            </span>
+          </div>
+          {editing && <div className="ob-editing">Editing {editing.id} · v{editing.version} — commit saves v{editing.version + 1}</div>}
+          {step === 'build' ? kind === 'blocks' ? <BuildBlocks /> : <BuildFigure /> : <QuestionStep />}
+        </>
+      )}
+      {page === 'bank' && <Bank />}
+      {page === 'test' && (
+        <div className="ob-placeholder">
+          <h2>Test Management</h2>
+          <p className="muted">Phase 2</p>
+        </div>
+      )}
+      {page === 'analysis' && (
+        <div className="ob-placeholder">
+          <h2>Result Analysis</h2>
+          <p className="muted">Phase 3</p>
+        </div>
+      )}
       {toast && <div className="ob-toast">{toast}</div>}
     </div>
   );

@@ -2,20 +2,22 @@
 // fingers pan and zoom, a tap adds or removes a block. Pinch never changes
 // the object.
 import { useEffect, useRef, useState } from 'react';
-import type { Blocks } from '../core/blocks';
+import type { Blocks, Cell } from '../core/blocks';
 import { BlockScene, type Hit } from '../render/BlockScene';
 
 const TAP_SLOP = 8;
 
-export function Viewport({ blocks, onTap, frameKey }: { blocks: Blocks; onTap: (h: Hit | null) => void; frameKey: number }) {
+export function Viewport({ blocks, marked = null, onTap, frameKey }: { blocks: Blocks; marked?: Cell | null; onTap: (h: Hit | null) => void; frameKey: number }) {
   const box = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const scene = useRef<BlockScene | null>(null);
   const [error, setError] = useState<string | null>(null);
   const latest = useRef(blocks);
+  const markedRef = useRef(marked);
   useEffect(() => {
     latest.current = blocks;
-  }, [blocks]);
+    markedRef.current = marked;
+  }, [blocks, marked]);
 
   useEffect(() => {
     const el = box.current!;
@@ -37,7 +39,7 @@ export function Viewport({ blocks, onTap, frameKey }: { blocks: Blocks; onTap: (
     });
     ro.observe(el);
     scene.current.resize(el.clientWidth, el.clientHeight);
-    scene.current.setBlocks(latest.current);
+    scene.current.setBlocks(latest.current, markedRef.current);
     return () => {
       ro.disconnect();
       scene.current?.dispose();
@@ -45,7 +47,7 @@ export function Viewport({ blocks, onTap, frameKey }: { blocks: Blocks; onTap: (
     };
   }, []);
 
-  useEffect(() => scene.current?.setBlocks(blocks), [blocks]);
+  useEffect(() => scene.current?.setBlocks(blocks, marked), [blocks, marked]);
   useEffect(() => {
     if (frameKey) scene.current?.frame(latest.current);
   }, [frameKey]);

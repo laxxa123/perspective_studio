@@ -25,9 +25,10 @@ option sameness are exact.
 - **Three.js** (already a dependency, used by CUBE) draws only the
   interactive authoring viewport (`render/BlockScene.ts`); it holds no
   state.
-- **No new runtime dependency** for Phase 1a. M0 keeps its draft in
-  localStorage; SQLite (`objects.db`, behind a repository) arrives with the
-  Question Bank (M4), as CUBE does.
+- **No new runtime dependency** for Phase 1a. Questions and drafts are
+  stored through repositories in SQLite (`objects` database,
+  @capacitor-community/sqlite) on Android and IndexedDB (`idb`) in a
+  browser, as CUBE does (0.24.0); M0's localStorage draft is read once.
 - Phase 1c (add / subtract / intersect, extrusion) will need a geometry
   library; it gets its own ADR after its own device spike.
 
